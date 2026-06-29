@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createClient } from "@/utils/supabase/client";
 import SubmissionsPanel from "@/components/dashboard/SubmissionsPanel";
 import ExhibitionsPanel from "@/components/dashboard/ExhibitionsPanel";
 import CataloguePanel from "@/components/dashboard/CataloguePanel";
@@ -19,6 +21,13 @@ const NAV = [
 
 export default function DashboardPage() {
   const [tab, setTab] = useState<Tab>("submissions");
+  const router = useRouter();
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+  }
   const pendingCount = SUBMISSIONS.filter(s => s.status === "pending").length;
   const ackCount = SUBMISSIONS.filter(s => s.status === "declined" && s.ack === false).length;
 
@@ -56,6 +65,9 @@ export default function DashboardPage() {
           <Link href="/docs" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "#6B655B" }}>
             <span style={{ fontSize: 14 }}>📖</span> Documentation
           </Link>
+          <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "#8A3A30", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+            <span style={{ fontSize: 14 }}>→</span> Sign out
+          </button>
         </div>
       </aside>
 

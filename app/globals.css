@@ -1,24 +1,121 @@
 @import "tailwindcss";
 
 :root {
-  --pl-primary: #17150F;
+  /* ---- Brand ---- */
   --pl-accent: #B5623C;
+  --pl-primary: #17150F;
+
+  /* ---- Surfaces ---- */
+  --pl-bg-app: #FBFAF8;
+  --pl-bg-shell: #EFECE4;
   --pl-sidebar: #F4F1EA;
-  --pl-bg: #FBFAF8;
-  --pl-bg-warm: #EFECE4;
+  --pl-surface: #FFFFFF;
+  --pl-surface-dark: #1C1A17;
+
+  /* ---- Text ---- */
+  --pl-text: #17150F;
+  --pl-text-body: #2A2723;
+  --pl-text-secondary: #57534A;
+  --pl-text-muted: #6B655B;
+  --pl-text-soft: #8B8579;
+  --pl-text-faint: #9A9486;
+  --pl-text-eyebrow: #A39D8E;
+  --pl-on-dark: #FBFAF8;
+  --pl-on-dark-soft: #B8B2A6;
+  --pl-on-dark-faint: #8A8478;
+
+  /* ---- Borders ---- */
   --pl-border: #ECE8DE;
-  --pl-border-soft: #E7E3D9;
-  --pl-muted: #A39D8E;
-  --pl-sub: #8B8579;
-  --pl-head: 'Newsreader', serif;
+  --pl-border-strong: #E7E3D9;
+  --pl-border-input: #E0DBCF;
+  --pl-border-chip: #E4DFD3;
+  --pl-divider: #F1EEE6;
+  --pl-border-dark: #3D382F;
+
+  /* ---- Status: Pending ---- */
+  --pl-pending-bg: #F4ECD9;
+  --pl-pending-fg: #8A6A1E;
+  --pl-pending-dot: #C2922F;
+
+  /* ---- Status: Approved ---- */
+  --pl-approved-bg: #E7EFE1;
+  --pl-approved-fg: #4A6138;
+  --pl-approved-dot: #6B8A4E;
+  --pl-approved-panel-bg: #EEF2EA;
+  --pl-approved-panel-border: #DBE6D2;
+
+  /* ---- Status: Declined ---- */
+  --pl-declined-bg: #F3E4E0;
+  --pl-declined-fg: #8A3A30;
+  --pl-declined-dot: #B04A3C;
+  --pl-declined-panel-bg: #F8EAE6;
+  --pl-declined-panel-border: #EAD2CB;
+
+  /* ---- Status: Changes ---- */
+  --pl-changes-bg: #E6EBEF;
+  --pl-changes-fg: #3C566B;
+  --pl-changes-dot: #5A7894;
+  --pl-changes-panel-bg: #EAEEF2;
+  --pl-changes-panel-border: #D5DEE6;
+
+  /* ---- Neutral chip ---- */
+  --pl-neutral-chip-bg: #EEEAE0;
+  --pl-neutral-chip-fg: #57534A;
+
+  /* ---- Radii ---- */
+  --pl-radius-chip: 7px;
+  --pl-radius-sm: 8px;
+  --pl-radius-btn: 9px;
+  --pl-radius-input: 10px;
+  --pl-radius-card: 13px;
+  --pl-radius-card-lg: 14px;
+  --pl-radius-pill: 20px;
+
+  /* ---- Shadows ---- */
+  --pl-shadow-card-hover: 0 6px 20px rgba(30,27,20,.07);
+  --pl-shadow-drawer: -20px 0 60px rgba(30,27,20,.18);
+  --pl-shadow-toast: 0 12px 36px rgba(30,27,20,.3);
+  --pl-scrim: rgba(30,27,20,.34);
+
+  /* ---- Layout ---- */
+  --pl-sidebar-width: 248px;
+  --pl-content-max: 1240px;
+  --pl-marketing-max: 1180px;
+  --pl-drawer-width: 520px;
+
+  /* ---- Motion ---- */
+  --pl-ease: cubic-bezier(.2,.8,.2,1);
+  --pl-dur-fast: .12s;
+  --pl-dur-base: .25s;
+
+  /* ---- Legacy aliases (keep for existing component code) ---- */
+  --pl-bg: var(--pl-bg-app);
+  --pl-bg-warm: var(--pl-bg-shell);
+  --pl-border-soft: var(--pl-border-strong);
+  --pl-muted: var(--pl-text-eyebrow);
+  --pl-sub: var(--pl-text-soft);
 }
 
 @theme inline {
-  --color-background: var(--pl-bg);
+  --color-background: var(--pl-bg-app);
   --color-foreground: var(--pl-primary);
+  --color-accent: var(--pl-accent);
+  --color-sidebar: var(--pl-sidebar);
+  --color-surface: var(--pl-surface);
+  --color-surface-dark: var(--pl-surface-dark);
+  --color-border: var(--pl-border);
+  --color-border-input: var(--pl-border-input);
+  --color-text-muted: var(--pl-text-muted);
+  --color-text-soft: var(--pl-text-soft);
+  --color-text-eyebrow: var(--pl-text-eyebrow);
+  --color-on-dark: var(--pl-on-dark);
+  --color-on-dark-soft: var(--pl-on-dark-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-newsreader);
+  --radius-input: var(--pl-radius-input);
+  --radius-btn: var(--pl-radius-btn);
+  --radius-card: var(--pl-radius-card);
 }
 
 *,
