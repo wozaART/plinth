@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
-export default function SiteNav() {
+export default async function SiteNav() {
+  const cookieStore = await cookies();
+  const supabase = createClient(cookieStore);
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <header style={{ position: "sticky", top: 0, zIndex: 30, background: "rgba(251,250,248,.82)", backdropFilter: "blur(10px)", borderBottom: "1px solid #ECE8DE" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "15px clamp(20px,5vw,40px)", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" as const }}>
@@ -15,8 +21,12 @@ export default function SiteNav() {
           <Link href="/review" style={{ fontSize: 13.5, color: "#57534A" }}>Personalise</Link>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Link href="/dashboard" style={{ fontSize: 13.5, fontWeight: 500, color: "#17150F", padding: "9px 14px" }}>Sign in</Link>
-          <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 500, background: "#17150F", color: "#FBFAF8", padding: "10px 17px", borderRadius: 9 }}>Open dashboard</Link>
+          {!user && (
+            <Link href="/signin" style={{ fontSize: 13.5, fontWeight: 500, color: "#17150F", padding: "9px 14px" }}>Sign in</Link>
+          )}
+          {user && (
+            <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 500, background: "#17150F", color: "#FBFAF8", padding: "10px 17px", borderRadius: 9 }}>Open dashboard</Link>
+          )}
         </div>
       </div>
     </header>
