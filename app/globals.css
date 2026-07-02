@@ -3,6 +3,8 @@
 :root {
   /* ---- Brand ---- */
   --pl-accent: #B5623C;
+  --pl-accent-hover: #9C4F30;
+  --pl-on-accent: #FBFAF8;
   --pl-primary: #17150F;
 
   /* ---- Surfaces ---- */

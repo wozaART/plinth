@@ -40,3 +40,11 @@ export interface Contact {
   focus: string;
   last: string;
 }
+
+export interface FrameJob {
+  title: string;
+  artist: string;
+  spec: string;
+  stage: "queued" | "building" | "ready";
+  due: string;
+}

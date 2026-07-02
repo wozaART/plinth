@@ -1,4 +1,4 @@
-import type { Submission, Exhibition, CatalogueWork, Contact } from "./types";
+import type { Submission, Exhibition, CatalogueWork, Contact, FrameJob } from "./types";
 
 export const SUBMISSIONS: Submission[] = [
   { id: "s1", title: "Veld at First Light", artist: "Thandiwe Mokoena", year: 2024, medium: "Oil on canvas", dim: "120 × 90 cm", price: "R 24 000", forEx: "Highveld Light", date: "2 days ago", status: "pending", note: "", statement: "A study of dawn breaking over the Highveld grasslands — part of an ongoing series on light and memory in the interior." },
@@ -39,4 +39,11 @@ export const CONTACTS: Contact[] = [
   { name: "Sipho Dlamini", email: "sipho.d@studio.co.za", role: "Artist", focus: "Mixed media", last: "5 days ago" },
   { name: "Marcus Reid", email: "m.reid@privatebank.com", role: "Collector", focus: "Investment-grade", last: "1 week ago" },
   { name: "Lerato Khumalo", email: "lerato@khumalo.art", role: "Artist", focus: "Painting", last: "1 week ago" },
+];
+
+export const FRAME_JOBS: FrameJob[] = [
+  { title: "Red Ground", artist: "Nomvula Zulu", spec: "Float frame · oiled oak, 30mm", stage: "queued", due: "14 Jul" },
+  { title: "Veld at First Light", artist: "Thandiwe Mokoena", spec: "Box frame · charcoal ash", stage: "building", due: "11 Jul" },
+  { title: "Salt Pan, Evening", artist: "Lerato Khumalo", spec: "Conservation mount + glass", stage: "building", due: "12 Jul" },
+  { title: "Quiet Interior", artist: "Aisha Patel", spec: "Float frame · natural maple", stage: "ready", due: "Done · 5 Jul" },
 ];

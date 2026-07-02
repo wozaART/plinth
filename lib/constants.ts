@@ -1,4 +1,7 @@
 import type { SubmissionStatus } from "./types";
+import { galleryConfig } from "./gallery.config";
+
+const statusColors = galleryConfig.theme.colors.status;
 
 export const ARTWORK_GRADIENTS = [
   "radial-gradient(circle at 72% 30%, #E9E1D2 0 19%, rgba(233,225,210,0) 19.5%), linear-gradient(155deg,#6E2B2B,#532020)",
@@ -18,22 +21,28 @@ export const AVATAR_COLORS = [
 ];
 
 export const STATUS_META: Record<SubmissionStatus, { label: string; bg: string; fg: string; dot: string }> = {
-  pending:  { label: "Pending review",    bg: "#F4ECD9", fg: "#8A6A1E", dot: "#C2922F" },
-  approved: { label: "Approved",          bg: "#E7EFE1", fg: "#4A6138", dot: "#6B8A4E" },
-  declined: { label: "Declined",          bg: "#F3E4E0", fg: "#8A3A30", dot: "#B04A3C" },
-  changes:  { label: "Changes requested", bg: "#E6EBEF", fg: "#3C566B", dot: "#5A7894" },
+  pending:  { label: "Pending review",    bg: statusColors.pending.bg,  fg: statusColors.pending.fg,  dot: statusColors.pending.dot },
+  approved: { label: "Approved",          bg: statusColors.approved.bg, fg: statusColors.approved.fg, dot: statusColors.approved.dot },
+  declined: { label: "Declined",          bg: statusColors.declined.bg, fg: statusColors.declined.fg, dot: statusColors.declined.dot },
+  changes:  { label: "Changes requested", bg: statusColors.changes.bg,  fg: statusColors.changes.fg,  dot: statusColors.changes.dot },
 };
 
 export const EX_STATUS_META: Record<string, { label: string; bg: string; fg: string }> = {
-  open:     { label: "Open call",    bg: "#E7EFE1", fg: "#4A6138" },
-  planning: { label: "Planning",     bg: "#F4ECD9", fg: "#8A6A1E" },
-  hanging:  { label: "Hanging now",  bg: "#E6EBEF", fg: "#3C566B" },
-  closed:   { label: "Closed",       bg: "#EEEAE0", fg: "#8B8579" },
+  open:     { label: "Open call",    bg: statusColors.approved.bg, fg: statusColors.approved.fg },
+  planning: { label: "Planning",     bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
+  hanging:  { label: "Hanging now",  bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
+  closed:   { label: "Closed",       bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
 };
 
 export const CAT_STATUS_META: Record<string, { bg: string; fg: string }> = {
-  available: { bg: "#EEEAE0", fg: "#57534A" },
-  sold:      { bg: "#E7EFE1", fg: "#4A6138" },
-  reserved:  { bg: "#F4ECD9", fg: "#8A6A1E" },
-  "on loan": { bg: "#E6EBEF", fg: "#3C566B" },
+  available: { bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
+  sold:      { bg: statusColors.approved.bg, fg: statusColors.approved.fg },
+  reserved:  { bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
+  "on loan": { bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
+};
+
+export const FRAME_STAGE_META: Record<string, { label: string; bg: string; fg: string }> = {
+  queued:   { label: "Awaiting framing", bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
+  building: { label: "In the frameshop", bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
+  ready:    { label: "Framed & ready",   bg: statusColors.approved.bg, fg: statusColors.approved.fg },
 };
