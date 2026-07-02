@@ -144,7 +144,7 @@ function SubmitDrawer({ onClose, onSubmit }: { onClose: () => void; onSubmit: (t
 
         <div style={{ padding: "16px 24px", borderTop: "1px solid var(--pl-border)", display: "flex", gap: 10 }}>
           {step > 1 && <button onClick={() => setStep(step - 1)} style={{ flex: 1, padding: "12px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Back</button>}
-          <button onClick={next} style={{ flex: 2, padding: "12px", background: "var(--pl-text)", color: "var(--pl-on-dark)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: "pointer" }}>
+          <button onClick={next} style={{ flex: 2, padding: "12px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: "pointer" }}>
             {step < 3 ? "Continue →" : "Submit for review"}
           </button>
         </div>
@@ -279,7 +279,7 @@ export default function StudioPage() {
             {tab === "open-calls" ? "Open calls" : tab}
           </h1>
           {tab === "submissions" && (
-            <button onClick={() => setShowSubmit(true)} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-text)", color: "var(--pl-on-dark)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
+            <button onClick={() => setShowSubmit(true)} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
           )}
         </div>
 
@@ -355,7 +355,7 @@ export default function StudioPage() {
                             </div>
                           )}
                           {w.status === "declined" && w.ack === false && (
-                            <button onClick={ackWork} style={{ marginTop: 12, background: "var(--pl-text)", color: "var(--pl-on-dark)", border: "none", borderRadius: 9, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                            <button onClick={ackWork} style={{ marginTop: 12, background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
                               I understand — I won&apos;t deliver this work
                             </button>
                           )}
@@ -388,7 +388,7 @@ export default function StudioPage() {
                     </div>
                   </div>
                   {oc.accepting && (
-                    <button onClick={() => setShowSubmit(true)} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-text)", color: "var(--pl-on-dark)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
+                    <button onClick={() => setShowSubmit(true)} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
                       Submit for this call
                     </button>
                   )}
@@ -403,7 +403,7 @@ export default function StudioPage() {
                 <div key={msg.preview} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 13, padding: "16px 18px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--pl-text)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--pl-on-dark)" }}>{galleryConfig.identity.shortName.slice(0, 2).toUpperCase()}</div>
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--pl-solid)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--pl-on-solid)" }}>{galleryConfig.identity.shortName.slice(0, 2).toUpperCase()}</div>
                       <div style={{ fontSize: 13.5, fontWeight: 600 }}>{msg.from}</div>
                     </div>
                     <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)" }}>{msg.time}</div>
@@ -422,7 +422,7 @@ export default function StudioPage() {
       {showSubmit && <SubmitDrawer onClose={() => setShowSubmit(false)} onSubmit={onSubmit} />}
 
       {toast && (
-        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-text)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
+        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
           {toast}
         </div>
       )}

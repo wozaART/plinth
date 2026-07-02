@@ -71,7 +71,7 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide }: Rev
         {sub.status === "pending" && (
           <div style={{ padding: 24, marginTop: "auto" }}>
             {mode === "view" ? (
-              <button onClick={() => setMode("decide")} style={{ width: "100%", padding: "13px", background: "var(--pl-text)", color: "var(--pl-on-dark)", borderRadius: 11, border: "none", fontSize: 14, fontWeight: 550, cursor: "pointer" }}>
+              <button onClick={() => setMode("decide")} style={{ width: "100%", padding: "13px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 11, border: "none", fontSize: 14, fontWeight: 550, cursor: "pointer" }}>
                 Make a decision
               </button>
             ) : (

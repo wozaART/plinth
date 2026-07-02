@@ -59,7 +59,7 @@ export default function DashboardPage() {
             <button key={item.id} onClick={() => setTab(item.id)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 9, border: "none", cursor: "pointer", background: tab === item.id ? "var(--pl-surface)" : "transparent", color: tab === item.id ? "var(--pl-text)" : "var(--pl-text-muted)", fontWeight: tab === item.id ? 600 : 400, fontSize: 14, textAlign: "left", boxShadow: tab === item.id ? "0 1px 4px rgba(0,0,0,.06)" : "none" }}>
               <span>{item.label}</span>
               {item.count !== null && item.count > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 600, background: tab === item.id ? "var(--pl-text)" : "var(--pl-border-strong)", color: tab === item.id ? "var(--pl-bg-app)" : "var(--pl-text-soft)", padding: "2px 7px", borderRadius: 12 }}>{item.count}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, background: tab === item.id ? "var(--pl-accent)" : "var(--pl-border-strong)", color: tab === item.id ? "var(--pl-on-accent)" : "var(--pl-text-soft)", padding: "2px 7px", borderRadius: 12 }}>{item.count}</span>
               )}
             </button>
           ))}
