@@ -12,6 +12,8 @@ export function themeCssVars(config: GalleryConfig): CSSProperties {
     "--pl-accent": c.accent,
     "--pl-accent-hover": c.accentHover,
     "--pl-on-accent": c.onAccent,
+    "--pl-solid": c.solid,
+    "--pl-on-solid": c.onSolid,
     "--pl-primary": c.text,
 
     "--pl-bg-app": c.bgApp,

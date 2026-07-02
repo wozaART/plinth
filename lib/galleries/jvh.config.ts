@@ -7,7 +7,7 @@ function formatZar(amount: number): string {
 export const jvhConfig: GalleryConfig = {
   identity: {
     slug: "jvh",
-    name: "JV Hart Gallery",
+    name: "JVH Art Gallery",
     shortName: "JVH",
     tagline: "Contemporary art from across South Africa, rotating monthly.",
     city: "Garsfontein, Pretoria",
@@ -19,6 +19,9 @@ export const jvhConfig: GalleryConfig = {
       accent: "#22C39C",
       accentHover: "#159A79",
       onAccent: "#06251C",
+
+      solid: "#22C39C",
+      onSolid: "#06251C",
 
       bgApp: "#0C0C0E",
       bgShell: "#141416",
@@ -77,7 +80,7 @@ export const jvhConfig: GalleryConfig = {
   },
   business: {
     currencyFormat: formatZar,
-    // Commission rate not confirmed with JV Hart Gallery yet — inherits Plinth's
+    // Commission rate not confirmed with JVH Art Gallery yet — inherits Plinth's
     // default 40% until the actual figure is provided.
     commissionRate: 0.4,
     deliveryAddress: "593 Jacqueline Dr, Garsfontein, Pretoria",

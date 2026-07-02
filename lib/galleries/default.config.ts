@@ -20,6 +20,9 @@ export const defaultConfig: GalleryConfig = {
       accentHover: "#9C4F30",
       onAccent: "#FBFAF8",
 
+      solid: "#17150F",
+      onSolid: "#FBFAF8",
+
       bgApp: "#FBFAF8",
       bgShell: "#EFECE4",
       sidebar: "#F4F1EA",

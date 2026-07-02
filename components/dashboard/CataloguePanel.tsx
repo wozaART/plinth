@@ -16,12 +16,12 @@ export default function CataloguePanel() {
       <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(["all", ...STATUSES] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-text)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-text)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-dark)" : "var(--pl-text-muted)", cursor: "pointer", textTransform: "capitalize" }}>
+            <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer", textTransform: "capitalize" }}>
               {f}
             </button>
           ))}
         </div>
-        <button style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-text)", color: "var(--pl-on-dark)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add work</button>
+        <button style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add work</button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">

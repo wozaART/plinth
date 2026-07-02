@@ -16,6 +16,12 @@ export interface GalleryThemeColors {
   accentHover: string;
   onAccent: string;
 
+  /** Fill/text pair for solid "primary action" surfaces (active filter pills,
+   * primary buttons, toasts). Kept separate from text/onDark because in a
+   * dark-mode gallery theme those two can collapse to the same color. */
+  solid: string;
+  onSolid: string;
+
   bgApp: string;
   bgShell: string;
   sidebar: string;

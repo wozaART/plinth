@@ -35,9 +35,9 @@ export default function SubmissionsPanel() {
       {/* Filter strip */}
       <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap" }}>
         {(["all", "pending", "approved", "declined", "changes"] as const).map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-text)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-text)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-dark)" : "var(--pl-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+          <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
             {f === "all" ? "All" : STATUS_META[f].label}
-            {counts[f] ? <span style={{ fontSize: 10, background: filter === f ? "rgba(255,255,255,.2)" : "var(--pl-sidebar)", color: filter === f ? "var(--pl-on-dark)" : "var(--pl-text-soft)", padding: "1px 5px", borderRadius: 10 }}>{counts[f]}</span> : null}
+            {counts[f] ? <span style={{ fontSize: 10, background: filter === f ? "rgba(0,0,0,.15)" : "var(--pl-sidebar)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-soft)", padding: "1px 5px", borderRadius: 10 }}>{counts[f]}</span> : null}
           </button>
         ))}
       </div>
@@ -89,7 +89,7 @@ export default function SubmissionsPanel() {
       )}
 
       {toast && (
-        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-text)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
+        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
           {toast}
         </div>
       )}

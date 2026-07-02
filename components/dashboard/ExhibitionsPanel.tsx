@@ -6,7 +6,7 @@ export default function ExhibitionsPanel() {
     <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 22, fontWeight: 550, margin: 0 }}>Exhibitions</h2>
-        <button style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-text)", color: "var(--pl-on-dark)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ New exhibition</button>
+        <button style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ New exhibition</button>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {EXHIBITIONS.map((ex) => {
