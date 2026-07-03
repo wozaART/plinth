@@ -1,12 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { avatarBg, initials } from "@/lib/utils";
+import { inviteArtist } from "@/lib/supabase/actions";
 import type { Contact } from "@/lib/types";
 
 export default function ContactsPanel({ data }: { data: Contact[] }) {
   const [filter, setFilter] = useState<"All" | "Artist" | "Collector">("All");
   const filtered = filter === "All" ? data : data.filter(c => c.role === filter);
+  const [inviteState, setInviteState] = useState<Record<string, "sending" | "sent" | "error">>({});
+  const [isPending, startTransition] = useTransition();
+
+  function handleInvite(contact: Contact) {
+    setInviteState(s => ({ ...s, [contact.email]: "sending" }));
+    startTransition(async () => {
+      try {
+        await inviteArtist(contact.email, contact.name);
+        setInviteState(s => ({ ...s, [contact.email]: "sent" }));
+      } catch {
+        setInviteState(s => ({ ...s, [contact.email]: "error" }));
+      }
+    });
+  }
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -38,6 +53,30 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
                 <div style={{ fontSize: 11, color: "var(--pl-text-faint)" }}>Last contact</div>
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-muted)", marginTop: 1 }}>{c.last}</div>
               </div>
+              {c.role === "Artist" && (
+                <button
+                  onClick={() => handleInvite(c)}
+                  disabled={isPending && inviteState[c.email] === "sending"}
+                  style={{
+                    fontSize: 12,
+                    padding: "7px 12px",
+                    borderRadius: 8,
+                    border: "1px solid var(--pl-border-strong)",
+                    background: inviteState[c.email] === "sent" ? "var(--pl-changes-bg)" : "var(--pl-surface)",
+                    color: inviteState[c.email] === "sent" ? "var(--pl-changes-fg)" : "var(--pl-text-muted)",
+                    cursor: inviteState[c.email] === "sending" ? "default" : "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  {inviteState[c.email] === "sending"
+                    ? "Sending…"
+                    : inviteState[c.email] === "sent"
+                    ? "Invited"
+                    : inviteState[c.email] === "error"
+                    ? "Retry invite"
+                    : "Invite to portal"}
+                </button>
+              )}
             </div>
           ))}
         </div>
