@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && pathname === "/signin") {
+  if (user && pathname === "/signin" && !request.nextUrl.searchParams.has("invite")) {
     const role = (user.user_metadata as { role?: string })?.role;
     const url = request.nextUrl.clone();
     url.pathname = role === "artist" ? "/studio" : "/dashboard";

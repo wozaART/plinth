@@ -516,6 +516,20 @@ export type Database = {
     }
     Functions: {
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
+      get_artist_invite: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          full_name: string | null
+          gallery_name: string
+          status: string
+          expires_at: string
+        }[]
+      }
+      accept_artist_invite: {
+        Args: { p_token: string }
+        Returns: { gallery_id: string; gallery_name: string }[]
+      }
     }
     Enums: {
       [_ in never]: never
