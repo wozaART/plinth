@@ -1,9 +1,10 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
+import { galleryConfig } from "@/lib/gallery.config";
 import type { SubmissionStatus } from "@/lib/types";
 
 async function supabaseServer() {
@@ -94,4 +95,41 @@ export async function createSubmission(formData: FormData) {
 
   revalidatePath("/studio");
   return { id: submissionId, title };
+}
+
+export async function inviteArtist(email: string, fullName: string) {
+  const supabase = await supabaseServer();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const gallery = await getCurrentGallery(supabase);
+
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  const appUrl = `${protocol}://${host}`;
+
+  const { data, error } = await supabase.functions.invoke("send-artist-invite", {
+    body: {
+      galleryId: gallery.id,
+      galleryName: galleryConfig.identity.name,
+      accentColor: galleryConfig.theme.colors.accent,
+      appUrl,
+      inviterName: user.user_metadata?.full_name || galleryConfig.identity.name,
+      artistEmail: email,
+      artistName: fullName,
+    },
+  });
+
+  if (error) {
+    const body = await error.context?.json?.().catch(() => null);
+    throw new Error(body?.error || error.message);
+  }
+  if (data?.error) throw new Error(data.error);
+
+  revalidatePath("/dashboard");
+  return data;
 }
