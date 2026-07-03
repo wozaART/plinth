@@ -17,3 +17,25 @@ export function initials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
+export function relativeTime(iso: string): string {
+  const then = new Date(iso);
+  const now = new Date();
+  if (then.toDateString() === now.toDateString()) return "Today";
+
+  const day = 86400;
+  const week = day * 7;
+  const diffSec = Math.max(0, Math.floor((now.getTime() - then.getTime()) / 1000));
+
+  if (diffSec < day * 2) return "Yesterday";
+  if (diffSec < week) return `${Math.floor(diffSec / day)} days ago`;
+
+  const weeks = Math.floor(diffSec / week);
+  if (weeks < 5) return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+
+  return then.toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" });
+}
+
+export function shortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
+}

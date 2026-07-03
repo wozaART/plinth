@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { CONTACTS } from "@/lib/data";
 import { avatarBg, initials } from "@/lib/utils";
+import type { Contact } from "@/lib/types";
 
-export default function ContactsPanel() {
+export default function ContactsPanel({ data }: { data: Contact[] }) {
   const [filter, setFilter] = useState<"All" | "Artist" | "Collector">("All");
-  const filtered = filter === "All" ? CONTACTS : CONTACTS.filter(c => c.role === filter);
+  const filtered = filter === "All" ? data : data.filter(c => c.role === filter);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>

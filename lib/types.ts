@@ -48,3 +48,30 @@ export interface FrameJob {
   stage: "queued" | "building" | "ready";
   due: string;
 }
+
+export interface MyWork {
+  id: string;
+  title: string;
+  year: number;
+  medium: string;
+  status: SubmissionStatus;
+  date: string;
+  note?: string;
+  ack?: boolean;
+}
+
+export interface OpenCall {
+  title: string;
+  gallery: string;
+  deadline: string;
+  focus: string;
+  accepting: boolean;
+}
+
+export interface StudioMessage {
+  id: string;
+  from: string;
+  time: string;
+  preview: string;
+  body: string;
+}

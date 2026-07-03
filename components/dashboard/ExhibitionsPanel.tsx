@@ -1,7 +1,7 @@
-import { EXHIBITIONS } from "@/lib/data";
 import { EX_STATUS_META } from "@/lib/constants";
+import type { Exhibition } from "@/lib/types";
 
-export default function ExhibitionsPanel() {
+export default function ExhibitionsPanel({ data }: { data: Exhibition[] }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
@@ -9,7 +9,7 @@ export default function ExhibitionsPanel() {
         <button style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ New exhibition</button>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        {EXHIBITIONS.map((ex) => {
+        {data.map((ex) => {
           const meta = EX_STATUS_META[ex.status];
           const pct = Math.round((ex.filled / ex.slots) * 100);
           return (

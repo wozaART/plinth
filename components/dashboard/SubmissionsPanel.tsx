@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import ReviewDrawer from "./ReviewDrawer";
-import { SUBMISSIONS } from "@/lib/data";
 import { STATUS_META } from "@/lib/constants";
 import { artworkBg } from "@/lib/utils";
+import { decideSubmission } from "@/lib/supabase/actions";
 import type { Submission, SubmissionStatus } from "@/lib/types";
 
-export default function SubmissionsPanel() {
-  const [submissions, setSubmissions] = useState(SUBMISSIONS);
+export default function SubmissionsPanel({ initialData }: { initialData: Submission[] }) {
+  const [submissions, setSubmissions] = useState(initialData);
   const [filter, setFilter] = useState<"all" | SubmissionStatus>("all");
   const [active, setActive] = useState<Submission | null>(null);
   const [activeIdx, setActiveIdx] = useState(-1);
@@ -28,6 +28,7 @@ export default function SubmissionsPanel() {
       "Changes requested — artist notified."
     );
     setTimeout(() => setToast(null), 3800);
+    void decideSubmission(id, status, note);
   }
 
   return (

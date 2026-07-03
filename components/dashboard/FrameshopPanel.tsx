@@ -1,8 +1,8 @@
-import { FRAME_JOBS } from "@/lib/data";
 import { FRAME_STAGE_META } from "@/lib/constants";
 import { artworkBg } from "@/lib/utils";
+import type { FrameJob } from "@/lib/types";
 
-export default function FrameshopPanel() {
+export default function FrameshopPanel({ data }: { data: FrameJob[] }) {
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
       <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: "var(--pl-radius-card-lg)", padding: "16px 18px", display: "flex", gap: 14, alignItems: "center", marginBottom: 20 }}>
@@ -21,7 +21,7 @@ export default function FrameshopPanel() {
           </tr>
         </thead>
         <tbody>
-          {FRAME_JOBS.map((f, i) => {
+          {data.map((f, i) => {
             const meta = FRAME_STAGE_META[f.stage];
             return (
               <tr key={f.title + i} style={{ borderBottom: "1px solid var(--pl-divider)" }}>
