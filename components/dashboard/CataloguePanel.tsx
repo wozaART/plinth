@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { CATALOGUE } from "@/lib/data";
 import { CAT_STATUS_META } from "@/lib/constants";
 import { artworkBg } from "@/lib/utils";
+import type { CatalogueWork } from "@/lib/types";
 
 const STATUSES = ["available", "sold", "reserved", "on loan"] as const;
 
-export default function CataloguePanel() {
+export default function CataloguePanel({ data }: { data: CatalogueWork[] }) {
   const [filter, setFilter] = useState<"all" | string>("all");
-  const filtered = filter === "all" ? CATALOGUE : CATALOGUE.filter(w => w.status === filter);
+  const filtered = filter === "all" ? data : data.filter(w => w.status === filter);
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
