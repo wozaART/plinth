@@ -1,30 +1,39 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ArtistForms, GalleryForms } from "@/components/auth";
+import type { InviteStatus } from "@/components/auth/ArtistForms";
 import { ErrorBanner } from "@/components/auth/primitives";
 
 type Side = "gallery" | "artist";
 type GView = "signin" | "signup" | "forgot";
-type AView = "signin" | "invite";
-type AStep = "email" | "code";
+type AView = "signin" | "forgot" | "invite";
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+  const inviteToken = searchParams.get("invite");
 
   // ── Navigation state ──────────────────────────────────────────
-  const [side, setSide] = useState<Side>("gallery");
+  const [side, setSide] = useState<Side>(inviteToken ? "artist" : "gallery");
   const [gView, setGView] = useState<GView>("signin");
-  const [aView, setAView] = useState<AView>("signin");
-  const [aStep, setAStep] = useState<AStep>("email");
+  const [aView, setAView] = useState<AView>(inviteToken ? "invite" : "signin");
 
   // ── Shared state ──────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [forgotSent, setForgotSent] = useState(false);
 
   // ── Gallery form state ────────────────────────────────────────
@@ -39,20 +48,52 @@ export default function SignInPage() {
 
   // ── Artist form state ─────────────────────────────────────────
   const [artistEmail, setArtistEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const [artistPassword, setArtistPassword] = useState("");
+
+  // ── Invite state ──────────────────────────────────────────────
+  const [inviteStatus, setInviteStatus] = useState<InviteStatus>(inviteToken ? "loading" : "no_token");
+  const [inviteGalleryName, setInviteGalleryName] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [invitePractice, setInvitePractice] = useState("");
   const [inviteCity, setInviteCity] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePassword, setInvitePassword] = useState("");
   const [inviteAgreed, setInviteAgreed] = useState(true);
+  const [inviteConfirmationPending, setInviteConfirmationPending] = useState(false);
+
+  useEffect(() => {
+    if (!inviteToken) return;
+    let cancelled = false;
+
+    (async () => {
+      const { data, error: rpcError } = await supabase
+        .rpc("get_artist_invite", { p_token: inviteToken })
+        .maybeSingle();
+      if (cancelled) return;
+
+      if (rpcError || !data) {
+        setInviteStatus("not_found");
+        return;
+      }
+      setInviteEmail(data.email);
+      setInviteName(data.full_name ?? "");
+      setInviteGalleryName(data.gallery_name);
+
+      if (data.status === "accepted") setInviteStatus("accepted");
+      else if (data.status === "revoked") setInviteStatus("revoked");
+      else if (data.status === "expired" || new Date(data.expires_at) < new Date()) setInviteStatus("expired");
+      else setInviteStatus("ready");
+    })();
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inviteToken]);
 
   // ── Helpers ───────────────────────────────────────────────────
   const pickSide = (s: Side) => {
     setSide(s);
     setError(null);
     setForgotSent(false);
-    setAStep("email");
   };
 
   const withLoad = async (fn: () => Promise<void>) => {
@@ -101,55 +142,71 @@ export default function SignInPage() {
   };
 
   // ── Artist handlers ───────────────────────────────────────────
-  const handleSendCode = (emailOverride?: string) =>
+  const handleArtistSignIn = () =>
     withLoad(async () => {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: emailOverride ?? artistEmail,
-        options: { shouldCreateUser: true },
-      });
-      if (error) { setError(error.message); return; }
-      setAStep("code");
-      setOtp(["", "", "", "", "", ""]);
-    });
-
-  const handleVerifyOtp = () =>
-    withLoad(async () => {
-      const token = otp.join("");
-      if (token.length < 6) { setError("Please enter the full 6-digit code."); return; }
-      const { error } = await supabase.auth.verifyOtp({ email: artistEmail, token, type: "email" });
+      const { error } = await supabase.auth.signInWithPassword({ email: artistEmail, password: artistPassword });
       if (error) { setError(error.message); return; }
       router.push("/studio");
       router.refresh();
     });
 
+  const handleArtistForgotPassword = () =>
+    withLoad(async () => {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/account/update-password`,
+      });
+      if (error) { setError(error.message); return; }
+      setForgotSent(true);
+    });
+
+  const handleArtistOAuth = async (provider: "google" | "apple") => {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  };
+
+  // ── Invite handlers ───────────────────────────────────────────
+  const handleInviteOAuth = async (provider: "google" | "apple") => {
+    if (!inviteToken) return;
+    if (!inviteAgreed) { setError("Please agree to the terms to continue."); return; }
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/studio&invite=${inviteToken}`,
+      },
+    });
+  };
+
   const handleInviteAccept = () =>
     withLoad(async () => {
+      if (!inviteToken) return;
       if (!inviteAgreed) { setError("Please agree to the terms to continue."); return; }
-      const { error } = await supabase.auth.signInWithOtp({
+      if (invitePassword.length < 6) { setError("Choose a password with at least 6 characters."); return; }
+
+      const { data, error } = await supabase.auth.signUp({
         email: inviteEmail,
+        password: invitePassword,
         options: {
-          shouldCreateUser: true,
           data: { role: "artist", full_name: inviteName, practice: invitePractice, city: inviteCity },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/studio&invite=${inviteToken}`,
         },
       });
       if (error) { setError(error.message); return; }
-      setArtistEmail(inviteEmail);
-      setAView("signin");
-      setAStep("code");
-      setOtp(["", "", "", "", "", ""]);
+
+      if (!data.session) {
+        // Email confirmation required before a session exists — the invite
+        // gets redeemed once they click through in auth/callback.
+        setInviteConfirmationPending(true);
+        return;
+      }
+
+      const { error: acceptError } = await supabase.rpc("accept_artist_invite", { p_token: inviteToken });
+      if (acceptError) { setError(acceptError.message); return; }
+
+      router.push("/studio");
+      router.refresh();
     });
-
-  const handleOtpDigit = (index: number, val: string) => {
-    const digit = val.replace(/\D/g, "").slice(-1);
-    const next = [...otp];
-    next[index] = digit;
-    setOtp(next);
-    if (digit && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) otpRefs.current[index - 1]?.focus();
-  };
 
   const isGallery = side === "gallery";
 
@@ -247,25 +304,34 @@ export default function SignInPage() {
 
           {!isGallery && aView === "signin" && (
             <ArtistForms.SignIn
-              step={aStep} email={artistEmail} otp={otp} otpRefs={otpRefs}
-              loading={loading} onEmail={setArtistEmail}
-              onOtpDigit={handleOtpDigit} onOtpKeyDown={handleOtpKeyDown}
-              onSendCode={() => handleSendCode()}
-              onVerify={handleVerifyOtp}
-              onResend={() => handleSendCode()}
-              onBack={() => { setAStep("email"); setError(null); }}
+              email={artistEmail} password={artistPassword} loading={loading}
+              onEmail={setArtistEmail} onPassword={setArtistPassword}
+              onSubmit={handleArtistSignIn}
+              onForgot={() => { setAView("forgot"); setError(null); }}
               onInvite={() => { setAView("invite"); setError(null); }}
+              onOAuth={handleArtistOAuth} onError={setError}
+            />
+          )}
+
+          {!isGallery && aView === "forgot" && (
+            <ArtistForms.Forgot
+              email={forgotEmail} sent={forgotSent} loading={loading}
+              onEmail={setForgotEmail} onSubmit={handleArtistForgotPassword}
+              onBack={() => { setAView("signin"); setForgotSent(false); setError(null); }}
               onError={setError}
             />
           )}
 
           {!isGallery && aView === "invite" && (
             <ArtistForms.Invite
-              name={inviteName} practice={invitePractice} city={inviteCity}
-              email={inviteEmail} agreed={inviteAgreed} loading={loading}
+              status={inviteStatus} galleryName={inviteGalleryName}
+              email={inviteEmail} name={inviteName} practice={invitePractice} city={inviteCity}
+              password={invitePassword} agreed={inviteAgreed} confirmationPending={inviteConfirmationPending}
+              loading={loading}
               onName={setInviteName} onPractice={setInvitePractice}
-              onCity={setInviteCity} onEmail={setInviteEmail} onAgreed={setInviteAgreed}
+              onCity={setInviteCity} onPassword={setInvitePassword} onAgreed={setInviteAgreed}
               onSubmit={handleInviteAccept}
+              onOAuth={handleInviteOAuth}
               onSignIn={() => { setAView("signin"); setError(null); }}
               onError={setError}
             />
