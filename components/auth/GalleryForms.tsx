@@ -24,7 +24,7 @@ interface SignInProps extends BaseProps {
   onSubmit: () => void;
   onForgot: () => void;
   onSignUp: () => void;
-  onOAuth: (p: "google" | "apple") => void;
+  onOAuth: (p: "google") => void;
 }
 
 export function GallerySignIn({
@@ -64,7 +64,7 @@ export function GallerySignIn({
       </PrimaryButton>
 
       <Divider />
-      <OAuthRow onGoogle={() => onOAuth("google")} onApple={() => onOAuth("apple")} />
+      <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[30px] text-center">
         New to Plinth?{" "}
@@ -91,7 +91,7 @@ interface SignUpProps extends BaseProps {
   onPassword: (v: string) => void;
   onSubmit: () => void;
   onSignIn: () => void;
-  onOAuth: (p: "google" | "apple") => void;
+  onOAuth: (p: "google") => void;
 }
 
 export function GallerySignUp({
@@ -158,7 +158,7 @@ export function GallerySignUp({
       </PrimaryButton>
 
       <Divider label="or sign up with" />
-      <OAuthRow onGoogle={() => onOAuth("google")} onApple={() => onOAuth("apple")} />
+      <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[26px] text-center">
         Already have an account?{" "}

@@ -97,6 +97,39 @@ export async function createSubmission(formData: FormData) {
   return { id: submissionId, title };
 }
 
+export async function createContact(input: { name: string; email: string; role: "Artist" | "Collector"; focus: string; sendInvite: boolean }) {
+  const supabase = await supabaseServer();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const gallery = await getCurrentGallery(supabase);
+
+  const { error } = await supabase.from("contacts").insert({
+    gallery_id: gallery.id,
+    name: input.name,
+    email: input.email,
+    role: input.role,
+    focus: input.focus || null,
+    last_contact_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+
+  let inviteError: string | undefined;
+  if (input.role === "Artist" && input.sendInvite) {
+    try {
+      await inviteArtist(input.email, input.name);
+    } catch (err) {
+      inviteError = err instanceof Error ? err.message : "Failed to send invitation.";
+    }
+  }
+
+  revalidatePath("/dashboard");
+  return { inviteError };
+}
+
 export async function inviteArtist(email: string, fullName: string) {
   const supabase = await supabaseServer();
 

@@ -134,7 +134,7 @@ function SignInForm() {
       setForgotSent(true);
     });
 
-  const handleOAuth = async (provider: "google" | "apple") => {
+  const handleOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -159,7 +159,7 @@ function SignInForm() {
       setForgotSent(true);
     });
 
-  const handleArtistOAuth = async (provider: "google" | "apple") => {
+  const handleArtistOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -167,7 +167,7 @@ function SignInForm() {
   };
 
   // ── Invite handlers ───────────────────────────────────────────
-  const handleInviteOAuth = async (provider: "google" | "apple") => {
+  const handleInviteOAuth = async (provider: "google") => {
     if (!inviteToken) return;
     if (!inviteAgreed) { setError("Please agree to the terms to continue."); return; }
     await supabase.auth.signInWithOAuth({

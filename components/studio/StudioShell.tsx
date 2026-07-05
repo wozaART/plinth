@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, type CSSProperties, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, avatarBg, initials } from "@/lib/utils";
 import { STATUS_META } from "@/lib/constants";
 import { galleryConfig } from "@/lib/gallery.config";
 import { ackDeclinedSubmission, createSubmission } from "@/lib/supabase/actions";
 import type { MyWork, OpenCall, StudioMessage } from "@/lib/types";
+import { createClient } from "@/utils/supabase/client";
 
 type StudioTab = "overview" | "submissions" | "open-calls" | "messages" | "profile";
 
@@ -217,6 +219,7 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
 }
 
 export default function StudioShell({ artistName, artistCity, works: initialWorks, openCalls, messages, profile }: StudioShellProps) {
+  const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
   const [showSubmit, setShowSubmit] = useState(false);
@@ -229,6 +232,12 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
     setToast("Decision acknowledged.");
     setTimeout(() => setToast(null), 3000);
     if (unacknowledged) void ackDeclinedSubmission(unacknowledged.id);
+  }
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
   }
 
   async function handleSubmitWork(formData: FormData) {
@@ -276,9 +285,9 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </nav>
 
         <div style={{ padding: "10px 10px 0", borderTop: "1px solid var(--pl-border-dark)" }}>
-          <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "var(--pl-on-dark-faint)" }}>
-            <span>🖼️</span> Gallery dashboard
-          </Link>
+          <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "var(--pl-declined-fg)", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+            <span style={{ fontSize: 14 }}>→</span> Sign out
+          </button>
         </div>
       </aside>
 

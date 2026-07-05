@@ -24,7 +24,7 @@ interface ArtistSignInProps extends BaseProps {
   onSubmit: () => void;
   onForgot: () => void;
   onInvite: () => void;
-  onOAuth: (p: "google" | "apple") => void;
+  onOAuth: (p: "google") => void;
 }
 
 export function ArtistSignIn({
@@ -66,7 +66,7 @@ export function ArtistSignIn({
       </PrimaryButton>
 
       <Divider />
-      <OAuthRow onGoogle={() => onOAuth("google")} onApple={() => onOAuth("apple")} />
+      <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[30px] text-center">
         Got an invite from a gallery?{" "}
@@ -151,7 +151,7 @@ interface ArtistInviteProps extends BaseProps {
   onPassword: (v: string) => void;
   onAgreed: (v: boolean) => void;
   onSubmit: () => void;
-  onOAuth: (p: "google" | "apple") => void;
+  onOAuth: (p: "google") => void;
   onSignIn: () => void;
 }
 
@@ -312,7 +312,7 @@ export function ArtistInvite({
       </PrimaryButton>
 
       <Divider label="or continue with" />
-      <OAuthRow onGoogle={() => onOAuth("google")} onApple={() => onOAuth("apple")} />
+      <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[22px] text-center">
         Already set up?{" "}
