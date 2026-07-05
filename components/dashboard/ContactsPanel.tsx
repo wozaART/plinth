@@ -2,14 +2,18 @@
 
 import { useState, useTransition } from "react";
 import { avatarBg, initials } from "@/lib/utils";
-import { inviteArtist } from "@/lib/supabase/actions";
+import { inviteArtist, createContact } from "@/lib/supabase/actions";
+import AddContactDrawer from "./AddContactDrawer";
 import type { Contact } from "@/lib/types";
 
 export default function ContactsPanel({ data }: { data: Contact[] }) {
+  const [contacts, setContacts] = useState(data);
   const [filter, setFilter] = useState<"All" | "Artist" | "Collector">("All");
-  const filtered = filter === "All" ? data : data.filter(c => c.role === filter);
+  const filtered = filter === "All" ? contacts : contacts.filter(c => c.role === filter);
   const [inviteState, setInviteState] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [isPending, startTransition] = useTransition();
+  const [addOpen, setAddOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   function handleInvite(contact: Contact) {
     setInviteState(s => ({ ...s, [contact.email]: "sending" }));
@@ -19,6 +23,29 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
         setInviteState(s => ({ ...s, [contact.email]: "sent" }));
       } catch {
         setInviteState(s => ({ ...s, [contact.email]: "error" }));
+      }
+    });
+  }
+
+  function handleCreate(contact: Pick<Contact, "name" | "email" | "role" | "focus">, sendInvite: boolean) {
+    setContacts(prev => [{ ...contact, last: "Just now" }, ...prev]);
+    setAddOpen(false);
+    setToast(sendInvite ? `Portal invitation sent to ${contact.name}` : `${contact.name} added to contacts`);
+    setTimeout(() => setToast(null), 3800);
+    startTransition(async () => {
+      try {
+        const { inviteError } = await createContact({ ...contact, sendInvite });
+        if (sendInvite) {
+          setInviteState(s => ({ ...s, [contact.email]: inviteError ? "error" : "sent" }));
+          if (inviteError) {
+            setToast(`${contact.name} added, but the invite couldn't be sent`);
+            setTimeout(() => setToast(null), 3800);
+          }
+        }
+      } catch (err) {
+        setContacts(prev => prev.filter(c => c.email !== contact.email));
+        setToast(err instanceof Error ? err.message : `Couldn't add ${contact.name} — try again`);
+        setTimeout(() => setToast(null), 3800);
       }
     });
   }
@@ -33,7 +60,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
             </button>
           ))}
         </div>
-        <button style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add contact</button>
+        <button onClick={() => setAddOpen(true)} style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add contact</button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl">
@@ -81,6 +108,20 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
           ))}
         </div>
       </div>
+
+      {addOpen && (
+        <AddContactDrawer
+          onClose={() => setAddOpen(false)}
+          onCreate={handleCreate}
+          existingEmails={contacts.map(c => c.email.toLowerCase())}
+        />
+      )}
+
+      {toast && (
+        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

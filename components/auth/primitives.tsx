@@ -96,13 +96,7 @@ export function Divider({ label = "or continue with" }: { label?: string }) {
   );
 }
 
-export function OAuthRow({
-  onGoogle,
-  onApple,
-}: {
-  onGoogle: () => void;
-  onApple: () => void;
-}) {
+export function OAuthRow({ onGoogle }: { onGoogle: () => void }) {
   const btnCls =
     "flex-1 flex items-center justify-center gap-[9px] py-[11px] rounded-[var(--pl-radius-input)] border border-border-input bg-surface font-sans text-[13.5px] font-medium text-foreground cursor-pointer";
   return (
@@ -112,12 +106,6 @@ export function OAuthRow({
           G
         </span>
         Google
-      </button>
-      <button onClick={onApple} className={btnCls}>
-        <span className="w-[18px] h-[18px] rounded-full bg-foreground text-on-dark inline-flex items-center justify-center text-[11px]">
-          ⌘
-        </span>
-        Apple
       </button>
     </div>
   );
