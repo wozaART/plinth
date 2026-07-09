@@ -175,9 +175,11 @@ details summary::-webkit-details-marker { display: none; }
 @keyframes plToast { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 @keyframes plPop { from { transform: scale(.97); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes plFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes plSpin { to { transform: rotate(360deg); } }
 
 .anim-scrim { animation: plScrim .2s ease; }
 .anim-drawer { animation: plDrawer .26s cubic-bezier(.2,.8,.2,1); }
 .anim-toast { animation: plToast .3s cubic-bezier(.2,.8,.2,1); }
 .anim-pop { animation: plPop .25s ease; }
 .anim-fade { animation: plFade .25s ease; }
+.anim-spin { animation: plSpin .8s linear infinite; }
