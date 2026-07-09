@@ -34,6 +34,7 @@ export interface CatalogueWork {
 }
 
 export interface Contact {
+  id: string;
   name: string;
   email: string;
   role: "Artist" | "Collector";

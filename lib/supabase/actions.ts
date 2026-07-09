@@ -107,14 +107,18 @@ export async function createContact(input: { name: string; email: string; role: 
 
   const gallery = await getCurrentGallery(supabase);
 
-  const { error } = await supabase.from("contacts").insert({
-    gallery_id: gallery.id,
-    name: input.name,
-    email: input.email,
-    role: input.role,
-    focus: input.focus || null,
-    last_contact_at: new Date().toISOString(),
-  });
+  const { data, error } = await supabase
+    .from("contacts")
+    .insert({
+      gallery_id: gallery.id,
+      name: input.name,
+      email: input.email,
+      role: input.role,
+      focus: input.focus || null,
+      last_contact_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
   if (error) throw error;
 
   let inviteError: string | undefined;
@@ -127,7 +131,14 @@ export async function createContact(input: { name: string; email: string; role: 
   }
 
   revalidatePath("/dashboard");
-  return { inviteError };
+  return { id: data.id, inviteError };
+}
+
+export async function deleteContact(id: string) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("contacts").delete().eq("id", id);
+  if (error) throw error;
+  revalidatePath("/dashboard");
 }
 
 export async function inviteArtist(email: string, fullName: string) {

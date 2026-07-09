@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { avatarBg, initials } from "@/lib/utils";
-import { inviteArtist, createContact } from "@/lib/supabase/actions";
+import { inviteArtist, createContact, deleteContact } from "@/lib/supabase/actions";
 import AddContactDrawer from "./AddContactDrawer";
 import type { Contact } from "@/lib/types";
 
@@ -14,6 +14,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
   const [isPending, startTransition] = useTransition();
   const [addOpen, setAddOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [removeState, setRemoveState] = useState<Record<string, "confirm" | "removing" | "error">>({});
 
   function handleInvite(contact: Contact) {
     setInviteState(s => ({ ...s, [contact.email]: "sending" }));
@@ -28,13 +29,15 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
   }
 
   function handleCreate(contact: Pick<Contact, "name" | "email" | "role" | "focus">, sendInvite: boolean) {
-    setContacts(prev => [{ ...contact, last: "Just now" }, ...prev]);
+    const tempId = crypto.randomUUID();
+    setContacts(prev => [{ ...contact, id: tempId, last: "Just now" }, ...prev]);
     setAddOpen(false);
     setToast(sendInvite ? `Portal invitation sent to ${contact.name}` : `${contact.name} added to contacts`);
     setTimeout(() => setToast(null), 3800);
     startTransition(async () => {
       try {
-        const { inviteError } = await createContact({ ...contact, sendInvite });
+        const { id, inviteError } = await createContact({ ...contact, sendInvite });
+        setContacts(prev => prev.map(c => (c.id === tempId ? { ...c, id } : c)));
         if (sendInvite) {
           setInviteState(s => ({ ...s, [contact.email]: inviteError ? "error" : "sent" }));
           if (inviteError) {
@@ -43,9 +46,25 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
           }
         }
       } catch (err) {
-        setContacts(prev => prev.filter(c => c.email !== contact.email));
+        setContacts(prev => prev.filter(c => c.id !== tempId));
         setToast(err instanceof Error ? err.message : `Couldn't add ${contact.name} — try again`);
         setTimeout(() => setToast(null), 3800);
+      }
+    });
+  }
+
+  function handleRemoveClick(contact: Contact) {
+    if (removeState[contact.id] !== "confirm") {
+      setRemoveState(s => ({ ...s, [contact.id]: "confirm" }));
+      return;
+    }
+    setRemoveState(s => ({ ...s, [contact.id]: "removing" }));
+    startTransition(async () => {
+      try {
+        await deleteContact(contact.id);
+        setContacts(cs => cs.filter(c => c.id !== contact.id));
+      } catch {
+        setRemoveState(s => ({ ...s, [contact.id]: "error" }));
       }
     });
   }
@@ -66,7 +85,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.map((c, i) => (
-            <div key={c.email} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13 }}>
+            <div key={c.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13 }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: avatarBg(i), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{initials(c.name)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -104,6 +123,28 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
                     : "Invite to portal"}
                 </button>
               )}
+              <button
+                onClick={() => handleRemoveClick(c)}
+                disabled={isPending && removeState[c.id] === "removing"}
+                style={{
+                  fontSize: 12,
+                  padding: "7px 12px",
+                  borderRadius: 8,
+                  border: "1px solid var(--pl-border-strong)",
+                  background: removeState[c.id] === "confirm" ? "#c0392b" : "var(--pl-surface)",
+                  color: removeState[c.id] === "confirm" ? "#fff" : "var(--pl-text-muted)",
+                  cursor: removeState[c.id] === "removing" ? "default" : "pointer",
+                  flexShrink: 0,
+                }}
+              >
+                {removeState[c.id] === "removing"
+                  ? "Removing…"
+                  : removeState[c.id] === "confirm"
+                  ? "Confirm?"
+                  : removeState[c.id] === "error"
+                  ? "Retry remove"
+                  : "Remove"}
+              </button>
             </div>
           ))}
         </div>

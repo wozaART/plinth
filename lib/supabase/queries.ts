@@ -110,6 +110,7 @@ export async function getContacts(supabase: Client, galleryId: string): Promise<
   if (error) throw error;
 
   return (data ?? []).map((c) => ({
+    id: c.id,
     name: c.name,
     email: c.email,
     role: c.role as Contact["role"],
