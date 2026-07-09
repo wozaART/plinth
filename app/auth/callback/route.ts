@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as string | null;
   const next = searchParams.get("next") ?? "/";
   const invite = searchParams.get("invite");
+  const roleParam = searchParams.get("role");
 
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -41,7 +42,11 @@ export async function GET(request: NextRequest) {
       if (inviteError) {
         return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(inviteError)}`);
       }
-      const role = invite ? "artist" : (data.user.user_metadata as { role?: string })?.role;
+      const existingRole = (data.user.user_metadata as { role?: string })?.role;
+      const role = invite ? "artist" : existingRole ?? roleParam;
+      if (!existingRole && role) {
+        await supabase.auth.updateUser({ data: { role } });
+      }
       return NextResponse.redirect(`${origin}${role === "artist" ? "/studio" : "/dashboard"}`);
     }
   }

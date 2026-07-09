@@ -35,6 +35,7 @@ function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [forgotSent, setForgotSent] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   // ── Gallery form state ────────────────────────────────────────
   const [gEmail, setGEmail] = useState("");
@@ -107,6 +108,10 @@ function SignInForm() {
     withLoad(async () => {
       const { error } = await supabase.auth.signInWithPassword({ email: gEmail, password: gPassword });
       if (error) { setError(error.message); return; }
+      // Keep the transition on screen through the navigation — the sign-in
+      // form would otherwise flash back to its idle state before /dashboard
+      // has finished loading.
+      setRedirecting(true);
       router.push("/dashboard");
       router.refresh();
     });
@@ -137,7 +142,7 @@ function SignInForm() {
   const handleOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?role=gallery` },
     });
   };
 
@@ -162,7 +167,7 @@ function SignInForm() {
   const handleArtistOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?role=artist` },
     });
   };
 
@@ -338,6 +343,33 @@ function SignInForm() {
           )}
 
         </div>
+      </div>
+
+      {redirecting && <RedirectingTransition />}
+    </div>
+  );
+}
+
+// ── Post-sign-in transition ──────────────────────────────────────
+
+function RedirectingTransition() {
+  return (
+    <div
+      className="anim-scrim fixed inset-0 z-50 flex flex-col items-center justify-center gap-5"
+      style={{ background: "linear-gradient(150deg,#F4F1EA,#EAE5D9)" }}
+    >
+      <div className="anim-pop flex flex-col items-center gap-5">
+        <span className="inline-flex items-baseline gap-2">
+          <span className="font-serif text-2xl font-semibold tracking-[-0.01em] text-[#17150F]">
+            Plinth
+          </span>
+          <span className="w-[5px] h-[5px] rounded-full bg-[var(--pl-accent)] block translate-y-[-2px]" />
+        </span>
+        <span
+          className="anim-spin w-6 h-6 rounded-full border-2 border-[rgba(23,21,15,.15)]"
+          style={{ borderTopColor: "#17150F" }}
+        />
+        <p className="text-[13.5px] text-text-muted">Opening your dashboard…</p>
       </div>
     </div>
   );
