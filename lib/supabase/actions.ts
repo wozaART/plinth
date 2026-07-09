@@ -140,10 +140,13 @@ export async function inviteArtist(email: string, fullName: string) {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const requestHeaders = await headers();
-  const host = requestHeaders.get("host") ?? "localhost:3000";
-  const protocol = host.startsWith("localhost") ? "http" : "https";
-  const appUrl = `${protocol}://${host}`;
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    const requestHeaders = await headers();
+    const host = requestHeaders.get("host") ?? "localhost:3000";
+    const protocol = host.startsWith("localhost") ? "http" : "https";
+    appUrl = `${protocol}://${host}`;
+  }
 
   const { data, error } = await supabase.functions.invoke("send-artist-invite", {
     body: {
