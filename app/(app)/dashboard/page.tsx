@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role !== "gallery") redirect("/signin");
+  if (!user || user.user_metadata?.role === "artist") redirect("/signin");
 
   const gallery = await getCurrentGallery(supabase);
 
