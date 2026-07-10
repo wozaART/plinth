@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type") as string | null;
   const next = searchParams.get("next") ?? "/";
   const invite = searchParams.get("invite");
+  const exhibitionInvite = searchParams.get("exhibition_invite");
   const roleParam = searchParams.get("role");
 
   const cookieStore = await cookies();
@@ -35,6 +36,12 @@ export async function GET(request: NextRequest) {
     return error?.message ?? null;
   }
 
+  async function redeemExhibitionInviteIfPresent(): Promise<string | null> {
+    if (!exhibitionInvite) return null;
+    const { error } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInvite });
+    return error?.message ?? null;
+  }
+
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data.user) {
@@ -42,8 +49,12 @@ export async function GET(request: NextRequest) {
       if (inviteError) {
         return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(inviteError)}`);
       }
+      const exhibitionInviteError = await redeemExhibitionInviteIfPresent();
+      if (exhibitionInviteError) {
+        return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(exhibitionInviteError)}`);
+      }
       const existingRole = (data.user.user_metadata as { role?: string })?.role;
-      const role = invite ? "artist" : existingRole ?? roleParam;
+      const role = invite || exhibitionInvite ? "artist" : existingRole ?? roleParam;
       if (!existingRole && role) {
         await supabase.auth.updateUser({ data: { role } });
       }
@@ -58,6 +69,10 @@ export async function GET(request: NextRequest) {
       const inviteError = await redeemInviteIfPresent();
       if (inviteError) {
         return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(inviteError)}`);
+      }
+      const exhibitionInviteError = await redeemExhibitionInviteIfPresent();
+      if (exhibitionInviteError) {
+        return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(exhibitionInviteError)}`);
       }
       return NextResponse.redirect(`${origin}${next}`);
     }

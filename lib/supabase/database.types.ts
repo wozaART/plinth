@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -224,39 +219,137 @@ export type Database = {
           },
         ]
       }
+      exhibition_invites: {
+        Row: {
+          artist_id: string | null
+          created_at: string
+          email: string
+          exhibition_id: string
+          expires_at: string
+          full_name: string | null
+          gallery_id: string
+          id: string
+          invited_by: string
+          message: string | null
+          responded_at: string | null
+          status: string
+          token: string
+        }
+        Insert: {
+          artist_id?: string | null
+          created_at?: string
+          email: string
+          exhibition_id: string
+          expires_at?: string
+          full_name?: string | null
+          gallery_id: string
+          id?: string
+          invited_by: string
+          message?: string | null
+          responded_at?: string | null
+          status?: string
+          token?: string
+        }
+        Update: {
+          artist_id?: string | null
+          created_at?: string
+          email?: string
+          exhibition_id?: string
+          expires_at?: string
+          full_name?: string | null
+          gallery_id?: string
+          id?: string
+          invited_by?: string
+          message?: string | null
+          responded_at?: string | null
+          status?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exhibition_invites_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibition_invites_exhibition_id_fkey"
+            columns: ["exhibition_id"]
+            isOneToOne: false
+            referencedRelation: "exhibition_counts"
+            referencedColumns: ["exhibition_id"]
+          },
+          {
+            foreignKeyName: "exhibition_invites_exhibition_id_fkey"
+            columns: ["exhibition_id"]
+            isOneToOne: false
+            referencedRelation: "exhibitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exhibition_invites_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exhibitions: {
         Row: {
           blurb: string | null
+          closing_date: string | null
           created_at: string
-          dates_label: string
+          delivery_date: string | null
           gallery_id: string
           id: string
+          medium_requirements: string | null
+          opening_date: string | null
+          rules: string | null
+          size_requirements: string | null
           slots: number
           status: string
           submission_deadline: string | null
+          theme: string | null
           title: string
+          type: string
         }
         Insert: {
           blurb?: string | null
+          closing_date?: string | null
           created_at?: string
-          dates_label: string
+          delivery_date?: string | null
           gallery_id: string
           id?: string
+          medium_requirements?: string | null
+          opening_date?: string | null
+          rules?: string | null
+          size_requirements?: string | null
           slots?: number
           status?: string
           submission_deadline?: string | null
+          theme?: string | null
           title: string
+          type?: string
         }
         Update: {
           blurb?: string | null
+          closing_date?: string | null
           created_at?: string
-          dates_label?: string
+          delivery_date?: string | null
           gallery_id?: string
           id?: string
+          medium_requirements?: string | null
+          opening_date?: string | null
+          rules?: string | null
+          size_requirements?: string | null
           slots?: number
           status?: string
           submission_deadline?: string | null
+          theme?: string | null
           title?: string
+          type?: string
         }
         Relationships: [
           {
@@ -433,6 +526,7 @@ export type Database = {
           medium: string | null
           note: string
           price: number | null
+          rules_ack: boolean | null
           statement: string | null
           status: string
           title: string
@@ -450,6 +544,7 @@ export type Database = {
           medium?: string | null
           note?: string
           price?: number | null
+          rules_ack?: boolean | null
           statement?: string | null
           status?: string
           title: string
@@ -467,6 +562,7 @@ export type Database = {
           medium?: string | null
           note?: string
           price?: number | null
+          rules_ack?: boolean | null
           statement?: string | null
           status?: string
           title?: string
@@ -515,21 +611,44 @@ export type Database = {
       }
     }
     Functions: {
-      owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
+      accept_artist_invite: {
+        Args: { p_token: string }
+        Returns: {
+          gallery_id: string
+          gallery_name: string
+        }[]
+      }
+      accept_exhibition_invite: {
+        Args: { p_token: string }
+        Returns: {
+          exhibition_id: string
+          gallery_name: string
+        }[]
+      }
       get_artist_invite: {
         Args: { p_token: string }
         Returns: {
           email: string
-          full_name: string | null
+          expires_at: string
+          full_name: string
           gallery_name: string
           status: string
-          expires_at: string
         }[]
       }
-      accept_artist_invite: {
+      get_exhibition_invite: {
         Args: { p_token: string }
-        Returns: { gallery_id: string; gallery_name: string }[]
+        Returns: {
+          email: string
+          exhibition_rules: string
+          exhibition_theme: string
+          exhibition_title: string
+          expires_at: string
+          full_name: string
+          gallery_name: string
+          status: string
+        }[]
       }
+      owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -665,3 +784,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

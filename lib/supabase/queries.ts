@@ -3,6 +3,7 @@ import type { Database } from "./database.types";
 import type {
   Submission,
   Exhibition,
+  ExhibitionInvite,
   CatalogueWork,
   Contact,
   FrameJob,
@@ -40,13 +41,29 @@ export async function getSubmissions(supabase: Client, galleryId: string): Promi
     status: s.status as Submission["status"],
     note: s.note,
     ack: s.ack ?? undefined,
+    rulesAck: s.rules_ack ?? undefined,
     statement: s.statement ?? "",
   }));
 }
 
-export async function getExhibitionsWithCounts(supabase: Client, galleryId: string): Promise<Exhibition[]> {
+function exhibitionDatesLabel(e: { opening_date: string | null; closing_date: string | null; submission_deadline: string | null }): string {
+  if (e.opening_date && e.closing_date) return `${shortDate(e.opening_date)} – ${shortDate(e.closing_date)}`;
+  if (e.opening_date) return `Opens ${shortDate(e.opening_date)}`;
+  if (e.closing_date) return `Closes ${shortDate(e.closing_date)}`;
+  if (e.submission_deadline) return `Submissions close ${shortDate(e.submission_deadline)}`;
+  return "Dates to be confirmed";
+}
+
+export async function getExhibitionsWithCounts(
+  supabase: Client,
+  galleryId: string,
+  includeArchived = false,
+): Promise<Exhibition[]> {
+  let query = supabase.from("exhibitions").select("*").eq("gallery_id", galleryId).order("created_at", { ascending: true });
+  if (!includeArchived) query = query.neq("status", "archived");
+
   const [{ data: exhibitions, error: exError }, { data: counts, error: countError }] = await Promise.all([
-    supabase.from("exhibitions").select("*").eq("gallery_id", galleryId).order("created_at", { ascending: true }),
+    query,
     supabase.from("exhibition_counts").select("*"),
   ]);
   if (exError) throw exError;
@@ -57,15 +74,71 @@ export async function getExhibitionsWithCounts(supabase: Client, galleryId: stri
   return (exhibitions ?? []).map((e) => {
     const c = countsById.get(e.id);
     return {
+      id: e.id,
       title: e.title,
-      dates: e.dates_label,
+      type: e.type as Exhibition["type"],
       status: e.status as Exhibition["status"],
       blurb: e.blurb ?? "",
+      theme: e.theme ?? "",
+      mediumRequirements: e.medium_requirements ?? "",
+      sizeRequirements: e.size_requirements ?? "",
+      rules: e.rules ?? "",
       slots: e.slots,
       filled: c?.filled ?? 0,
       applicants: c?.applicants ?? 0,
+      submissionDeadline: e.submission_deadline,
+      openingDate: e.opening_date,
+      closingDate: e.closing_date,
+      deliveryDate: e.delivery_date,
+      dates: exhibitionDatesLabel(e),
     };
   });
+}
+
+export async function getExhibitionInvitesForGallery(supabase: Client, galleryId: string): Promise<ExhibitionInvite[]> {
+  const { data, error } = await supabase
+    .from("exhibition_invites")
+    .select("*, exhibitions(title)")
+    .eq("gallery_id", galleryId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((i) => ({
+    id: i.id,
+    exhibitionId: i.exhibition_id,
+    exhibitionTitle: i.exhibitions?.title ?? "",
+    artistId: i.artist_id,
+    email: i.email,
+    fullName: i.full_name ?? "",
+    message: i.message ?? "",
+    status: i.status as ExhibitionInvite["status"],
+    createdAt: i.created_at,
+    expiresAt: i.expires_at,
+    respondedAt: i.responded_at,
+  }));
+}
+
+export async function getExhibitionInvitesForArtist(supabase: Client, artistId: string, artistEmail: string): Promise<ExhibitionInvite[]> {
+  const { data, error } = await supabase
+    .from("exhibition_invites")
+    .select("*, exhibitions(title)")
+    .or(`artist_id.eq.${artistId},email.ilike.${artistEmail}`)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((i) => ({
+    id: i.id,
+    exhibitionId: i.exhibition_id,
+    exhibitionTitle: i.exhibitions?.title ?? "",
+    artistId: i.artist_id,
+    email: i.email,
+    fullName: i.full_name ?? "",
+    message: i.message ?? "",
+    status: i.status as ExhibitionInvite["status"],
+    createdAt: i.created_at,
+    expiresAt: i.expires_at,
+    respondedAt: i.responded_at,
+  }));
 }
 
 export async function getCatalogue(supabase: Client, galleryId: string): Promise<CatalogueWork[]> {
@@ -147,14 +220,21 @@ export async function getOpenCalls(supabase: Client, galleryId: string): Promise
     .from("exhibitions")
     .select("*")
     .eq("gallery_id", galleryId)
+    .neq("status", "archived")
     .order("created_at", { ascending: true });
   if (error) throw error;
 
   return (data ?? []).map((e) => ({
+    id: e.id,
     title: e.title,
     gallery: galleryConfig.identity.name,
+    type: e.type as OpenCall["type"],
     deadline: e.submission_deadline ? shortDate(e.submission_deadline) : "Closed",
     focus: e.blurb ?? "",
+    theme: e.theme ?? "",
+    mediumRequirements: e.medium_requirements ?? "",
+    sizeRequirements: e.size_requirements ?? "",
+    rules: e.rules ?? "",
     accepting: e.status === "open" || e.status === "planning",
   }));
 }

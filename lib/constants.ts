@@ -32,6 +32,12 @@ export const EX_STATUS_META: Record<string, { label: string; bg: string; fg: str
   planning: { label: "Planning",     bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
   hanging:  { label: "Hanging now",  bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
   closed:   { label: "Closed",       bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
+  archived: { label: "Archived",     bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
+};
+
+export const EX_TYPE_META: Record<string, string> = {
+  group: "Group",
+  solo: "Solo",
 };
 
 export const CAT_STATUS_META: Record<string, { bg: string; fg: string }> = {

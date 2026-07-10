@@ -1,8 +1,11 @@
--- JVH Art Gallery demo/seed data.
+-- JVH Art Gallery + The Sable Gallery demo/seed data.
 --
 -- Creates one gallery-owner account and eight artist accounts (all sharing
 -- the demo password below), the `jvh` gallery tenant, its exhibitions,
--- submissions, catalogue, frameshop queue, contacts and messages.
+-- submissions, catalogue, frameshop queue, contacts and messages. Also
+-- creates a second gallery-owner account (owner@sable.demo.plinth.test) and
+-- five artist accounts for the `default` tenant (The Sable Gallery, see
+-- lib/galleries/default.config.ts), with its own smaller populated dataset.
 --
 -- Demo login password for every seeded account: PlinthDemo123!
 --
@@ -70,11 +73,11 @@ where owner_id = '00000000-0000-4000-8000-000000000001';
 
 -- ── Exhibitions ─────────────────────────────────────────────────────────
 
-insert into public.exhibitions (id, gallery_id, title, dates_label, status, blurb, slots, submission_deadline) values
-  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000002', 'Highveld Light', '12 Jul – 30 Aug 2026', 'open', 'Group show · landscape & memory of the interior', 14, '2026-07-15'),
-  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000002', 'New Ground: Emerging Voices', '6 Sep – 18 Oct 2026', 'planning', 'Solo & duo presentations · under-35 artists', 8, '2026-08-01'),
-  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000002', 'Clay & Country', 'Currently hanging', 'hanging', 'Ceramics & sculpture from the Karoo', 20, null),
-  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000002', 'Summer Salon 2025', 'Closed · Dec 2025', 'closed', 'Annual mixed exhibition', 30, null)
+insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, slots, submission_deadline, opening_date, closing_date, delivery_date) values
+  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000002', 'Highveld Light', 'group', 'open', 'Group show · landscape & memory of the interior', 'Landscape & memory of the interior', 'Any painting or works-on-paper medium', 'No dimension over 150cm on the longest edge', 'Work must be for sale, framed and ready to hang, and delivered by the delivery date below. No AI-generated or reproduced work.', 14, '2026-07-15', '2026-07-12', '2026-08-30', '2026-07-10'),
+  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000002', 'New Ground: Emerging Voices', 'solo', 'planning', 'Solo & duo presentations · under-35 artists', 'Emerging voices, under 35', null, null, 'Open to artists under 35. A short artist statement is required with every submission.', 8, '2026-08-01', '2026-09-06', '2026-10-18', '2026-09-03'),
+  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000002', 'Clay & Country', 'group', 'hanging', 'Ceramics & sculpture from the Karoo', 'Ceramics & sculpture from the Karoo', 'Ceramic or sculptural work only', null, null, 20, null, null, null, null),
+  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000002', 'Summer Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, 30, null, null, '2025-12-05', null)
 on conflict (id) do nothing;
 
 -- ── Submissions ─────────────────────────────────────────────────────────
@@ -136,4 +139,101 @@ on conflict (id) do nothing;
 insert into public.messages (id, gallery_id, artist_id, submission_id, sender, subject, body, created_at) values
   ('00000000-0000-4000-8000-000000000701', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000108', '00000000-0000-4000-8000-000000000310', 'gallery', 'Re: Archive Fragment III — Drop-off details', 'Hi Tariq, just following up on the framing note — when you''re happy with the change, please let us know and we''ll issue the drop-off pass. Looking forward to seeing it.', now() - interval '2 days'),
   ('00000000-0000-4000-8000-000000000702', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000108', '00000000-0000-4000-8000-000000000309', 'gallery', 'Rooftop Study — approved & drop-off pass', 'Your work has been selected for Highveld Light. Please find attached your drop-off pass with reference JVH-S14. Delivery to 593 Jacqueline Dr, Garsfontein, Pretoria. No unscheduled deliveries please.', now() - interval '7 days')
+on conflict (id) do nothing;
+
+-- ═══════════════════════════════════════════════════════════════════════
+-- The Sable Gallery demo/seed data (`default` tenant).
+-- ═══════════════════════════════════════════════════════════════════════
+
+-- ── Auth users ──────────────────────────────────────────────────────────
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password,
+  email_confirmed_at, last_sign_in_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+  confirmation_token, email_change, email_change_token_new, recovery_token
+) values
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000001', 'authenticated', 'authenticated', 'owner@sable.demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"gallery","gallery_name":"The Sable Gallery","full_name":"Sable Gallery Team","city":"Maboneng, Johannesburg"}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000101', 'authenticated', 'authenticated', 'naledi@demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"artist","full_name":"Naledi Sithole","practice":"Oil painting","city":"Cape Town"}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000102', 'authenticated', 'authenticated', 'bongani@demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"artist","full_name":"Bongani Ngcobo","practice":"Photography","city":"Johannesburg"}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000103', 'authenticated', 'authenticated', 'zanele@demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"artist","full_name":"Zanele Mahlangu","practice":"Sculpture","city":"Durban"}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000104', 'authenticated', 'authenticated', 'pieter@demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"artist","full_name":"Pieter van der Merwe","practice":"Printmaking","city":"Stellenbosch"}', now(), now(), '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-9000-000000000105', 'authenticated', 'authenticated', 'amahle@demo.plinth.test', extensions.crypt('PlinthDemo123!', extensions.gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"]}', '{"role":"artist","full_name":"Amahle Ndlovu","practice":"Ceramics","city":"Gqeberha"}', now(), now(), '', '', '', '')
+on conflict (id) do nothing;
+
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select gen_random_uuid(), u.id, u.id::text, jsonb_build_object('sub', u.id::text, 'email', u.email), 'email', now(), now(), now()
+from auth.users u
+where u.id in (
+  '00000000-0000-4000-9000-000000000001',
+  '00000000-0000-4000-9000-000000000101', '00000000-0000-4000-9000-000000000102',
+  '00000000-0000-4000-9000-000000000103', '00000000-0000-4000-9000-000000000104',
+  '00000000-0000-4000-9000-000000000105'
+)
+on conflict do nothing;
+
+-- artist_profiles and a galleries row for the owner were just created by
+-- the handle_new_user() trigger from each account's signup metadata. Slug
+-- must be normalized to "default" to match lib/galleries/default.config.ts
+-- (NEXT_PUBLIC_GALLERY -> slug lookup in lib/supabase/gallery.ts), the same
+-- way the JVH block above normalizes its own trigger-created row.
+
+update public.galleries
+set id = '00000000-0000-4000-9000-000000000002',
+    slug = 'default',
+    name = 'The Sable Gallery',
+    city = 'Maboneng, Johannesburg',
+    commission_rate = 0.400,
+    delivery_address = 'Studio 4, Arts on Main, Maboneng, Johannesburg',
+    drop_off_pass_prefix = 'PL-S'
+where owner_id = '00000000-0000-4000-9000-000000000001';
+
+-- ── Exhibitions ─────────────────────────────────────────────────────────
+
+insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, slots, submission_deadline, opening_date, closing_date, delivery_date) values
+  ('00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000002', 'Maboneng Nights', 'group', 'open', 'Group show · city life after dark', 'City life after dark', 'Any medium', 'No dimension over 120cm', 'Work must be for sale and delivered ready to hang. No AI-generated or reproduced work.', 12, '2026-07-20', '2026-08-03', '2026-09-21', '2026-07-28'),
+  ('00000000-0000-4000-9000-000000000202', '00000000-0000-4000-9000-000000000002', 'New Terrain', 'solo', 'planning', 'Solo & duo presentations · emerging printmakers', 'Emerging printmakers', 'Printmaking only', null, 'Open to printmakers with fewer than 3 prior solo shows.', 6, '2026-09-01', '2026-10-05', '2026-11-15', '2026-09-28'),
+  ('00000000-0000-4000-9000-000000000203', '00000000-0000-4000-9000-000000000002', 'Winter Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, 25, null, null, '2025-06-30', null)
+on conflict (id) do nothing;
+
+-- ── Submissions ─────────────────────────────────────────────────────────
+
+insert into public.submissions (id, gallery_id, exhibition_id, artist_id, title, year, medium, dim, price, status, note, ack, statement, created_at) values
+  ('00000000-0000-4000-9000-000000000301', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000101', 'Neon Wash', 2024, 'Oil on canvas', '110 × 85 cm', 26500, 'pending', '', null, 'Maboneng''s sodium-lit streets rendered in thick, wet-on-wet oil.', now() - interval '2 days'),
+  ('00000000-0000-4000-9000-000000000302', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000102', 'Taxi Rank, Midnight', 2023, 'Silver gelatin print', '60 × 90 cm', 9200, 'approved', 'Striking composition — this anchors the north wall beautifully.', null, 'A long-exposure study of Johannesburg''s all-night taxi ranks.', now() - interval '6 days'),
+  ('00000000-0000-4000-9000-000000000303', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000103', 'Fractured Vessel', 2024, 'Bronze', '55 × 25 × 25 cm', 34000, 'pending', '', null, 'Cast in three pieces and rejoined visibly, exploring repair as form.', now() - interval '3 days'),
+  ('00000000-0000-4000-9000-000000000304', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000104', 'Winelands Woodcut No. 4', 2023, 'Woodcut on paper', '50 × 40 cm', 4800, 'declined', 'Lovely craft, but we''re fully subscribed on printmaking for this cycle. Please try our autumn open call.', false, 'Fourth in a series of woodcuts depicting the Stellenbosch winelands in winter.', now() - interval '10 days'),
+  ('00000000-0000-4000-9000-000000000305', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000105', 'Ash Glaze Triptych', 2024, 'Wood-fired ceramic', 'Var. to 35 cm', 15800, 'changes', 'We''d love to show this — could you rework the base of the centre piece? It''s slightly unstable for plinth display.', null, 'Three wood-fired vessels sharing a single ash glaze run.', now() - interval '4 days')
+on conflict (id) do nothing;
+
+-- ── Catalogue ───────────────────────────────────────────────────────────
+
+insert into public.catalogue_works (id, gallery_id, submission_id, artist_id, title, price, status) values
+  ('00000000-0000-4000-9000-000000000401', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000302', '00000000-0000-4000-9000-000000000102', 'Taxi Rank, Midnight', 9200, 'available'),
+  ('00000000-0000-4000-9000-000000000402', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000101', 'Rooftop Pool, Braamfontein', 19500, 'available'),
+  ('00000000-0000-4000-9000-000000000403', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000103', 'Small Standing Form', 8600, 'sold'),
+  ('00000000-0000-4000-9000-000000000404', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000105', 'Blue Ash Bowl', 4200, 'reserved')
+on conflict (id) do nothing;
+
+-- ── Frameshop ───────────────────────────────────────────────────────────
+
+insert into public.frame_jobs (id, gallery_id, submission_id, artist_id, title, spec, stage, due_date) values
+  ('00000000-0000-4000-9000-000000000501', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000302', '00000000-0000-4000-9000-000000000102', 'Taxi Rank, Midnight', 'Box frame · matte black, 25mm', 'ready', '2026-07-18'),
+  ('00000000-0000-4000-9000-000000000502', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000301', '00000000-0000-4000-9000-000000000101', 'Neon Wash', 'Float frame · raw steel', 'building', '2026-07-22')
+on conflict (id) do nothing;
+
+-- ── Contacts ────────────────────────────────────────────────────────────
+
+insert into public.contacts (id, gallery_id, name, email, role, focus, last_contact_at) values
+  ('00000000-0000-4000-9000-000000000601', '00000000-0000-4000-9000-000000000002', 'Naledi Sithole', 'naledi.s@studio.co.za', 'Artist', 'Oil painting', now()),
+  ('00000000-0000-4000-9000-000000000602', '00000000-0000-4000-9000-000000000002', 'Bongani Ngcobo', 'bongani.n@lens.co.za', 'Artist', 'Photography', now() - interval '1 day'),
+  ('00000000-0000-4000-9000-000000000603', '00000000-0000-4000-9000-000000000002', 'Mr. Thabo Radebe', 'tradebe@collect.co.za', 'Collector', 'Contemporary SA sculpture', now() - interval '3 days'),
+  ('00000000-0000-4000-9000-000000000604', '00000000-0000-4000-9000-000000000002', 'Zanele Mahlangu', 'zanele.m@gmail.com', 'Artist', 'Sculpture', now() - interval '5 days')
+on conflict (id) do nothing;
+
+-- ── Messages ────────────────────────────────────────────────────────────
+
+insert into public.messages (id, gallery_id, artist_id, submission_id, sender, subject, body, created_at) values
+  ('00000000-0000-4000-9000-000000000701', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000105', '00000000-0000-4000-9000-000000000305', 'gallery', 'Re: Ash Glaze Triptych — base rework', 'Hi Amahle, just checking in on the centre piece''s base — let us know when it''s ready and we''ll confirm your slot in Maboneng Nights.', now() - interval '1 day'),
+  ('00000000-0000-4000-9000-000000000702', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000102', '00000000-0000-4000-9000-000000000302', 'gallery', 'Taxi Rank, Midnight — approved & drop-off pass', 'Your work has been selected for Maboneng Nights. Please find attached your drop-off pass with reference PL-S07. Delivery to Studio 4, Arts on Main, Maboneng, Johannesburg.', now() - interval '6 days')
 on conflict (id) do nothing;
