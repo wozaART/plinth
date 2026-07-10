@@ -1,8 +1,8 @@
 export { GallerySignIn, GallerySignUp, GalleryForgot } from "./GalleryForms";
-export { ArtistSignIn, ArtistForgot, ArtistInvite } from "./ArtistForms";
+export { ArtistSignIn, ArtistForgot, ArtistInvite, ArtistExhibitionInvite } from "./ArtistForms";
 
 import { GallerySignIn, GallerySignUp, GalleryForgot } from "./GalleryForms";
-import { ArtistSignIn, ArtistForgot, ArtistInvite } from "./ArtistForms";
+import { ArtistSignIn, ArtistForgot, ArtistInvite, ArtistExhibitionInvite } from "./ArtistForms";
 
 export const GalleryForms = {
   SignIn: GallerySignIn,
@@ -14,4 +14,5 @@ export const ArtistForms = {
   SignIn: ArtistSignIn,
   Forgot: ArtistForgot,
   Invite: ArtistInvite,
+  ExhibitionInvite: ArtistExhibitionInvite,
 };

@@ -13,17 +13,47 @@ export interface Submission {
   status: SubmissionStatus;
   note: string;
   ack?: boolean;
+  rulesAck?: boolean;
   statement: string;
 }
 
+export type ExhibitionType = "group" | "solo";
+export type ExhibitionStatus = "open" | "planning" | "hanging" | "closed" | "archived";
+
 export interface Exhibition {
+  id: string;
   title: string;
-  dates: string;
-  status: "open" | "planning" | "hanging" | "closed";
+  type: ExhibitionType;
+  status: ExhibitionStatus;
   blurb: string;
+  theme: string;
+  mediumRequirements: string;
+  sizeRequirements: string;
+  rules: string;
   slots: number;
   filled: number;
   applicants: number;
+  submissionDeadline: string | null;
+  openingDate: string | null;
+  closingDate: string | null;
+  deliveryDate: string | null;
+  dates: string;
+}
+
+export type ExhibitionInviteStatus = "pending" | "accepted" | "declined" | "revoked" | "expired";
+
+export interface ExhibitionInvite {
+  id: string;
+  exhibitionId: string;
+  exhibitionTitle: string;
+  artistId: string | null;
+  email: string;
+  fullName: string;
+  message: string;
+  status: ExhibitionInviteStatus;
+  createdAt: string;
+  expiresAt: string;
+  respondedAt: string | null;
 }
 
 export interface CatalogueWork {
@@ -62,10 +92,16 @@ export interface MyWork {
 }
 
 export interface OpenCall {
+  id: string;
   title: string;
   gallery: string;
+  type: ExhibitionType;
   deadline: string;
   focus: string;
+  theme: string;
+  mediumRequirements: string;
+  sizeRequirements: string;
+  rules: string;
   accepting: boolean;
 }
 

@@ -323,3 +323,270 @@ export function ArtistInvite({
     </div>
   );
 }
+
+// ── Artist · Accept Exhibition Invite ────────────────────────────────
+
+export type ExhibitionInviteStatus = "loading" | "no_token" | "not_found" | "expired" | "accepted" | "revoked" | "ready" | "ready_signed_in";
+
+interface ArtistExhibitionInviteProps extends BaseProps {
+  status: ExhibitionInviteStatus;
+  galleryName: string;
+  exhibitionTitle: string;
+  exhibitionTheme: string;
+  exhibitionRules: string;
+  email: string;
+  name: string;
+  practice: string;
+  city: string;
+  password: string;
+  agreed: boolean;
+  rulesAck: boolean;
+  confirmationPending: boolean;
+  onName: (v: string) => void;
+  onPractice: (v: string) => void;
+  onCity: (v: string) => void;
+  onPassword: (v: string) => void;
+  onAgreed: (v: boolean) => void;
+  onRulesAck: (v: boolean) => void;
+  onSubmit: () => void;
+  onOAuth: (p: "google") => void;
+  onSignIn: () => void;
+}
+
+export function ArtistExhibitionInvite({
+  status, galleryName, exhibitionTitle, exhibitionTheme, exhibitionRules,
+  email, name, practice, city, password, agreed, rulesAck, confirmationPending, loading,
+  onName, onPractice, onCity, onPassword, onAgreed, onRulesAck,
+  onSubmit, onOAuth, onSignIn, onError,
+}: ArtistExhibitionInviteProps) {
+  if (status === "loading") {
+    return (
+      <div className="anim-fade">
+        <Eyebrow>Exhibition invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">Checking your invite…</AuthHeading>
+      </div>
+    );
+  }
+
+  if (status === "no_token") {
+    return (
+      <div className="anim-fade">
+        <Eyebrow>Exhibition invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">Open the link from your gallery.</AuthHeading>
+        <p className="text-[14px] text-text-muted leading-relaxed mt-[11px] mb-7">
+          Exhibition invites arrive by email with a personal link — open that link to view and accept it.
+        </p>
+        <PrimaryButton className="!mt-0" onClick={onSignIn}>
+          Back to sign in
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  if (status === "not_found" || status === "expired" || status === "revoked") {
+    const copy = {
+      not_found: "This invite link isn't valid. Double-check the link from your gallery's email.",
+      expired: "This invite has expired. Ask the gallery to send you a new one.",
+      revoked: "This invite is no longer active. Ask the gallery to send you a new one.",
+    }[status];
+    return (
+      <div className="anim-fade">
+        <Eyebrow>Exhibition invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">
+          {status === "expired" ? "This invite expired." : "We couldn't find that invite."}
+        </AuthHeading>
+        <p className="text-[14px] text-text-muted leading-relaxed mt-[11px] mb-7">{copy}</p>
+        <PrimaryButton className="!mt-0" onClick={onSignIn}>
+          Back to sign in
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  if (status === "accepted") {
+    return (
+      <div className="anim-fade">
+        <Eyebrow>Exhibition invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">This invite is already set up.</AuthHeading>
+        <p className="text-[14px] text-text-muted leading-relaxed mt-[11px] mb-7">
+          Looks like this invitation has already been accepted — sign in instead.
+        </p>
+        <PrimaryButton className="!mt-0" onClick={onSignIn}>
+          Sign in
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  if (confirmationPending) {
+    return (
+      <div className="anim-fade">
+        <div className="w-[46px] h-[46px] rounded-full bg-[var(--pl-approved-bg)] flex items-center justify-center text-[var(--pl-approved-fg)] text-xl mb-[18px]">
+          ✓
+        </div>
+        <Eyebrow>Check your inbox</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,33px)]">Confirm your email.</AuthHeading>
+        <p className="text-[14px] text-text-muted leading-relaxed mt-3 mb-7">
+          We sent a confirmation link to <strong>{email}</strong>. Click it to finish joining {galleryName} and confirm your place in {exhibitionTitle}.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === "ready_signed_in") {
+    return (
+      <div className="anim-fade">
+        <div className="flex items-center gap-[11px] bg-sidebar border border-border rounded-[var(--pl-radius-card)] px-[15px] py-[13px] mb-[22px]">
+          <div className="w-[38px] h-[38px] rounded-[9px] bg-gradient-to-br from-[#2A2723] to-[#57534A] text-on-dark flex items-center justify-center font-serif text-base font-semibold shrink-0">
+            {galleryName.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-semibold text-foreground">{galleryName}</div>
+            <div className="text-[12px] text-text-soft">invited you to exhibit in {exhibitionTitle}</div>
+          </div>
+        </div>
+
+        <Eyebrow>Exhibition invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">Join {exhibitionTitle}.</AuthHeading>
+        {exhibitionTheme && (
+          <p className="text-[14px] text-text-muted leading-relaxed mt-[11px]">
+            <strong className="text-foreground">Theme:</strong> {exhibitionTheme}
+          </p>
+        )}
+        {exhibitionRules && (
+          <p className="text-[13px] text-text-soft leading-relaxed mt-2 mb-6">
+            <strong className="text-foreground">Rules:</strong> {exhibitionRules}
+          </p>
+        )}
+
+        {exhibitionRules && (
+          <label className="flex gap-[10px] items-start mt-5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={rulesAck}
+              onChange={(e) => onRulesAck(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+            />
+            <span className="text-[12.5px] text-text-muted leading-relaxed">
+              I have read and understand the rules for {exhibitionTitle}.
+            </span>
+          </label>
+        )}
+
+        <PrimaryButton loading={loading} onClick={onSubmit}>
+          {loading ? "Joining…" : "Confirm & join exhibition"}
+        </PrimaryButton>
+      </div>
+    );
+  }
+
+  // status === "ready"
+  return (
+    <div className="anim-fade">
+      <div className="flex items-center gap-[11px] bg-sidebar border border-border rounded-[var(--pl-radius-card)] px-[15px] py-[13px] mb-[22px]">
+        <div className="w-[38px] h-[38px] rounded-[9px] bg-gradient-to-br from-[#2A2723] to-[#57534A] text-on-dark flex items-center justify-center font-serif text-base font-semibold shrink-0">
+          {galleryName.charAt(0).toUpperCase()}
+        </div>
+        <div className="min-w-0">
+          <div className="text-[13.5px] font-semibold text-foreground">{galleryName}</div>
+          <div className="text-[12px] text-text-soft">invited you to exhibit in {exhibitionTitle}</div>
+        </div>
+      </div>
+
+      <Eyebrow>Exhibition invitation</Eyebrow>
+      <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">Join {exhibitionTitle}.</AuthHeading>
+      {exhibitionTheme && (
+        <p className="text-[14px] text-text-muted leading-relaxed mt-[11px]">
+          <strong className="text-foreground">Theme:</strong> {exhibitionTheme}
+        </p>
+      )}
+      {exhibitionRules && (
+        <p className="text-[13px] text-text-soft leading-relaxed mt-2 mb-6">
+          <strong className="text-foreground">Rules:</strong> {exhibitionRules}
+        </p>
+      )}
+
+      <FieldLabel>Email</FieldLabel>
+      <AuthInput type="email" value={email} disabled />
+
+      <div className="mt-4">
+        <FieldLabel>Your name</FieldLabel>
+        <AuthInput
+          placeholder="Thandiwe Mokoena"
+          value={name}
+          onChange={(e) => onName(e.target.value)}
+        />
+      </div>
+
+      <div className="flex gap-3 mt-4">
+        <div style={{ flex: 1.3 }}>
+          <FieldLabel>Practice</FieldLabel>
+          <AuthInput
+            placeholder="Painter, sculptor…"
+            value={practice}
+            onChange={(e) => onPractice(e.target.value)}
+          />
+        </div>
+        <div className="flex-1">
+          <FieldLabel>Based in</FieldLabel>
+          <AuthInput
+            placeholder="Johannesburg"
+            value={city}
+            onChange={(e) => onCity(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <FieldLabel>Choose a password</FieldLabel>
+        <AuthInput
+          type="password"
+          placeholder="••••••••••"
+          value={password}
+          onChange={(e) => { onPassword(e.target.value); onError(null); }}
+          onKeyDown={(e) => e.key === "Enter" && onSubmit()}
+        />
+      </div>
+
+      {exhibitionRules && (
+        <label className="flex gap-[10px] items-start mt-5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rulesAck}
+            onChange={(e) => onRulesAck(e.target.checked)}
+            className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+          />
+          <span className="text-[12.5px] text-text-muted leading-relaxed">
+            I have read and understand the rules for {exhibitionTitle}.
+          </span>
+        </label>
+      )}
+
+      <label className="flex gap-[10px] items-start mt-3 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={agreed}
+          onChange={(e) => onAgreed(e.target.checked)}
+          className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+        />
+        <span className="text-[12.5px] text-text-muted leading-relaxed">
+          I agree to Plinth&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
+        </span>
+      </label>
+
+      <PrimaryButton loading={loading} onClick={onSubmit}>
+        {loading ? "Setting up…" : "Accept & create account"}
+      </PrimaryButton>
+
+      <Divider label="or continue with" />
+      <OAuthRow onGoogle={() => onOAuth("google")} />
+
+      <p className="text-[13px] text-text-muted mt-[22px] text-center">
+        Already set up?{" "}
+        <GhostButton onClick={onSignIn} className="text-[13px] text-foreground font-semibold">
+          Sign in →
+        </GhostButton>
+      </p>
+    </div>
+  );
+}

@@ -74,6 +74,7 @@ export const jvhConfig: GalleryConfig = {
       { id: "overview", label: "Overview", enabled: true },
       { id: "submissions", label: "My submissions", enabled: true },
       { id: "open-calls", label: "Open calls", enabled: true },
+      { id: "invitations", label: "Invitations", enabled: true },
       { id: "profile", label: "Profile", enabled: true },
       { id: "messages", label: "Messages", enabled: true },
     ],

@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { ArtistForms, GalleryForms } from "@/components/auth";
-import type { InviteStatus } from "@/components/auth/ArtistForms";
+import type { InviteStatus, ExhibitionInviteStatus } from "@/components/auth/ArtistForms";
 import { ErrorBanner } from "@/components/auth/primitives";
 
 type Side = "gallery" | "artist";
 type GView = "signin" | "signup" | "forgot";
-type AView = "signin" | "forgot" | "invite";
+type AView = "signin" | "forgot" | "invite" | "exhibition-invite";
 
 export default function SignInPage() {
   return (
@@ -25,11 +25,12 @@ function SignInForm() {
   const searchParams = useSearchParams();
   const supabase = createClient();
   const inviteToken = searchParams.get("invite");
+  const exhibitionInviteToken = searchParams.get("exhibition_invite");
 
   // ── Navigation state ──────────────────────────────────────────
-  const [side, setSide] = useState<Side>(inviteToken ? "artist" : "gallery");
+  const [side, setSide] = useState<Side>(inviteToken || exhibitionInviteToken ? "artist" : "gallery");
   const [gView, setGView] = useState<GView>("signin");
-  const [aView, setAView] = useState<AView>(inviteToken ? "invite" : "signin");
+  const [aView, setAView] = useState<AView>(inviteToken ? "invite" : exhibitionInviteToken ? "exhibition-invite" : "signin");
 
   // ── Shared state ──────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -62,6 +63,21 @@ function SignInForm() {
   const [inviteAgreed, setInviteAgreed] = useState(true);
   const [inviteConfirmationPending, setInviteConfirmationPending] = useState(false);
 
+  // ── Exhibition invite state ─────────────────────────────────────
+  const [exInviteStatus, setExInviteStatus] = useState<ExhibitionInviteStatus>(exhibitionInviteToken ? "loading" : "no_token");
+  const [exInviteGalleryName, setExInviteGalleryName] = useState("");
+  const [exInviteExhibitionTitle, setExInviteExhibitionTitle] = useState("");
+  const [exInviteExhibitionTheme, setExInviteExhibitionTheme] = useState("");
+  const [exInviteExhibitionRules, setExInviteExhibitionRules] = useState("");
+  const [exInviteEmail, setExInviteEmail] = useState("");
+  const [exInviteName, setExInviteName] = useState("");
+  const [exInvitePractice, setExInvitePractice] = useState("");
+  const [exInviteCity, setExInviteCity] = useState("");
+  const [exInvitePassword, setExInvitePassword] = useState("");
+  const [exInviteAgreed, setExInviteAgreed] = useState(true);
+  const [exInviteRulesAck, setExInviteRulesAck] = useState(false);
+  const [exInviteConfirmationPending, setExInviteConfirmationPending] = useState(false);
+
   useEffect(() => {
     if (!inviteToken) return;
     let cancelled = false;
@@ -89,6 +105,52 @@ function SignInForm() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inviteToken]);
+
+  useEffect(() => {
+    if (!exhibitionInviteToken) return;
+    let cancelled = false;
+
+    (async () => {
+      const { data, error: rpcError } = await supabase
+        .rpc("get_exhibition_invite", { p_token: exhibitionInviteToken })
+        .maybeSingle();
+      if (cancelled) return;
+
+      if (rpcError || !data) {
+        setExInviteStatus("not_found");
+        return;
+      }
+      setExInviteEmail(data.email);
+      setExInviteName(data.full_name ?? "");
+      setExInviteGalleryName(data.gallery_name);
+      setExInviteExhibitionTitle(data.exhibition_title);
+      setExInviteExhibitionTheme(data.exhibition_theme ?? "");
+      setExInviteExhibitionRules(data.exhibition_rules ?? "");
+
+      if (data.status === "accepted") {
+        setExInviteStatus("accepted");
+        return;
+      }
+      if (data.status === "revoked") {
+        setExInviteStatus("revoked");
+        return;
+      }
+      if (data.status === "expired" || new Date(data.expires_at) < new Date()) {
+        setExInviteStatus("expired");
+        return;
+      }
+
+      const { data: { user: signedInUser } } = await supabase.auth.getUser();
+      if (signedInUser && signedInUser.email?.toLowerCase() === data.email.toLowerCase()) {
+        setExInviteStatus("ready_signed_in");
+      } else {
+        setExInviteStatus("ready");
+      }
+    })();
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exhibitionInviteToken]);
 
   // ── Helpers ───────────────────────────────────────────────────
   const pickSide = (s: Side) => {
@@ -207,6 +269,57 @@ function SignInForm() {
       }
 
       const { error: acceptError } = await supabase.rpc("accept_artist_invite", { p_token: inviteToken });
+      if (acceptError) { setError(acceptError.message); return; }
+
+      router.push("/studio");
+      router.refresh();
+    });
+
+  const handleExhibitionInviteOAuth = async (provider: "google") => {
+    if (!exhibitionInviteToken) return;
+    if (!exInviteAgreed) { setError("Please agree to the terms to continue."); return; }
+    if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/studio&exhibition_invite=${exhibitionInviteToken}`,
+      },
+    });
+  };
+
+  const handleExhibitionInviteAccept = () =>
+    withLoad(async () => {
+      if (!exhibitionInviteToken) return;
+
+      if (exInviteStatus === "ready_signed_in") {
+        if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
+        const { error: acceptError } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInviteToken });
+        if (acceptError) { setError(acceptError.message); return; }
+        router.push("/studio");
+        router.refresh();
+        return;
+      }
+
+      if (!exInviteAgreed) { setError("Please agree to the terms to continue."); return; }
+      if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
+      if (exInvitePassword.length < 6) { setError("Choose a password with at least 6 characters."); return; }
+
+      const { data, error } = await supabase.auth.signUp({
+        email: exInviteEmail,
+        password: exInvitePassword,
+        options: {
+          data: { role: "artist", full_name: exInviteName, practice: exInvitePractice, city: exInviteCity },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/studio&exhibition_invite=${exhibitionInviteToken}`,
+        },
+      });
+      if (error) { setError(error.message); return; }
+
+      if (!data.session) {
+        setExInviteConfirmationPending(true);
+        return;
+      }
+
+      const { error: acceptError } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInviteToken });
       if (acceptError) { setError(acceptError.message); return; }
 
       router.push("/studio");
@@ -337,6 +450,22 @@ function SignInForm() {
               onCity={setInviteCity} onPassword={setInvitePassword} onAgreed={setInviteAgreed}
               onSubmit={handleInviteAccept}
               onOAuth={handleInviteOAuth}
+              onSignIn={() => { setAView("signin"); setError(null); }}
+              onError={setError}
+            />
+          )}
+
+          {!isGallery && aView === "exhibition-invite" && (
+            <ArtistForms.ExhibitionInvite
+              status={exInviteStatus} galleryName={exInviteGalleryName}
+              exhibitionTitle={exInviteExhibitionTitle} exhibitionTheme={exInviteExhibitionTheme} exhibitionRules={exInviteExhibitionRules}
+              email={exInviteEmail} name={exInviteName} practice={exInvitePractice} city={exInviteCity}
+              password={exInvitePassword} agreed={exInviteAgreed} rulesAck={exInviteRulesAck} confirmationPending={exInviteConfirmationPending}
+              loading={loading}
+              onName={setExInviteName} onPractice={setExInvitePractice}
+              onCity={setExInviteCity} onPassword={setExInvitePassword} onAgreed={setExInviteAgreed} onRulesAck={setExInviteRulesAck}
+              onSubmit={handleExhibitionInviteAccept}
+              onOAuth={handleExhibitionInviteOAuth}
               onSignIn={() => { setAView("signin"); setError(null); }}
               onError={setError}
             />

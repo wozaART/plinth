@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, type CSSProperties, type ChangeEvent } from "react";
+import { useState, useTransition, type CSSProperties, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, avatarBg, initials } from "@/lib/utils";
-import { STATUS_META } from "@/lib/constants";
+import { EX_TYPE_META, STATUS_META } from "@/lib/constants";
 import { galleryConfig } from "@/lib/gallery.config";
-import { ackDeclinedSubmission, createSubmission } from "@/lib/supabase/actions";
-import type { MyWork, OpenCall, StudioMessage } from "@/lib/types";
+import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite } from "@/lib/supabase/actions";
+import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
-type StudioTab = "overview" | "submissions" | "open-calls" | "messages" | "profile";
+type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile";
 
 interface ProfileData {
   firstName: string;
@@ -28,6 +28,7 @@ interface StudioShellProps {
   artistCity: string;
   works: MyWork[];
   openCalls: OpenCall[];
+  exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
   profile: ProfileData;
 }
@@ -63,24 +64,31 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   );
 }
 
-function SubmitDrawer({ onClose, onSubmit }: { onClose: () => void; onSubmit: (formData: FormData) => void }) {
+function SubmitDrawer({ openCalls, onClose, onSubmit }: { openCalls: OpenCall[]; onClose: () => void; onSubmit: (formData: FormData) => void }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ title: "", medium: "", dim: "", year: "", price: "", exhibition: "Highveld Light", statement: "" });
+  const [form, setForm] = useState({ title: "", medium: "", dim: "", year: "", price: "", exhibitionId: openCalls.find(o => o.accepting)?.id ?? "", statement: "" });
   const [image, setImage] = useState<File | null>(null);
+  const [rulesAck, setRulesAck] = useState(false);
+
+  const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
+  const needsRulesAck = Boolean(selectedCall?.rules);
+  const canAdvance = step < 3 || !needsRulesAck || rulesAck;
 
   function next() {
     if (step < 3) {
       setStep(step + 1);
       return;
     }
+    if (!canAdvance) return;
     const formData = new FormData();
     formData.set("title", form.title || "Untitled");
     formData.set("medium", form.medium);
     formData.set("dim", form.dim);
     formData.set("year", form.year);
     formData.set("price", form.price);
-    formData.set("exhibition", form.exhibition);
+    formData.set("exhibitionId", form.exhibitionId);
     formData.set("statement", form.statement);
+    formData.set("rulesAck", String(rulesAck));
     if (image) formData.set("image", image);
     onSubmit(formData);
   }
@@ -117,12 +125,20 @@ function SubmitDrawer({ onClose, onSubmit }: { onClose: () => void; onSubmit: (f
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Submitting for</span>
-                <select value={form.exhibition} onChange={e => setForm(f => ({ ...f, exhibition: e.target.value }))} style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", appearance: "none" }}>
-                  <option>Highveld Light</option>
-                  <option>New Ground: Emerging Voices</option>
-                  <option>Open submissions</option>
+                <select value={form.exhibitionId} onChange={e => { setForm(f => ({ ...f, exhibitionId: e.target.value })); setRulesAck(false); }} style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", appearance: "none" }}>
+                  <option value="">Open submissions</option>
+                  {openCalls.filter(o => o.accepting).map(o => (
+                    <option key={o.id} value={o.id}>{o.title}</option>
+                  ))}
                 </select>
               </label>
+              {selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
+                <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
+                  {selectedCall.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {selectedCall.theme}</div>}
+                  {selectedCall.mediumRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {selectedCall.mediumRequirements}</div>}
+                  {selectedCall.sizeRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {selectedCall.sizeRequirements}</div>}
+                </div>
+              )}
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Image (optional)</span>
                 <input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] ?? null)} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
@@ -152,6 +168,17 @@ function SubmitDrawer({ onClose, onSubmit }: { onClose: () => void; onSubmit: (f
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Artist statement</span>
                 <textarea value={form.statement} onChange={e => setForm(f => ({ ...f, statement: e.target.value }))} rows={5} placeholder="Briefly describe the work — your intent, materials, series context. 80–150 words is ideal." style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", resize: "none" }} />
               </label>
+              {needsRulesAck && selectedCall && (
+                <div style={{ background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55, marginBottom: 10 }}>
+                    <strong style={{ color: "var(--pl-text-secondary)" }}>Rules for {selectedCall.title}:</strong> {selectedCall.rules}
+                  </div>
+                  <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}>
+                    <input type="checkbox" checked={rulesAck} onChange={e => setRulesAck(e.target.checked)} style={{ marginTop: 2 }} />
+                    <span style={{ fontSize: 12.5, color: "var(--pl-text-secondary)", lineHeight: 1.5 }}>I have read and understand the rules for this exhibition.</span>
+                  </label>
+                </div>
+              )}
               <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55 }}>After submitting, the gallery will review your work and respond with either an approval (including a drop-off pass) or a note explaining their decision.</div>
             </div>
           )}
@@ -159,7 +186,7 @@ function SubmitDrawer({ onClose, onSubmit }: { onClose: () => void; onSubmit: (f
 
         <div style={{ padding: "16px 24px", borderTop: "1px solid var(--pl-border)", display: "flex", gap: 10 }}>
           {step > 1 && <button onClick={() => setStep(step - 1)} style={{ flex: 1, padding: "12px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Back</button>}
-          <button onClick={next} style={{ flex: 2, padding: "12px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: "pointer" }}>
+          <button onClick={next} disabled={!canAdvance} style={{ flex: 2, padding: "12px", background: canAdvance ? "var(--pl-solid)" : "var(--pl-border-strong)", color: canAdvance ? "var(--pl-on-solid)" : "var(--pl-text-faint)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: canAdvance ? "pointer" : "not-allowed" }}>
             {step < 3 ? "Continue →" : "Submit for review"}
           </button>
         </div>
@@ -218,12 +245,26 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, openCalls, messages, profile }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
+  const [invites, setInvites] = useState(initialInvites);
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [, startInviteTransition] = useTransition();
+
+  function respondInvite(id: string, response: "accepted" | "declined") {
+    setInvites(prev => prev.map(i => (i.id === id ? { ...i, status: response, respondedAt: new Date().toISOString() } : i)));
+    startInviteTransition(async () => {
+      try {
+        await respondToExhibitionInvite(id, response);
+      } catch {
+        setToast("Something went wrong responding to that invitation.");
+        setTimeout(() => setToast(null), 3500);
+      }
+    });
+  }
 
   const unacknowledged = works.find(w => w.status === "declined" && w.ack === false);
 
@@ -297,6 +338,11 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           <h1 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0, flex: 1, textTransform: "capitalize" }}>
             {tab === "open-calls" ? "Open calls" : tab}
           </h1>
+          {tab === "invitations" && invites.filter(i => i.status === "pending").length > 0 && (
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: "var(--pl-pending-bg)", color: "var(--pl-pending-fg)" }}>
+              {invites.filter(i => i.status === "pending").length} awaiting response
+            </span>
+          )}
           {tab === "submissions" && (
             <button onClick={() => setShowSubmit(true)} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
           )}
@@ -390,10 +436,13 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           {tab === "open-calls" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {openCalls.map((oc) => (
-                <div key={oc.title} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 14, padding: "20px 22px" }}>
+                <div key={oc.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 14, padding: "20px 22px" }}>
                   <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" as const }}>
                     <div>
-                      <h3 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0 }}>{oc.title}</h3>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <h3 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0 }}>{oc.title}</h3>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>{EX_TYPE_META[oc.type]}</span>
+                      </div>
                       <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", marginTop: 3 }}>{oc.gallery}</div>
                       <div style={{ fontSize: 13.5, color: "var(--pl-text-secondary)", marginTop: 6 }}>{oc.focus}</div>
                     </div>
@@ -406,10 +455,45 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 6 }}>Deadline: {oc.deadline}</div>
                     </div>
                   </div>
+                  {(oc.theme || oc.mediumRequirements || oc.sizeRequirements || oc.rules) && (
+                    <div style={{ marginTop: 14, background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.6 }}>
+                      {oc.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {oc.theme}</div>}
+                      {oc.mediumRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {oc.mediumRequirements}</div>}
+                      {oc.sizeRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {oc.sizeRequirements}</div>}
+                      {oc.rules && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Rules:</strong> {oc.rules}</div>}
+                    </div>
+                  )}
                   {oc.accepting && (
                     <button onClick={() => setShowSubmit(true)} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
                       Submit for this call
                     </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === "invitations" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {invites.length === 0 && (
+                <div style={{ fontSize: 13.5, color: "var(--pl-text-soft)" }}>No exhibition invitations yet.</div>
+              )}
+              {invites.map((inv) => (
+                <div key={inv.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 13, padding: "16px 18px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600 }}>{inv.exhibitionTitle}</div>
+                      {inv.message && <p style={{ fontSize: 13, color: "var(--pl-text-muted)", margin: "6px 0 0", lineHeight: 1.55, fontStyle: "italic" }}>&ldquo;{inv.message}&rdquo;</p>}
+                    </div>
+                    <span style={{ fontSize: 10.5, fontWeight: 600, padding: "4px 10px", borderRadius: 20, whiteSpace: "nowrap" as const, background: inv.status === "pending" ? "var(--pl-pending-bg)" : inv.status === "accepted" ? "var(--pl-approved-bg)" : "var(--pl-neutral-chip-bg)", color: inv.status === "pending" ? "var(--pl-pending-fg)" : inv.status === "accepted" ? "var(--pl-approved-fg)" : "var(--pl-neutral-chip-fg)" }}>
+                      {inv.status === "pending" ? "Awaiting response" : inv.status[0].toUpperCase() + inv.status.slice(1)}
+                    </span>
+                  </div>
+                  {inv.status === "pending" && (
+                    <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                      <button onClick={() => respondInvite(inv.id, "accepted")} style={{ padding: "9px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 550, cursor: "pointer" }}>Accept</button>
+                      <button onClick={() => respondInvite(inv.id, "declined")} style={{ padding: "9px 16px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, fontSize: 13, color: "var(--pl-text-secondary)", cursor: "pointer" }}>Decline</button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -438,7 +522,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </div>
       </main>
 
-      {showSubmit && <SubmitDrawer onClose={() => setShowSubmit(false)} onSubmit={handleSubmitWork} />}
+      {showSubmit && <SubmitDrawer openCalls={openCalls} onClose={() => setShowSubmit(false)} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>

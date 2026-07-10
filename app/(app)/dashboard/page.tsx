@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getSubmissions, getExhibitionsWithCounts, getCatalogue, getFrameJobs, getContacts } from "@/lib/supabase/queries";
+import { getSubmissions, getExhibitionsWithCounts, getExhibitionInvitesForGallery, getCatalogue, getFrameJobs, getContacts } from "@/lib/supabase/queries";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export default async function DashboardPage() {
@@ -14,9 +14,10 @@ export default async function DashboardPage() {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const [submissions, exhibitions, catalogue, contacts, frameJobs] = await Promise.all([
+  const [submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs] = await Promise.all([
     getSubmissions(supabase, gallery.id),
-    getExhibitionsWithCounts(supabase, gallery.id),
+    getExhibitionsWithCounts(supabase, gallery.id, true),
+    getExhibitionInvitesForGallery(supabase, gallery.id),
     getCatalogue(supabase, gallery.id),
     getContacts(supabase, gallery.id),
     getFrameJobs(supabase, gallery.id),
@@ -26,6 +27,7 @@ export default async function DashboardPage() {
     <DashboardShell
       submissions={submissions}
       exhibitions={exhibitions}
+      exhibitionInvites={exhibitionInvites}
       catalogue={catalogue}
       contacts={contacts}
       frameJobs={frameJobs}

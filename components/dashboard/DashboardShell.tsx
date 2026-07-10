@@ -10,19 +10,20 @@ import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import { galleryConfig } from "@/lib/gallery.config";
-import type { Submission, Exhibition, CatalogueWork, Contact, FrameJob } from "@/lib/types";
+import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, Contact, FrameJob } from "@/lib/types";
 
 type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop";
 
 interface DashboardShellProps {
   submissions: Submission[];
   exhibitions: Exhibition[];
+  exhibitionInvites: ExhibitionInvite[];
   catalogue: CatalogueWork[];
   contacts: Contact[];
   frameJobs: FrameJob[];
 }
 
-export default function DashboardShell({ submissions, exhibitions, catalogue, contacts, frameJobs }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity } = galleryConfig;
@@ -98,7 +99,7 @@ export default function DashboardShell({ submissions, exhibitions, catalogue, co
         </div>
 
         {tab === "submissions" && <SubmissionsPanel initialData={submissions} />}
-        {tab === "exhibitions" && <ExhibitionsPanel data={exhibitions} />}
+        {tab === "exhibitions" && <ExhibitionsPanel data={exhibitions} invites={exhibitionInvites} contacts={contacts} />}
         {tab === "catalogue" && <CataloguePanel data={catalogue} />}
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
