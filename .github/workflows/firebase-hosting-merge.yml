@@ -34,14 +34,13 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          if [ -z "$SUPABASE_URL" ]; then
-            echo "::error::SUPABASE_URL secret is empty; the build cannot resolve image URLs."
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL secret is empty; the build cannot resolve image URLs."
             exit 1
           fi
           {
-            echo "SUPABASE_URL=$SUPABASE_URL"
-            echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
-            echo "RECAPTCHA_SITE_KEY=$RECAPTCHA_SITE_KEY"
+            echo "NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
           } > .env.local
 
       - name: Build
