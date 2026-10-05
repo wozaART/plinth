@@ -141,6 +141,85 @@ const DOCS: DocSection[] = [
       "Once they're set up, their submissions will appear in your queue tagged with their name.",
     ],
   },
+  {
+    id: "custom-domain-overview",
+    category: "Custom domain",
+    title: "Putting the portal on your own domain",
+    body: [
+      "You can open the gallery portal at a subdomain of your existing website domain, for example platform.<your-domain>. Your main website stays exactly as it is. Only the platform subdomain points at Plinth.",
+      "The setup has three parts: a DNS record at your domain provider, a custom domain attached to the portal hosting, and a sign-in redirect so login and invite emails use the new address.",
+    ],
+    steps: [
+      "Choose the subdomain name. We recommend platform, so the address is platform.<your-domain>.",
+      "Add the DNS record (next section).",
+      "Attach the domain and confirm the certificate is issued (see Attach the domain and wait for the certificate).",
+      "Allow the new address for sign-in, then test (see Allow the new address for sign-in).",
+    ],
+    tip: "Galleries usually finish this in under an hour. DNS changes can take a while to spread, so allow a day before deciding something is wrong.",
+  },
+  {
+    id: "custom-domain-dns",
+    category: "Custom domain",
+    title: "Add the DNS record in Squarespace",
+    body: [
+      "Squarespace manages DNS for domains bought through it. Add a CNAME record for the platform subdomain that points at the address we give you during setup.",
+      "Only add a subdomain record. Do not change the root domain or www records, or your Squarespace website may stop working.",
+    ],
+    steps: [
+      "Log in to Squarespace and open Settings, then Domains.",
+      "Select your domain and open DNS Settings (Squarespace may label this Advanced DNS or Custom Records).",
+      "Add a record: Type CNAME, Host platform, Data set to the target address we give you.",
+      "Save. Leave the existing records alone.",
+    ],
+    tip: "If your domain is registered elsewhere and only the DNS is at Squarespace, make the change in whichever place actually hosts the DNS. Your provider's help page will say which.",
+  },
+  {
+    id: "custom-domain-attach",
+    category: "Custom domain",
+    title: "Attach the domain and wait for the certificate",
+    body: [
+      "Once the DNS record is in place, the portal hosting needs to know about the domain. Plinth attaches it and issues a secure (HTTPS) certificate automatically.",
+      "Verification may ask for one more record, usually a TXT record for ownership. Add it the same way as the CNAME.",
+    ],
+    steps: [
+      "Send us your chosen subdomain. We attach it to your portal.",
+      "If a verification record is requested, add it in Squarespace DNS settings exactly as shown.",
+      "Wait for the status to show Connected. This can take up to a few hours.",
+      "Open https://platform.<your-domain> in a browser. You should see the sign-in page with a padlock.",
+    ],
+  },
+  {
+    id: "custom-domain-signin",
+    category: "Custom domain",
+    title: "Allow the new address for sign-in",
+    body: [
+      "Sign-in links and invitation emails are only accepted from addresses on the approved list. Once the new address is live, we add it so login and invites work from platform.<your-domain>.",
+      "Once that is done, send yourself a test invitation and check that the link opens the portal, not a different address.",
+    ],
+    steps: [
+      "Confirm the new address with us so we can add it to the approved sign-in list.",
+      "Sign in from https://platform.<your-domain>.",
+      "Send a test artist invitation to an address you control and open it from the email.",
+      "The link should open platform.<your-domain>. If it opens anywhere else, let us know before inviting artists.",
+    ],
+    tip: "Keep the old address working too if you already share it. Both can be approved at the same time.",
+  },
+  {
+    id: "custom-domain-troubleshooting",
+    category: "Custom domain",
+    title: "Troubleshooting the custom domain",
+    body: [
+      "Most problems are DNS timing or a record typed slightly differently. Check the record first before contacting us.",
+      "A certificate warning or a 'not secure' message usually means the certificate is still being issued. It clears on its own once the status shows Connected.",
+    ],
+    steps: [
+      "Check the CNAME host is exactly platform (not platform.<your-domain> typed twice).",
+      "Check the target matches the address we gave you, with no extra spaces.",
+      "Wait an hour, then try a private browser window to avoid cached results.",
+      "If sign-in loops back to the sign-in page, confirm the new address was added to the approved list.",
+    ],
+    tip: "Send us a screenshot of the DNS record and the error message. That is usually enough to find the problem quickly.",
+  },
 ];
 
 const CATEGORIES = ["All", ...Array.from(new Set(DOCS.map(d => d.category)))];
