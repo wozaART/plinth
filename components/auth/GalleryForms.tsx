@@ -67,7 +67,7 @@ export function GallerySignIn({
       <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[30px] text-center">
-        New to Plinth?{" "}
+        New to Woza Art?{" "}
         <GhostButton onClick={onSignUp} className="text-[13px] text-foreground font-semibold">
           Create your gallery →
         </GhostButton>

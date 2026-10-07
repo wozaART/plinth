@@ -7,7 +7,7 @@ update public.galleries
 set
   short_name = 'Sable',
   tagline = 'The quiet operating system for small contemporary galleries.',
-  logo_wordmark_primary = 'Plinth',
+  logo_wordmark_primary = 'Woza Art',
   logo_wordmark_secondary = null,
   theme_mode = 'light',
   font_display = '{"googleFont":"Newsreader","weights":["400","500","600"],"styles":["normal","italic"]}',

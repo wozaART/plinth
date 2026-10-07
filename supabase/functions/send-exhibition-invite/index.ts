@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
       appUrl,
     });
 
-    const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Plinth <onboarding@resend.dev>";
+    const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Woza Art <onboarding@resend.dev>";
 
     const resendResponse = await fetch("https://api.resend.com/emails", {
       method: "POST",

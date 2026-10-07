@@ -282,7 +282,7 @@ export default function ReviewPage() {
 
   function buildSummary() {
     const lines: string[] = [];
-    lines.push("PLINTH — GALLERY REVIEW FEEDBACK");
+    lines.push("WOZA ART — GALLERY REVIEW FEEDBACK");
     lines.push("=".repeat(34));
     lines.push("Gallery:   " + (galleryName || "—"));
     if (reviewerName) lines.push("Reviewer:  " + reviewerName);
@@ -346,7 +346,7 @@ export default function ReviewPage() {
       <header style={{ position: "sticky", top: 0, zIndex: 30, background: "rgba(251,250,248,.85)", backdropFilter: "blur(10px)", borderBottom: "1px solid #ECE8DE" }}>
         <div style={{ maxWidth: 1080, margin: "0 auto", padding: "14px clamp(18px,4vw,32px)", display: "flex", alignItems: "center", gap: 14 }}>
           <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 22, fontWeight: 600, letterSpacing: "-.01em" }}>Plinth</span>
+            <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 22, fontWeight: 600, letterSpacing: "-.01em" }}>Woza Art</span>
             <span style={{ width: 5, height: 5, borderRadius: "50%", background: accent, transform: "translateY(-2px)", display: "inline-block" }} />
           </Link>
           <span style={{ fontSize: 13, color: "#A39D8E", padding: "3px 10px", border: "1px solid #E7E3D9", borderRadius: 20 }}>Gallery preview</span>
@@ -367,7 +367,7 @@ export default function ReviewPage() {
               A preview prepared for your gallery
             </div>
             <h1 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: "clamp(34px,5.4vw,58px)", fontWeight: 500, lineHeight: 1.04, letterSpacing: "-.025em", margin: "0", maxWidth: 760 }}>
-              See Plinth as <em style={{ fontStyle: "italic", color: "#6B4A3A" }}>your</em> gallery — then tell us what to change.
+              See Woza Art as <em style={{ fontStyle: "italic", color: "#6B4A3A" }}>your</em> gallery — then tell us what to change.
             </h1>
             <p style={{ fontSize: "clamp(15px,1.7vw,18px)", color: "#57534A", lineHeight: 1.6, maxWidth: 600, margin: "24px 0 0" }}>
               You've had a look at the working sample. Now make it yours: add your name, logo and colours, see both portals adopt your brand, then walk through the features and tell us what's valuable and what's missing. It takes about ten minutes.
@@ -678,7 +678,7 @@ export default function ReviewPage() {
               <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 22, fontWeight: 550, color: "#FBFAF8" }}>Overall</div>
 
               <div style={{ marginTop: 20 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", marginBottom: 10 }}>How well does Plinth fit your gallery?</div>
+                <div style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", marginBottom: 10 }}>How well does Woza Art fit your gallery?</div>
                 <div style={{ display: "flex", gap: 8 }}>
                   {[1, 2, 3, 4, 5].map(n => {
                     const on = rating >= n; const sel = rating === n;
@@ -711,7 +711,7 @@ export default function ReviewPage() {
               </div>
 
               <div style={{ marginTop: 22 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", marginBottom: 10 }}>Would you use Plinth for your gallery?</div>
+                <div style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", marginBottom: 10 }}>Would you use Woza Art for your gallery?</div>
                 <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
                   {([["Yes — sign us up", "Yes"], ["Maybe, with changes", "Maybe"], ["Not yet", "No"]] as const).map(([label, val]) => {
                     const on = adopt === val;

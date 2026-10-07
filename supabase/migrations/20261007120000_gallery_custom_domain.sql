@@ -1,5 +1,5 @@
 -- Custom domain attachment: lets a gallery point their own domain at their
--- Plinth portal. Status is tracked separately from the domain name itself
+-- Woza Art portal. Status is tracked separately from the domain name itself
 -- so the UI can show "pending verification" while Vercel propagates DNS.
 
 alter table public.galleries

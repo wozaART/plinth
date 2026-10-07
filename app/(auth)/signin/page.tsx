@@ -346,7 +346,7 @@ function SignInForm() {
             className="font-serif text-2xl font-semibold tracking-[-0.01em]"
             style={{ color: isGallery ? "#17150F" : "#FBFAF8" }}
           >
-            Plinth
+            Woza Art
           </span>
           <span className="w-[5px] h-[5px] rounded-full bg-[var(--pl-accent)] block translate-y-[-2px]" />
         </Link>
@@ -490,7 +490,7 @@ function RedirectingTransition() {
       <div className="anim-pop flex flex-col items-center gap-5">
         <span className="inline-flex items-baseline gap-2">
           <span className="font-serif text-2xl font-semibold tracking-[-0.01em] text-[#17150F]">
-            Plinth
+            Woza Art
           </span>
           <span className="w-[5px] h-[5px] rounded-full bg-[var(--pl-accent)] block translate-y-[-2px]" />
         </span>

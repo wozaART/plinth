@@ -13,7 +13,7 @@ import {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Public: the respondent is a gallery with no Plinth account, so there is no
+// Public: the respondent is a gallery with no Woza Art account, so there is no
 // auth check. Every value is validated against the question list, and the
 // table accepts inserts only.
 export async function submitConsignmentTerms(formData: FormData): Promise<TermsResult> {

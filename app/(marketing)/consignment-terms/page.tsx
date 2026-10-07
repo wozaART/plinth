@@ -3,7 +3,7 @@ import ConsignmentTermsForm from "@/components/marketing/ConsignmentTermsForm";
 import { TERMS_QUESTIONS, TERMS_TEXT_LIMITS, type TermsValues } from "@/lib/consignment-terms";
 
 export const metadata: Metadata = {
-  title: "Consignment terms — Plinth",
+  title: "Consignment terms — Woza Art",
   description: "A few questions about how your gallery handles commission, artist payouts, discounts and VAT.",
   robots: { index: false, follow: false },
 };
@@ -30,7 +30,7 @@ export default async function ConsignmentTermsPage({
     <main style={{ flex: 1, background: "var(--pl-bg-app)", color: "var(--pl-text)" }}>
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "clamp(24px,6vw,56px) 16px 64px" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 23, fontWeight: 600, letterSpacing: "-.01em" }}>Plinth</span>
+          <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 23, fontWeight: 600, letterSpacing: "-.01em" }}>Woza Art</span>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--pl-accent)", transform: "translateY(-2px)", display: "inline-block" }} />
         </div>
 
@@ -38,7 +38,7 @@ export default async function ConsignmentTermsPage({
           How does your gallery pay its artists?
         </h1>
         <p style={{ fontSize: 16, lineHeight: 1.6, color: "var(--pl-text-secondary)", margin: "14px 0 28px" }}>
-          Plinth is building a consignment ledger that shows an artist each sale, the commission split and when
+          Woza Art is building a consignment ledger that shows an artist each sale, the commission split and when
           they are paid. Your answers shape how it works. It takes about five minutes, and you can skip anything
           marked optional.
         </p>

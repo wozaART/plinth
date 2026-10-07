@@ -20,7 +20,7 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Plinth — Gallery Management",
+  title: "Woza Art — Gallery Management",
   description: "The quiet operating system for small contemporary galleries.",
 };
 

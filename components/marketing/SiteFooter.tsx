@@ -7,7 +7,7 @@ export default function SiteFooter() {
         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 40, justifyContent: "space-between" }}>
           <div style={{ maxWidth: 300 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-              <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 22, fontWeight: 600, color: "#FBFAF8" }}>Plinth</span>
+              <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 22, fontWeight: 600, color: "#FBFAF8" }}>Woza Art</span>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#B5623C", transform: "translateY(-2px)", display: "inline-block" }} />
             </div>
             <p style={{ fontSize: 13, lineHeight: 1.6, margin: "14px 0 0", color: "#8A8478" }}>The quiet operating system for small contemporary galleries. Made in South Africa.</p>
@@ -30,7 +30,7 @@ export default function SiteFooter() {
           </div>
         </div>
         <div style={{ marginTop: 44, paddingTop: 22, borderTop: "1px solid #2C2920", display: "flex", flexWrap: "wrap" as const, gap: "10px 20px", justifyContent: "space-between", fontSize: 12, color: "#6F695D" }}>
-          <span>© 2025 Plinth. For contemporary galleries.</span>
+          <span>© 2025 Woza Art. For contemporary galleries.</span>
           <span>Privacy · Terms · Made in South Africa</span>
         </div>
       </div>

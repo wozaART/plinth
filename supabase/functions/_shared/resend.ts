@@ -9,7 +9,7 @@ export function escapeHtml(value: string): string {
 }
 
 export async function sendEmail(to: string, subject: string, html: string): Promise<ResendResult> {
-  const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Plinth <onboarding@resend.dev>";
+  const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Woza Art <onboarding@resend.dev>";
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",

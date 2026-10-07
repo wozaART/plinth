@@ -80,7 +80,7 @@ function renderContactEmail(contactName: string, galleryName: string): string {
   return `<!doctype html>
 <html><body style="font-family:sans-serif;color:#1c1a17;">
   <p>Hi ${escapeHtml(contactName)},</p>
-  <p>Thanks for sharing ${escapeHtml(galleryName)}'s consignment terms with Plinth. We'll be in touch if we have follow-up questions.</p>
+  <p>Thanks for sharing ${escapeHtml(galleryName)}'s consignment terms with Woza Art. We'll be in touch if we have follow-up questions.</p>
 </body></html>`;
 }
 

@@ -2,7 +2,7 @@
 -- on the public /consignment-terms form (commission, payout timing, who
 -- absorbs discounts, VAT). They inform the sales/payouts schema.
 --
--- The respondent has no Plinth account, so the row is not tied to a tenant
+-- The respondent has no Woza Art account, so the row is not tied to a tenant
 -- and anyone may insert. Nobody can read through the API: there is no select
 -- policy, so responses are read in the Supabase dashboard (service role).
 --
