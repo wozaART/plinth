@@ -31,6 +31,7 @@ export const TERMS_SECTIONS: TermsSection[] = [
       { id: "gallery_name", kind: "text", label: "Gallery name", required: true },
       { id: "contact_name", kind: "text", label: "Your name", required: true },
       { id: "contact_role", kind: "text", label: "Your role", placeholder: "e.g. Gallery director" },
+      { id: "contact_email", kind: "text", label: "Your email", required: true, placeholder: "you@gallery.com" },
       {
         id: "written_agreement",
         kind: "choice",

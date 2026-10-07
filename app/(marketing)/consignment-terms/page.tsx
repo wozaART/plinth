@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 // Lets a link pre-fill the "About you" answers, e.g.
 // /consignment-terms?contact_name=Thomas&contact_role=Gallery+director
-const PREFILLABLE = ["gallery_name", "contact_name", "contact_role"];
+const PREFILLABLE = ["gallery_name", "contact_name", "contact_role", "contact_email"];
 
 export default async function ConsignmentTermsPage({
   searchParams,
