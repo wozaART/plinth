@@ -31,6 +31,8 @@ export default async function DashboardPage() {
       catalogue={catalogue}
       contacts={contacts}
       frameJobs={frameJobs}
+      customDomain={gallery.custom_domain}
+      domainStatus={gallery.domain_status}
     />
   );
 }
