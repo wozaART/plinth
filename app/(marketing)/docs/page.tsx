@@ -16,9 +16,9 @@ const DOCS: DocSection[] = [
   {
     id: "welcome",
     category: "Getting started",
-    title: "Getting started with Plinth",
+    title: "Getting started with Woza Art",
     body: [
-      "Plinth is designed to be set up in a single afternoon. This guide walks you through creating your gallery profile, inviting your team, and preparing for your first open call.",
+      "Woza Art is designed to be set up in a single afternoon. This guide walks you through creating your gallery profile, inviting your team, and preparing for your first open call.",
       "You don't need to import everything at once — start with your active exhibitions and submissions, and migrate the rest of your catalogue as you go.",
     ],
     steps: [
@@ -27,14 +27,14 @@ const DOCS: DocSection[] = [
       "Invite your first artist by email — they'll be guided through creating their studio account.",
       "Review their submission and issue your first decision.",
     ],
-    tip: "Many galleries find the first week easiest if they run Plinth alongside their existing system, then switch fully once the submission workflow feels natural.",
+    tip: "Many galleries find the first week easiest if they run Woza Art alongside their existing system, then switch fully once the submission workflow feels natural.",
   },
   {
     id: "open-call",
     category: "Getting started",
     title: "Setting up an open call",
     body: [
-      "An open call in Plinth is a named exhibition with an accepting status — artists can see it in their studio and submit directly to it.",
+      "An open call in Woza Art is a named exhibition with an accepting status — artists can see it in their studio and submit directly to it.",
       "You can set custom criteria (medium, dimensions, price range) that are shown to artists before they submit. This reduces unsuitable submissions significantly.",
     ],
     steps: [
@@ -68,7 +68,7 @@ const DOCS: DocSection[] = [
     category: "Submissions",
     title: "The acknowledgement workflow",
     body: [
-      "Plinth's signature workflow ensures that declined artists explicitly read and confirm the decision before delivering work — eliminating the common situation where an artist brings rejected work to a show.",
+      "Woza Art's signature workflow ensures that declined artists explicitly read and confirm the decision before delivering work — eliminating the common situation where an artist brings rejected work to a show.",
       "When you decline a submission, the artist sees a blocking notice the next time they open their studio. They cannot proceed until they've read the note and confirmed they will not deliver the work.",
     ],
     steps: [
@@ -100,7 +100,7 @@ const DOCS: DocSection[] = [
     category: "Catalogue",
     title: "Importing your catalogue",
     body: [
-      "Your Plinth catalogue is a living record of every work your gallery holds, has sold, or currently has on loan. It doesn't need to be complete on day one — add works as you review them.",
+      "Your Woza Art catalogue is a living record of every work your gallery holds, has sold, or currently has on loan. It doesn't need to be complete on day one — add works as you review them.",
       "Catalogue entries link to artist profiles, so you can see an artist's full submission and exhibition history alongside their currently listed works.",
     ],
     steps: [
@@ -146,7 +146,7 @@ const DOCS: DocSection[] = [
     category: "Custom domain",
     title: "Putting the portal on your own domain",
     body: [
-      "You can open the gallery portal at a subdomain of your existing website domain, for example platform.<your-domain>. Your main website stays exactly as it is. Only the platform subdomain points at Plinth.",
+      "You can open the gallery portal at a subdomain of your existing website domain, for example platform.<your-domain>. Your main website stays exactly as it is. Only the platform subdomain points at Woza Art.",
       "The setup has three parts: a DNS record at your domain provider, a custom domain attached to the portal hosting, and a sign-in redirect so login and invite emails use the new address.",
     ],
     steps: [
@@ -178,7 +178,7 @@ const DOCS: DocSection[] = [
     category: "Custom domain",
     title: "Attach the domain and wait for the certificate",
     body: [
-      "Once the DNS record is in place, the portal hosting needs to know about the domain. Plinth attaches it and issues a secure (HTTPS) certificate automatically.",
+      "Once the DNS record is in place, the portal hosting needs to know about the domain. Woza Art attaches it and issues a secure (HTTPS) certificate automatically.",
       "Verification may ask for one more record, usually a TXT record for ownership. Add it the same way as the CNAME.",
     ],
     steps: [
@@ -243,7 +243,7 @@ export default function DocsPage() {
       {/* Left sidebar */}
       <aside style={{ width: 240, flexShrink: 0, background: "#F4F1EA", borderRight: "1px solid #ECE8DE", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
         <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 7, padding: "0 18px 16px" }}>
-          <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 21, fontWeight: 600 }}>Plinth</span>
+          <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 21, fontWeight: 600 }}>Woza Art</span>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#B5623C", transform: "translateY(-2px)", display: "inline-block" }} />
         </Link>
 

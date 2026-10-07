@@ -142,7 +142,7 @@ export function renderExhibitionInviteEmail(params: ExhibitionInviteEmailParams)
           <tr>
             <td align="center" style="padding:24px 16px 0;">
               <p style="margin:0; font-family:Helvetica, Arial, sans-serif; font-size:12px; line-height:1.6; color:#b3a996;">
-                Plinth &middot; Gallery &amp; artist management &middot; <a href="${appUrl}" style="color:#b3a996;">${appUrl.replace(/^https?:\/\//, "")}</a>
+                Woza Art &middot; Gallery &amp; artist management &middot; <a href="${appUrl}" style="color:#b3a996;">${appUrl.replace(/^https?:\/\//, "")}</a>
               </p>
             </td>
           </tr>

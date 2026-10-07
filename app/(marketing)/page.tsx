@@ -4,7 +4,7 @@ import SiteNav from "@/components/marketing/SiteNav";
 import SiteFooter from "@/components/marketing/SiteFooter";
 
 export const metadata: Metadata = {
-  title: "Plinth — Gallery Management for Contemporary Galleries",
+  title: "Woza Art — Gallery Management for Contemporary Galleries",
   description: "The quiet operating system for small contemporary galleries — submissions, exhibitions, catalogue and collectors in one place.",
 };
 
@@ -27,7 +27,7 @@ export default function Home() {
               <span style={{ fontStyle: "italic", color: "#6B4A3A" }}>We&apos;ll mind the rest.</span>
             </h1>
             <p style={{ fontSize: "clamp(15px,1.6vw,18px)", lineHeight: 1.6, color: "#57534A", maxWidth: 520, margin: "26px 0 0" }}>
-              Plinth is the quiet operating system for small galleries — submissions, exhibitions, catalogue and collectors in one place, with artists kept informed at every step. So your curators can do the one thing software can&apos;t: welcome people through the door.
+              Woza Art is the quiet operating system for small galleries — submissions, exhibitions, catalogue and collectors in one place, with artists kept informed at every step. So your curators can do the one thing software can&apos;t: welcome people through the door.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 12, marginTop: 34 }}>
               <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#17150F", color: "#FBFAF8", padding: "14px 22px", borderRadius: 11, fontSize: 14.5, fontWeight: 500 }}>
@@ -85,7 +85,7 @@ export default function Home() {
           <div style={{ maxWidth: 660 }}>
             <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" as const, color: "#A39D8E" }}>The curator&apos;s day</div>
             <h2 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: "clamp(28px,4vw,42px)", fontWeight: 500, letterSpacing: "-.02em", lineHeight: 1.1, margin: "14px 0 0" }}>Running a gallery is mostly logistics and temperament.</h2>
-            <p style={{ fontSize: 16, color: "#57534A", lineHeight: 1.6, margin: "18px 0 0" }}>Between the spreadsheets, the unanswered emails and the artist at the door with work you never approved, the actual gallery — the room, the people, the art — gets the least of your attention. Plinth takes the three heaviest parts off your plate.</p>
+            <p style={{ fontSize: 16, color: "#57534A", lineHeight: 1.6, margin: "18px 0 0" }}>Between the spreadsheets, the unanswered emails and the artist at the door with work you never approved, the actual gallery — the room, the people, the art — gets the least of your attention. Woza Art takes the three heaviest parts off your plate.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(248px,1fr))", gap: 18, marginTop: 42 }}>
             {[
@@ -205,7 +205,7 @@ export default function Home() {
           <div style={{ maxWidth: 640 }}>
             <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" as const, color: "#9A9078" }}>The signature workflow</div>
             <h2 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: "clamp(28px,4.4vw,46px)", fontWeight: 500, letterSpacing: "-.02em", lineHeight: 1.08, margin: "14px 0 0", color: "#FBFAF8" }}>No work arrives unannounced.</h2>
-            <p style={{ fontSize: 16, color: "#C2BBAD", lineHeight: 1.65, margin: "18px 0 0" }}>The most common friction in a small gallery: an artist brings work that was never approved, because the rejection email went unread. Plinth closes that gap — a decision isn&apos;t done until the artist has seen it.</p>
+            <p style={{ fontSize: 16, color: "#C2BBAD", lineHeight: 1.65, margin: "18px 0 0" }}>The most common friction in a small gallery: an artist brings work that was never approved, because the rejection email went unread. Woza Art closes that gap — a decision isn&apos;t done until the artist has seen it.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(232px,1fr))", gap: 18, marginTop: 48 }}>
             {[
@@ -230,7 +230,7 @@ export default function Home() {
           <div style={{ flex: "1 1 380px", minWidth: 0 }}>
             <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" as const, color: "#A39D8E" }}>Your gallery, your way</div>
             <h2 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: "clamp(26px,3.6vw,40px)", fontWeight: 500, letterSpacing: "-.02em", lineHeight: 1.12, margin: "14px 0 0" }}>Made for your gallery — not a template.</h2>
-            <p style={{ fontSize: 15.5, color: "#57534A", lineHeight: 1.65, margin: "18px 0 0" }}>Every contemporary gallery has its own taste, its own pace and its own way of working with artists. Plinth adapts to yours: set your own open-call criteria, your pricing approach, your house language for decisions, and your branding — for galleries of two people or twenty.</p>
+            <p style={{ fontSize: 15.5, color: "#57534A", lineHeight: 1.65, margin: "18px 0 0" }}>Every contemporary gallery has its own taste, its own pace and its own way of working with artists. Woza Art adapts to yours: set your own open-call criteria, your pricing approach, your house language for decisions, and your branding — for galleries of two people or twenty.</p>
           </div>
           <div style={{ flex: "1 1 340px", minWidth: 0, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             {[
@@ -270,9 +270,9 @@ export default function Home() {
               </div>
               <div style={{ display: "flex", flexDirection: "column" as const, gap: 10 }}>
                 {[
-                  ["Getting started with Plinth", "Set up your gallery profile, team and first space.", "welcome"],
+                  ["Getting started with Woza Art", "Set up your gallery profile, team and first space.", "welcome"],
                   ["Setting up an open call", "Criteria, deadlines and how submissions arrive.", "open-call"],
-                  ["Importing your catalogue", "Bring existing works and pricing into Plinth.", "catalogue"],
+                  ["Importing your catalogue", "Bring existing works and pricing into Woza Art.", "catalogue"],
                 ].map(([title, sub, hash]) => (
                   <Link key={hash} href={`/docs#${hash}`} style={{ display: "block", background: "#fff", border: "1px solid #ECE8DE", borderRadius: 12, padding: "16px 17px" }}>
                     <div style={{ fontSize: 14.5, fontWeight: 600 }}>{title}</div>
@@ -332,9 +332,9 @@ export default function Home() {
             <h3 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 24, fontWeight: 550, margin: "0 0 18px" }}>Common questions</h3>
             <div style={{ background: "#fff", border: "1px solid #ECE8DE", borderRadius: 14, overflow: "hidden" }}>
               {[
-                ["Is my gallery's data mine?", "Entirely. Your artists, works, prices and collector relationships belong to your gallery and can be exported at any time. Plinth never sells your data or shares it between galleries."],
+                ["Is my gallery's data mine?", "Entirely. Your artists, works, prices and collector relationships belong to your gallery and can be exported at any time. Woza Art never sells your data or shares it between galleries."],
                 ["Can artists see each other's submissions?", "No. Each artist only sees their own work, decisions and messages with your gallery. The full review queue is visible to your team alone."],
-                ["Does it work for a two-person gallery?", "That's exactly who it's built for. Plinth is designed for small contemporary galleries who don't have an operations team — it does that job quietly in the background."],
+                ["Does it work for a two-person gallery?", "That's exactly who it's built for. Woza Art is designed for small contemporary galleries who don't have an operations team — it does that job quietly in the background."],
                 ["How do my artists get started?", "You invite them by email. They set up a simple profile, then submit work and apply to your open calls through the artist studio — no training required."],
               ].map(([q, a], i, arr) => (
                 <details key={q} style={{ borderBottom: i < arr.length - 1 ? "1px solid #F1EEE6" : undefined }}>
@@ -354,7 +354,7 @@ export default function Home() {
       <section style={{ maxWidth: 1180, margin: "0 auto", padding: "clamp(20px,4vw,40px) clamp(20px,5vw,40px)" }}>
         <div style={{ background: "#17150F", color: "#F3EFE7", borderRadius: 18, padding: "clamp(28px,4vw,44px) clamp(24px,4vw,46px)", display: "flex", flexWrap: "wrap" as const, gap: 24, alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ maxWidth: 560 }}>
-            <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" as const, color: "#9A9078" }}>Reviewing Plinth for your gallery?</div>
+            <div style={{ fontSize: 12, letterSpacing: ".14em", textTransform: "uppercase" as const, color: "#9A9078" }}>Reviewing Woza Art for your gallery?</div>
             <h2 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: "clamp(24px,3.4vw,36px)", fontWeight: 500, letterSpacing: "-.02em", lineHeight: 1.12, margin: "12px 0 0", color: "#FBFAF8" }}>See it in your own brand, then tell us what to change.</h2>
             <p style={{ fontSize: 14.5, color: "#B8B2A6", lineHeight: 1.6, margin: "12px 0 0" }}>Add your logo and colours, watch both portals adapt, and walk through the features with a short feedback survey.</p>
           </div>

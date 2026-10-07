@@ -46,7 +46,7 @@ export function renderArtistInviteEmail(params: ArtistInviteEmailParams): string
 </head>
 <body style="margin:0; padding:0; background-color:#f4f2ee; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
   <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
-    ${galleryName} has invited you to join their artist portal on Plinth.
+    ${galleryName} has invited you to join their artist portal on Woza Art.
   </div>
 
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f2ee;">
@@ -81,7 +81,7 @@ export function renderArtistInviteEmail(params: ArtistInviteEmailParams): string
               </p>
 
               <p style="margin:0 0 20px; font-family:Helvetica, Arial, sans-serif; font-size:15px; line-height:1.6; color:#4a453d;">
-                <strong>${inviterName}</strong> from <strong>${galleryName}</strong> has invited you to join their artist portal on Plinth. Once you accept, you'll be able to manage your artwork listings, track consignments, and collaborate directly with the gallery — all in one place.
+                <strong>${inviterName}</strong> from <strong>${galleryName}</strong> has invited you to join their artist portal on Woza Art. Once you accept, you'll be able to manage your artwork listings, track consignments, and collaborate directly with the gallery — all in one place.
               </p>
 
               <p style="margin:0 0 32px; font-family:Helvetica, Arial, sans-serif; font-size:15px; line-height:1.6; color:#4a453d;">
@@ -136,7 +136,7 @@ export function renderArtistInviteEmail(params: ArtistInviteEmailParams): string
           <tr>
             <td align="center" style="padding:24px 16px 0;">
               <p style="margin:0; font-family:Helvetica, Arial, sans-serif; font-size:12px; line-height:1.6; color:#b3a996;">
-                Plinth &middot; Gallery &amp; artist management &middot; <a href="${appUrl}" style="color:#b3a996;">${appUrl.replace(/^https?:\/\//, "")}</a>
+                Woza Art &middot; Gallery &amp; artist management &middot; <a href="${appUrl}" style="color:#b3a996;">${appUrl.replace(/^https?:\/\//, "")}</a>
               </p>
             </td>
           </tr>

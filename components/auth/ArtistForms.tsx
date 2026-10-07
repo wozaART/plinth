@@ -303,7 +303,7 @@ export function ArtistInvite({
           className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
         />
         <span className="text-[12.5px] text-text-muted leading-relaxed">
-          I agree to Plinth&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
+          I agree to Woza Art&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
         </span>
       </label>
 
@@ -570,7 +570,7 @@ export function ArtistExhibitionInvite({
           className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
         />
         <span className="text-[12.5px] text-text-muted leading-relaxed">
-          I agree to Plinth&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
+          I agree to Woza Art&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
         </span>
       </label>
 

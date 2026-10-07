@@ -1,6 +1,6 @@
 # Custom domains
 
-Plinth is a single deployment serving every gallery. `proxy.ts` resolves
+Woza Art is a single deployment serving every gallery. `proxy.ts` resolves
 which gallery a request belongs to from its host header, in order:
 
 1. An exact match against a gallery's `custom_domain` column, only when its

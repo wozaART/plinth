@@ -11,7 +11,7 @@ export default async function SiteNav() {
     <header style={{ position: "sticky", top: 0, zIndex: 30, background: "rgba(251,250,248,.82)", backdropFilter: "blur(10px)", borderBottom: "1px solid #ECE8DE" }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "15px clamp(20px,5vw,40px)", display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap" as const }}>
         <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 8, marginRight: "auto" }}>
-          <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 23, fontWeight: 600, letterSpacing: "-.01em" }}>Plinth</span>
+          <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 23, fontWeight: 600, letterSpacing: "-.01em" }}>Woza Art</span>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#B5623C", transform: "translateY(-2px)", display: "inline-block" }} />
         </Link>
         <nav style={{ display: "flex", alignItems: "center", gap: 26 }}>

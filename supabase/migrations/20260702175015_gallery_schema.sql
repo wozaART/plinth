@@ -1,4 +1,4 @@
--- Plinth gallery schema: multi-tenant tables for exhibitions, submissions,
+-- Woza Art gallery schema: multi-tenant tables for exhibitions, submissions,
 -- catalogue, frameshop, contacts and messages, scoped to `galleries` rows
 -- (one row per deployed portal, matched by NEXT_PUBLIC_GALLERY -> slug).
 
