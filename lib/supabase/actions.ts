@@ -4,7 +4,6 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { galleryConfig } from "@/lib/gallery.config";
 import type { SubmissionStatus, ExhibitionType, ExhibitionStatus } from "@/lib/types";
 
 async function supabaseServer() {
@@ -153,10 +152,10 @@ export async function inviteArtist(email: string, fullName: string) {
   const { data, error } = await supabase.functions.invoke("send-artist-invite", {
     body: {
       galleryId: gallery.id,
-      galleryName: galleryConfig.identity.name,
-      accentColor: galleryConfig.theme.colors.accent,
+      galleryName: gallery.name,
+      accentColor: (gallery.theme_colors as unknown as { accent: string }).accent,
       appUrl,
-      inviterName: user.user_metadata?.full_name || galleryConfig.identity.name,
+      inviterName: user.user_metadata?.full_name || gallery.name,
       artistEmail: email,
       artistName: fullName,
     },
@@ -299,10 +298,10 @@ export async function inviteArtistToExhibition(
   const { data, error } = await supabase.functions.invoke("send-exhibition-invite", {
     body: {
       galleryId: gallery.id,
-      galleryName: galleryConfig.identity.name,
-      accentColor: galleryConfig.theme.colors.accent,
+      galleryName: gallery.name,
+      accentColor: (gallery.theme_colors as unknown as { accent: string }).accent,
       appUrl,
-      inviterName: user.user_metadata?.full_name || galleryConfig.identity.name,
+      inviterName: user.user_metadata?.full_name || gallery.name,
       artistEmail: artist.email,
       artistName: artist.fullName,
       existingArtistId: artist.existingArtistId,

@@ -16,8 +16,8 @@ export default async function StudioPage() {
 
   const [works, openCalls, messages, profile, exhibitionInvites] = await Promise.all([
     getArtistWorks(supabase, user.id, gallery.id),
-    getOpenCalls(supabase, gallery.id),
-    getMessages(supabase, user.id, gallery.id),
+    getOpenCalls(supabase, gallery.id, gallery.name),
+    getMessages(supabase, user.id, gallery.id, gallery.name),
     getArtistProfile(supabase, user.id),
     getExhibitionInvitesForArtist(supabase, user.id, user.email ?? ""),
   ]);

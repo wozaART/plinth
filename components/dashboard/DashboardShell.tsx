@@ -10,7 +10,7 @@ import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
-import { galleryConfig } from "@/lib/gallery.config";
+import { useGalleryConfig } from "@/lib/gallery-context";
 import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, Contact, FrameJob } from "@/lib/types";
 
 type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings";
@@ -29,13 +29,13 @@ interface DashboardShellProps {
 export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs, customDomain, domainStatus }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
-  const { identity } = galleryConfig;
+  const { identity, nav } = useGalleryConfig();
 
   const pendingCount = submissions.filter(s => s.status === "pending").length;
   const ackCount = submissions.filter(s => s.status === "declined" && s.ack === false).length;
 
   const PENDING_COUNT_BY_TAB: Partial<Record<Tab, number>> = { submissions: pendingCount };
-  const NAV = galleryConfig.nav.galleryTabs
+  const NAV = nav.galleryTabs
     .filter(t => t.enabled)
     .map(t => ({ id: t.id as Tab, label: t.label, count: PENDING_COUNT_BY_TAB[t.id as Tab] ?? null }));
 

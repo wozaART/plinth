@@ -1,13 +1,61 @@
 import type { CSSProperties } from "react";
-import type { GalleryConfig } from "./gallery-config.types";
+import type { GalleryRow } from "./supabase/gallery";
+
+interface StatusColorSet {
+  bg: string;
+  fg: string;
+  dot: string;
+}
+
+interface StatusPanelColorSet extends StatusColorSet {
+  panelBg: string;
+  panelBorder: string;
+}
+
+interface GalleryThemeColors {
+  accent: string;
+  accentHover: string;
+  onAccent: string;
+  solid: string;
+  onSolid: string;
+  bgApp: string;
+  bgShell: string;
+  sidebar: string;
+  surface: string;
+  surfaceDark: string;
+  text: string;
+  textBody: string;
+  textSecondary: string;
+  textMuted: string;
+  textSoft: string;
+  textFaint: string;
+  textEyebrow: string;
+  onDark: string;
+  onDarkSoft: string;
+  onDarkFaint: string;
+  border: string;
+  borderStrong: string;
+  borderInput: string;
+  borderChip: string;
+  divider: string;
+  borderDark: string;
+  status: {
+    pending: StatusColorSet;
+    approved: StatusPanelColorSet;
+    declined: StatusPanelColorSet;
+    changes: StatusPanelColorSet;
+  };
+  neutralChipBg: string;
+  neutralChipFg: string;
+}
 
 /**
- * Maps a GalleryConfig's theme colors onto the --pl-* custom properties
+ * Maps a gallery row's theme_colors onto the --pl-* custom properties
  * declared in app/globals.css, so they can be set as inline styles on
  * <html> and override the CSS fallback defaults at paint time.
  */
-export function themeCssVars(config: GalleryConfig): CSSProperties {
-  const c = config.theme.colors;
+export function themeCssVars(gallery: GalleryRow): CSSProperties {
+  const c = gallery.theme_colors as unknown as GalleryThemeColors;
   const vars: Record<string, string> = {
     "--pl-accent": c.accent,
     "--pl-accent-hover": c.accentHover,

@@ -15,10 +15,10 @@ export default async function DashboardPage() {
   const gallery = await getCurrentGallery(supabase);
 
   const [submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs] = await Promise.all([
-    getSubmissions(supabase, gallery.id),
+    getSubmissions(supabase, gallery.id, gallery.currency_code),
     getExhibitionsWithCounts(supabase, gallery.id, true),
     getExhibitionInvitesForGallery(supabase, gallery.id),
-    getCatalogue(supabase, gallery.id),
+    getCatalogue(supabase, gallery.id, gallery.currency_code),
     getContacts(supabase, gallery.id),
     getFrameJobs(supabase, gallery.id),
   ]);

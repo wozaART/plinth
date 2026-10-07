@@ -11,16 +11,14 @@ import type {
   OpenCall,
   StudioMessage,
 } from "@/lib/types";
-import { galleryConfig } from "@/lib/gallery.config";
+import { formatCurrency } from "@/lib/currency";
 import { relativeTime, shortDate } from "@/lib/utils";
 
 type Client = SupabaseClient<Database>;
 
-const { currencyFormat } = galleryConfig.business;
-
 // ── Gallery-side reads ─────────────────────────────────────────────────
 
-export async function getSubmissions(supabase: Client, galleryId: string): Promise<Submission[]> {
+export async function getSubmissions(supabase: Client, galleryId: string, currencyCode: string): Promise<Submission[]> {
   const { data, error } = await supabase
     .from("submissions")
     .select("*, artist_profiles(full_name), exhibitions(title)")
@@ -35,7 +33,7 @@ export async function getSubmissions(supabase: Client, galleryId: string): Promi
     year: s.year ?? 0,
     medium: s.medium ?? "",
     dim: s.dim ?? "",
-    price: currencyFormat(Number(s.price ?? 0)),
+    price: formatCurrency(Number(s.price ?? 0), currencyCode),
     forEx: s.exhibitions?.title ?? "Open submissions",
     date: relativeTime(s.created_at),
     status: s.status as Submission["status"],
@@ -141,7 +139,7 @@ export async function getExhibitionInvitesForArtist(supabase: Client, artistId: 
   }));
 }
 
-export async function getCatalogue(supabase: Client, galleryId: string): Promise<CatalogueWork[]> {
+export async function getCatalogue(supabase: Client, galleryId: string, currencyCode: string): Promise<CatalogueWork[]> {
   const { data, error } = await supabase
     .from("catalogue_works")
     .select("*, artist_profiles(full_name)")
@@ -152,7 +150,7 @@ export async function getCatalogue(supabase: Client, galleryId: string): Promise
   return (data ?? []).map((w) => ({
     title: w.title,
     artist: w.artist_profiles?.full_name ?? "Unknown artist",
-    price: currencyFormat(Number(w.price ?? 0)),
+    price: formatCurrency(Number(w.price ?? 0), currencyCode),
     status: w.status as CatalogueWork["status"],
   }));
 }
@@ -215,7 +213,7 @@ export async function getArtistWorks(supabase: Client, artistId: string, gallery
   }));
 }
 
-export async function getOpenCalls(supabase: Client, galleryId: string): Promise<OpenCall[]> {
+export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string): Promise<OpenCall[]> {
   const { data, error } = await supabase
     .from("exhibitions")
     .select("*")
@@ -227,7 +225,7 @@ export async function getOpenCalls(supabase: Client, galleryId: string): Promise
   return (data ?? []).map((e) => ({
     id: e.id,
     title: e.title,
-    gallery: galleryConfig.identity.name,
+    gallery: galleryName,
     type: e.type as OpenCall["type"],
     deadline: e.submission_deadline ? shortDate(e.submission_deadline) : "Closed",
     focus: e.blurb ?? "",
@@ -239,7 +237,7 @@ export async function getOpenCalls(supabase: Client, galleryId: string): Promise
   }));
 }
 
-export async function getMessages(supabase: Client, artistId: string, galleryId: string): Promise<StudioMessage[]> {
+export async function getMessages(supabase: Client, artistId: string, galleryId: string, galleryName: string): Promise<StudioMessage[]> {
   const { data, error } = await supabase
     .from("messages")
     .select("*")
@@ -250,7 +248,7 @@ export async function getMessages(supabase: Client, artistId: string, galleryId:
 
   return (data ?? []).map((m) => ({
     id: m.id,
-    from: m.sender === "gallery" ? galleryConfig.identity.name : "You",
+    from: m.sender === "gallery" ? galleryName : "You",
     time: relativeTime(m.created_at),
     preview: m.subject,
     body: m.body,

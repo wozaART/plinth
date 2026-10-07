@@ -1,72 +1,66 @@
-# Custom domain runbook (per gallery)
+# Custom domains
 
-Puts a gallery's portal on `platform.<gallery-domain>`. Each gallery is its own build (`NEXT_PUBLIC_GALLERY=<slug>`) and its own Firebase Hosting site, so the steps are repeated per gallery.
+Plinth is a single deployment serving every gallery. `proxy.ts` resolves
+which gallery a request belongs to from its host header, in order:
 
-Gallery-facing steps live in the in-app guide under **Custom domain** (`app/(marketing)/docs/page.tsx`). Keep the two in sync.
+1. An exact match against a gallery's `custom_domain` column, only when its
+   `domain_status` is `'verified'`.
+2. The `<slug>.<apex>` subdomain pattern, where `<apex>` is
+   `NEXT_PUBLIC_PLATFORM_APEX_DOMAIN` and `<slug>` is the gallery's `slug`
+   column.
+3. `DEFAULT_GALLERY_SLUG`, for the bare apex domain, `localhost`, and
+   `*.vercel.app` preview URLs.
 
-Hosting: classic Firebase Hosting for the domain and CDN, with the Next.js server on Cloud Run (or Functions) behind a rewrite. Hosting serves static files only, so the rewrite is required for middleware and Supabase SSR cookies.
+A gallery's full look (colors, fonts, nav tabs, logo, commission copy) lives
+on its `galleries` row, not in a per-gallery build — see the columns added in
+`supabase/migrations/20261008120000_gallery_theming.sql`. There is no
+per-gallery build, deploy target, or hosting site anymore: attaching a domain
+is sufficient on its own.
 
-## Placeholders
+Gallery-facing steps live in the in-app guide under **Custom domain**
+(`app/(marketing)/docs/page.tsx`). Keep the two in sync.
 
-- `<slug>`: gallery slug, matching `lib/galleries/<slug>.config.ts` (e.g. `jvh`).
-- `<gallery-domain>`: the domain the gallery already owns (e.g. `example-gallery.co.za`).
-- `<site-id>`: the Firebase Hosting site ID for this gallery.
+## 1. Attach the domain
 
-## 1. Build config
+A gallery owner does this themselves from **Dashboard → Settings**
+(`components/dashboard/SettingsPanel.tsx`), which calls the server actions in
+`lib/supabase/domain-actions.ts`:
 
-1. Confirm `lib/galleries/<slug>.config.ts` exists. Add it if not.
-2. Add a build script to `package.json` that mirrors `build:jvh`:
-   `"build:<slug>": "NEXT_PUBLIC_GALLERY=<slug> next build"`
-3. Confirm the build runs locally: `npm run build:<slug>`.
+- `connectCustomDomain` — calls `addDomainToProject` (`lib/vercel/domains.ts`)
+  to attach the domain to the single shared Vercel project, stores it on
+  `galleries.custom_domain`, and sets `domain_status = 'pending'`.
+- `refreshDomainStatus` — polls `getDomainStatus` and flips `domain_status` to
+  `'verified'` once Vercel confirms DNS, or `'error'` if misconfigured.
+- `disconnectCustomDomain` — calls `removeDomainFromProject` and clears the
+  row.
 
-## 2. Firebase Hosting site
+No code change or redeploy is needed per gallery — once `domain_status` is
+`'verified'`, `proxy.ts` starts routing that host to the gallery
+immediately.
 
-1. Create the site: `firebase hosting:sites:create <site-id>`.
-2. Add a target for it: `firebase target:apply hosting <gallery-target> <site-id>`.
-3. In `firebase.json`, add a hosting entry for the target. Rewrite all paths to the Cloud Run service that runs the Next.js server:
+## 2. DNS
 
-   ```json
-   {
-     "hosting": [
-       {
-         "target": "<gallery-target>",
-         "rewrites": [
-           { "source": "**", "run": { "serviceId": "<cloud-run-service>", "region": "<region>" } }
-         ]
-       }
-     ]
-   }
-   ```
+`dnsInstructionsFor()` (`lib/vercel/domains.ts`) returns the record the
+gallery needs to add at their registrar: an `A` record to Vercel's anycast IP
+for an apex domain, or a `CNAME` to `cname.vercel-dns.com` for a subdomain.
+Only add the records for the exact domain being attached — never change the
+gallery's existing root or `www` records for anything else.
 
-4. Deploy the server and the static assets for this target. Confirm the exact deploy command against the current Firebase docs before running it.
-
-## 3. DNS
-
-1. In Firebase Hosting, add the custom domain `platform.<gallery-domain>` to the site.
-2. Copy the records Firebase shows (usually a CNAME to the site's Firebase address, plus a TXT record for ownership). **Confirm the record types in the Firebase console; do not copy them from this document.**
-3. Add the records at the gallery's DNS provider. For Squarespace, see the in-app guide (Custom domain → Add the DNS record). Only add the `platform` subdomain records. Never change the root or `www` records.
-4. Wait for the Firebase status to show connected and the certificate to be issued.
-
-## 4. Supabase auth
+## 3. Supabase auth
 
 1. Supabase dashboard → Authentication → URL Configuration.
-2. Add to **Redirect URLs**: `https://platform.<gallery-domain>/**` (or the exact `/auth/callback` path used by `app/auth/callback/route.ts`).
-3. Do **not** change the project-wide Site URL unless every gallery is moving. A per-gallery Site URL is not supported by a shared Supabase project; invite and reset emails use the Site URL, so check which one each email template uses before changing it.
-4. Note: `supabase/config.toml` holds the local values only (`site_url`, `additional_redirect_urls`). Production values are set in the dashboard, not in this file.
+2. Add to **Redirect URLs**: `https://<gallery-domain>/**` (or the exact
+   `/auth/callback` path used by `app/auth/callback/route.ts`).
+3. Do **not** change the project-wide Site URL unless every gallery is
+   moving — it's shared across all tenants in this one Supabase project.
+4. `supabase/config.toml` holds local values only (`site_url`,
+   `additional_redirect_urls`). Production values are set in the dashboard.
 
-## 5. Smoke test
+## 4. Smoke test
 
-- [ ] `https://platform.<gallery-domain>` loads with a valid certificate.
+- [ ] The domain loads with a valid certificate.
+- [ ] `galleries.domain_status` for that row reads `'verified'`.
 - [ ] Sign-in works and redirects to `/dashboard` or `/studio`.
-- [ ] A test invitation email's link opens `platform.<gallery-domain>`.
-- [ ] The main Squarespace website still loads unchanged.
-
-## Troubleshooting
-
-- **Certificate pending:** DNS not yet visible. Check the records with `dig +short CNAME platform.<gallery-domain>` and wait.
-- **Sign-in redirects to the wrong host:** the redirect URL is missing from Supabase, or the invite email uses the Site URL.
-- **Blank page or 404 on subpaths:** the rewrite is missing or points at the wrong Cloud Run service.
-
-## Not covered here
-
-- Runtime host-based gallery resolution, automated DNS, and Squarespace-side changes. See `~/.claude/plans/i-want-to-build-smooth-key-alternatives.md`.
+- [ ] The gallery's own theme (colors, fonts, nav tabs) renders — confirms
+      `proxy.ts` resolved the correct gallery row, not the platform
+      default.
