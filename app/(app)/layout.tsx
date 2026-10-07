@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { Cinzel, Poppins } from "next/font/google";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { buildGalleryRuntimeConfig, GalleryConfigProvider } from "@/lib/gallery-context";
+import { GalleryConfigProvider } from "@/lib/gallery-context";
+import { buildGalleryRuntimeConfig } from "@/lib/gallery-runtime-config";
 import { themeCssVars } from "@/lib/theme-css";
 
 // Gallery-specific display/body fonts, scoped to the portal route group only —
