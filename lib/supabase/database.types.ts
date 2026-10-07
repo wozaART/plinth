@@ -424,7 +424,9 @@ export type Database = {
           city: string | null
           commission_rate: number
           created_at: string
+          custom_domain: string | null
           delivery_address: string | null
+          domain_status: string
           drop_off_pass_prefix: string | null
           id: string
           name: string
@@ -435,7 +437,9 @@ export type Database = {
           city?: string | null
           commission_rate?: number
           created_at?: string
+          custom_domain?: string | null
           delivery_address?: string | null
+          domain_status?: string
           drop_off_pass_prefix?: string | null
           id?: string
           name: string
@@ -446,7 +450,9 @@ export type Database = {
           city?: string | null
           commission_rate?: number
           created_at?: string
+          custom_domain?: string | null
           delivery_address?: string | null
+          domain_status?: string
           drop_off_pass_prefix?: string | null
           id?: string
           name?: string

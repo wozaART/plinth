@@ -9,10 +9,11 @@ import ExhibitionsPanel from "@/components/dashboard/ExhibitionsPanel";
 import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
+import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import { galleryConfig } from "@/lib/gallery.config";
 import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, Contact, FrameJob } from "@/lib/types";
 
-type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop";
+type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings";
 
 interface DashboardShellProps {
   submissions: Submission[];
@@ -21,9 +22,11 @@ interface DashboardShellProps {
   catalogue: CatalogueWork[];
   contacts: Contact[];
   frameJobs: FrameJob[];
+  customDomain: string | null;
+  domainStatus: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs, customDomain, domainStatus }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity } = galleryConfig;
@@ -73,6 +76,9 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         </nav>
 
         <div style={{ padding: "10px 10px 0", borderTop: "1px solid var(--pl-border)" }}>
+          <button onClick={() => setTab("settings")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: tab === "settings" ? "var(--pl-text)" : "var(--pl-text-muted)", background: tab === "settings" ? "var(--pl-surface)" : "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+            <span style={{ fontSize: 14 }}>⚙</span> Settings
+          </button>
           <Link href="/docs" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "var(--pl-text-muted)" }}>
             <span style={{ fontSize: 14 }}>📖</span> Documentation
           </Link>
@@ -103,6 +109,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         {tab === "catalogue" && <CataloguePanel data={catalogue} />}
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
+        {tab === "settings" && <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />}
       </main>
     </div>
   );
