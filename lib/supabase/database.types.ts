@@ -181,29 +181,67 @@ export type Database = {
       consignment_terms_responses: {
         Row: {
           answers: Json
+          contact_email: string | null
           contact_name: string
           contact_role: string | null
           created_at: string
           gallery_name: string
           id: string
+          status: string
         }
         Insert: {
           answers: Json
+          contact_email?: string | null
           contact_name: string
           contact_role?: string | null
           created_at?: string
           gallery_name: string
           id?: string
+          status?: string
         }
         Update: {
           answers?: Json
+          contact_email?: string | null
           contact_name?: string
           contact_role?: string | null
           created_at?: string
           gallery_name?: string
           id?: string
+          status?: string
         }
         Relationships: []
+      }
+      consignment_terms_followups: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          message: string
+          response_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          message: string
+          response_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          message?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consignment_terms_followups_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "consignment_terms_responses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contacts: {
         Row: {
@@ -723,6 +761,7 @@ export type Database = {
           status: string
         }[]
       }
+      is_platform_owner: { Args: Record<PropertyKey, never>; Returns: boolean }
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
     }
     Enums: {

@@ -16,6 +16,42 @@ import { relativeTime, shortDate } from "@/lib/utils";
 
 type Client = SupabaseClient<Database>;
 
+// ── Platform-owner reads (not gallery-scoped) ───────────────────────────
+
+export interface ConsignmentTermsResponse {
+  id: string;
+  createdAt: string;
+  galleryName: string;
+  contactName: string;
+  contactRole: string | null;
+  contactEmail: string | null;
+  status: string;
+  answers: Record<string, string>;
+  followups: { id: string; message: string; createdAt: string }[];
+}
+
+export async function getConsignmentTermsResponses(supabase: Client): Promise<ConsignmentTermsResponse[]> {
+  const { data, error } = await supabase
+    .from("consignment_terms_responses")
+    .select("*, consignment_terms_followups(id, message, created_at)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    createdAt: r.created_at,
+    galleryName: r.gallery_name,
+    contactName: r.contact_name,
+    contactRole: r.contact_role,
+    contactEmail: r.contact_email,
+    status: r.status,
+    answers: (r.answers ?? {}) as Record<string, string>,
+    followups: (r.consignment_terms_followups ?? [])
+      .map((f) => ({ id: f.id, message: f.message, createdAt: f.created_at }))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  }));
+}
+
 // ── Gallery-side reads ─────────────────────────────────────────────────
 
 export async function getSubmissions(supabase: Client, galleryId: string, currencyCode: string): Promise<Submission[]> {
