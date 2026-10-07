@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META } from "@/lib/constants";
-import { galleryConfig } from "@/lib/gallery.config";
+import { useGalleryConfig } from "@/lib/gallery-context";
+import { renderCommissionNote } from "@/lib/gallery-runtime-config";
 import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite } from "@/lib/supabase/actions";
 import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
@@ -32,8 +33,6 @@ interface StudioShellProps {
   messages: StudioMessage[];
   profile: ProfileData;
 }
-
-const STUDIO_NAV = galleryConfig.nav.studioTabs.filter(t => t.enabled);
 
 function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   const [open, setOpen] = useState(false);
@@ -64,7 +63,7 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   );
 }
 
-function SubmitDrawer({ openCalls, onClose, onSubmit }: { openCalls: OpenCall[]; onClose: () => void; onSubmit: (formData: FormData) => void }) {
+function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; onClose: () => void; onSubmit: (formData: FormData) => void }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({ title: "", medium: "", dim: "", year: "", price: "", exhibitionId: openCalls.find(o => o.accepting)?.id ?? "", statement: "" });
   const [image, setImage] = useState<File | null>(null);
@@ -157,7 +156,7 @@ function SubmitDrawer({ openCalls, onClose, onSubmit }: { openCalls: OpenCall[];
                 <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="e.g. R 18 000" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
               </label>
               <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
-                {galleryConfig.copy.submitCommissionNote(Math.round(galleryConfig.business.commissionRate * 100))}
+                {commissionNote}
               </div>
             </div>
           )}
@@ -292,7 +291,10 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
     setTimeout(() => setToast(null), 3500);
   }
 
-  const { identity } = galleryConfig;
+  const gallery = useGalleryConfig();
+  const { identity, business, copy } = gallery;
+  const studioNav = gallery.nav.studioTabs.filter(t => t.enabled);
+  const commissionNote = renderCommissionNote(copy.submitCommissionNoteTemplate, Math.round(business.commissionRate * 100));
 
   return (
     <div style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
@@ -317,7 +319,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </div>
 
         <nav style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
-          {STUDIO_NAV.map(item => (
+          {studioNav.map(item => (
             <button key={item.id} onClick={() => setTab(item.id as StudioTab)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", borderRadius: 9, border: "none", cursor: "pointer", background: tab === item.id ? "rgba(255,255,255,.08)" : "transparent", color: tab === item.id ? "var(--pl-on-dark)" : "var(--pl-on-dark-faint)", fontSize: 14, fontWeight: tab === item.id ? 600 : 400, textAlign: "left" }}>
               {item.label}
               {item.id === "messages" && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--pl-accent)", display: "inline-block" }} />}
@@ -416,7 +418,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                           <p style={{ fontSize: 13, color: "var(--pl-text-secondary)", lineHeight: 1.6, margin: 0 }}>{w.note}</p>
                           {w.status === "approved" && (
                             <div style={{ marginTop: 11, display: "inline-flex", alignItems: "center", gap: 6, background: "var(--pl-approved-panel-bg)", color: "var(--pl-approved-fg)", padding: "7px 12px", borderRadius: 9, fontSize: 12, fontWeight: 600 }}>
-                              📋 Drop-off pass issued · {galleryConfig.business.dropOffPassPrefix}14
+                              📋 Drop-off pass issued · {business.dropOffPassPrefix}14
                             </div>
                           )}
                           {w.status === "declined" && w.ack === false && (
@@ -506,7 +508,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                 <div key={msg.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 13, padding: "16px 18px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--pl-solid)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--pl-on-solid)" }}>{galleryConfig.identity.shortName.slice(0, 2).toUpperCase()}</div>
+                      <div style={{ width: 30, height: 30, borderRadius: "50%", background: "var(--pl-solid)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "var(--pl-on-solid)" }}>{identity.shortName.slice(0, 2).toUpperCase()}</div>
                       <div style={{ fontSize: 13.5, fontWeight: 600 }}>{msg.from}</div>
                     </div>
                     <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)" }}>{msg.time}</div>
@@ -522,7 +524,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </div>
       </main>
 
-      {showSubmit && <SubmitDrawer openCalls={openCalls} onClose={() => setShowSubmit(false)} onSubmit={handleSubmitWork} />}
+      {showSubmit && <SubmitDrawer openCalls={openCalls} commissionNote={commissionNote} onClose={() => setShowSubmit(false)} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>

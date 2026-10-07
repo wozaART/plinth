@@ -1,7 +1,4 @@
 import type { SubmissionStatus } from "./types";
-import { galleryConfig } from "./gallery.config";
-
-const statusColors = galleryConfig.theme.colors.status;
 
 export const ARTWORK_GRADIENTS = [
   "radial-gradient(circle at 72% 30%, #E9E1D2 0 19%, rgba(233,225,210,0) 19.5%), linear-gradient(155deg,#6E2B2B,#532020)",
@@ -20,19 +17,23 @@ export const AVATAR_COLORS = [
   "#2A2723", "#6E2B2B", "#4A5560", "#6E7355", "#34406A", "#B5623C",
 ];
 
+// Status colors reference the --pl-* custom properties that lib/theme-css.ts
+// sets per-gallery at paint time, rather than a resolved hex value baked in
+// at module load — these consumers only ever use bg/fg/dot as inline style
+// values, never for comparisons.
 export const STATUS_META: Record<SubmissionStatus, { label: string; bg: string; fg: string; dot: string }> = {
-  pending:  { label: "Pending review",    bg: statusColors.pending.bg,  fg: statusColors.pending.fg,  dot: statusColors.pending.dot },
-  approved: { label: "Approved",          bg: statusColors.approved.bg, fg: statusColors.approved.fg, dot: statusColors.approved.dot },
-  declined: { label: "Declined",          bg: statusColors.declined.bg, fg: statusColors.declined.fg, dot: statusColors.declined.dot },
-  changes:  { label: "Changes requested", bg: statusColors.changes.bg,  fg: statusColors.changes.fg,  dot: statusColors.changes.dot },
+  pending:  { label: "Pending review",    bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)",  dot: "var(--pl-pending-dot)" },
+  approved: { label: "Approved",          bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)", dot: "var(--pl-approved-dot)" },
+  declined: { label: "Declined",          bg: "var(--pl-declined-bg)", fg: "var(--pl-declined-fg)", dot: "var(--pl-declined-dot)" },
+  changes:  { label: "Changes requested", bg: "var(--pl-changes-bg)",  fg: "var(--pl-changes-fg)",  dot: "var(--pl-changes-dot)" },
 };
 
 export const EX_STATUS_META: Record<string, { label: string; bg: string; fg: string }> = {
-  open:     { label: "Open call",    bg: statusColors.approved.bg, fg: statusColors.approved.fg },
-  planning: { label: "Planning",     bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
-  hanging:  { label: "Hanging now",  bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
-  closed:   { label: "Closed",       bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
-  archived: { label: "Archived",     bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
+  open:     { label: "Open call",    bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)" },
+  planning: { label: "Planning",     bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },
+  hanging:  { label: "Hanging now",  bg: "var(--pl-changes-bg)",  fg: "var(--pl-changes-fg)" },
+  closed:   { label: "Closed",       bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
+  archived: { label: "Archived",     bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
 };
 
 export const EX_TYPE_META: Record<string, string> = {
@@ -41,14 +42,14 @@ export const EX_TYPE_META: Record<string, string> = {
 };
 
 export const CAT_STATUS_META: Record<string, { bg: string; fg: string }> = {
-  available: { bg: galleryConfig.theme.colors.neutralChipBg, fg: galleryConfig.theme.colors.neutralChipFg },
-  sold:      { bg: statusColors.approved.bg, fg: statusColors.approved.fg },
-  reserved:  { bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
-  "on loan": { bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
+  available: { bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
+  sold:      { bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)" },
+  reserved:  { bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },
+  "on loan": { bg: "var(--pl-changes-bg)",  fg: "var(--pl-changes-fg)" },
 };
 
 export const FRAME_STAGE_META: Record<string, { label: string; bg: string; fg: string }> = {
-  queued:   { label: "Awaiting framing", bg: statusColors.pending.bg,  fg: statusColors.pending.fg },
-  building: { label: "In the frameshop", bg: statusColors.changes.bg,  fg: statusColors.changes.fg },
-  ready:    { label: "Framed & ready",   bg: statusColors.approved.bg, fg: statusColors.approved.fg },
+  queued:   { label: "Awaiting framing", bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },
+  building: { label: "In the frameshop", bg: "var(--pl-changes-bg)",  fg: "var(--pl-changes-fg)" },
+  ready:    { label: "Framed & ready",   bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)" },
 };

@@ -451,40 +451,82 @@ export type Database = {
           city: string | null
           commission_rate: number
           created_at: string
+          currency_code: string
           custom_domain: string | null
           delivery_address: string | null
           domain_status: string
           drop_off_pass_prefix: string | null
+          font_body: Json
+          font_display: Json
+          font_mono: Json | null
+          gallery_tabs: Json
           id: string
+          logo_image_url: string | null
+          logo_wordmark_primary: string | null
+          logo_wordmark_secondary: string | null
           name: string
           owner_id: string
+          short_name: string | null
           slug: string
+          studio_tabs: Json
+          submit_commission_note_template: string
+          tagline: string | null
+          theme_colors: Json
+          theme_mode: string
         }
         Insert: {
           city?: string | null
           commission_rate?: number
           created_at?: string
+          currency_code?: string
           custom_domain?: string | null
           delivery_address?: string | null
           domain_status?: string
           drop_off_pass_prefix?: string | null
+          font_body?: Json
+          font_display?: Json
+          font_mono?: Json | null
+          gallery_tabs?: Json
           id?: string
+          logo_image_url?: string | null
+          logo_wordmark_primary?: string | null
+          logo_wordmark_secondary?: string | null
           name: string
           owner_id: string
+          short_name?: string | null
           slug: string
+          studio_tabs?: Json
+          submit_commission_note_template?: string
+          tagline?: string | null
+          theme_colors?: Json
+          theme_mode?: string
         }
         Update: {
           city?: string | null
           commission_rate?: number
           created_at?: string
+          currency_code?: string
           custom_domain?: string | null
           delivery_address?: string | null
           domain_status?: string
           drop_off_pass_prefix?: string | null
+          font_body?: Json
+          font_display?: Json
+          font_mono?: Json | null
+          gallery_tabs?: Json
           id?: string
+          logo_image_url?: string | null
+          logo_wordmark_primary?: string | null
+          logo_wordmark_secondary?: string | null
           name?: string
           owner_id?: string
+          short_name?: string | null
           slug?: string
+          studio_tabs?: Json
+          submit_commission_note_template?: string
+          tagline?: string | null
+          theme_colors?: Json
+          theme_mode?: string
         }
         Relationships: []
       }

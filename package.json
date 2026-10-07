@@ -4,9 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:jvh": "NEXT_PUBLIC_GALLERY=jvh next dev -p 3010",
-    "dev:sable": "NEXT_PUBLIC_GALLERY=sable next dev -p 3010",
-    "build:jvh": "NEXT_PUBLIC_GALLERY=jvh next build",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
