@@ -178,6 +178,33 @@ export type Database = {
           },
         ]
       }
+      consignment_terms_responses: {
+        Row: {
+          answers: Json
+          contact_name: string
+          contact_role: string | null
+          created_at: string
+          gallery_name: string
+          id: string
+        }
+        Insert: {
+          answers: Json
+          contact_name: string
+          contact_role?: string | null
+          created_at?: string
+          gallery_name: string
+          id?: string
+        }
+        Update: {
+          answers?: Json
+          contact_name?: string
+          contact_role?: string | null
+          created_at?: string
+          gallery_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
       contacts: {
         Row: {
           created_at: string
