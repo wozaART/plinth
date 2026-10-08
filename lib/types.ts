@@ -56,11 +56,27 @@ export interface ExhibitionInvite {
   respondedAt: string | null;
 }
 
+export type CatalogueStatus = "available" | "sold" | "reserved" | "on loan";
+
 export interface CatalogueWork {
+  id: string;
   title: string;
+  artistId: string;
   artist: string;
   price: string;
-  status: "available" | "sold" | "reserved" | "on loan";
+  priceRaw: number | null;
+  agreedPrice: string;
+  agreedPriceRaw: number | null;
+  commissionRatePct: number | null;
+  status: CatalogueStatus;
+  consignedDate: string;
+  consignedDateRaw: string | null;
+  submissionId: string | null;
+}
+
+export interface GalleryArtist {
+  id: string;
+  name: string;
 }
 
 export interface Contact {

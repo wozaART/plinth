@@ -4,15 +4,17 @@ import { useState } from "react";
 import ReviewDrawer from "./ReviewDrawer";
 import { STATUS_META } from "@/lib/constants";
 import { artworkBg } from "@/lib/utils";
-import { decideSubmission } from "@/lib/supabase/actions";
+import { decideSubmission, acceptSubmissionIntoCatalogue } from "@/lib/supabase/actions";
 import type { Submission, SubmissionStatus } from "@/lib/types";
 
-export default function SubmissionsPanel({ initialData }: { initialData: Submission[] }) {
+export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }: { initialData: Submission[]; catalogueSubmissionIds: string[] }) {
   const [submissions, setSubmissions] = useState(initialData);
   const [filter, setFilter] = useState<"all" | SubmissionStatus>("all");
   const [active, setActive] = useState<Submission | null>(null);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [toast, setToast] = useState<string | null>(null);
+  const [acceptedIds, setAcceptedIds] = useState(new Set(catalogueSubmissionIds));
+  const [accepting, setAccepting] = useState(false);
 
   const filtered = filter === "all" ? submissions : submissions.filter(s => s.status === filter);
 
@@ -29,6 +31,19 @@ export default function SubmissionsPanel({ initialData }: { initialData: Submiss
     );
     setTimeout(() => setToast(null), 3800);
     void decideSubmission(id, status, note);
+  }
+
+  async function acceptIntoCatalogue(id: string) {
+    setAccepting(true);
+    try {
+      await acceptSubmissionIntoCatalogue(id);
+      setAcceptedIds(prev => new Set(prev).add(id));
+      setToast("Added to the catalogue.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Couldn't add that work to the catalogue — try again.");
+    }
+    setAccepting(false);
+    setTimeout(() => setToast(null), 3800);
   }
 
   return (
@@ -86,6 +101,9 @@ export default function SubmissionsPanel({ initialData }: { initialData: Submiss
           artworkIdx={activeIdx}
           onClose={() => setActive(null)}
           onDecide={decide}
+          inCatalogue={acceptedIds.has(active.id)}
+          accepting={accepting}
+          onAcceptIntoCatalogue={acceptIntoCatalogue}
         />
       )}
 

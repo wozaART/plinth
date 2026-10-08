@@ -10,6 +10,7 @@ import type {
   MyWork,
   OpenCall,
   StudioMessage,
+  GalleryArtist,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { relativeTime, shortDate } from "@/lib/utils";
@@ -175,6 +176,28 @@ export async function getExhibitionInvitesForArtist(supabase: Client, artistId: 
   }));
 }
 
+type CatalogueRow = Database["public"]["Tables"]["catalogue_works"]["Row"] & {
+  artist_profiles: { full_name: string | null } | null;
+};
+
+function mapCatalogueRow(w: CatalogueRow, currencyCode: string): CatalogueWork {
+  return {
+    id: w.id,
+    title: w.title,
+    artistId: w.artist_id,
+    artist: w.artist_profiles?.full_name ?? "Unknown artist",
+    price: w.price != null ? formatCurrency(Number(w.price), currencyCode) : "—",
+    priceRaw: w.price,
+    agreedPrice: w.agreed_price != null ? formatCurrency(Number(w.agreed_price), currencyCode) : "—",
+    agreedPriceRaw: w.agreed_price,
+    commissionRatePct: w.commission_rate != null ? Math.round(Number(w.commission_rate) * 100) : null,
+    status: w.status as CatalogueWork["status"],
+    consignedDate: w.consigned_at ? shortDate(w.consigned_at) : "—",
+    consignedDateRaw: w.consigned_at,
+    submissionId: w.submission_id,
+  };
+}
+
 export async function getCatalogue(supabase: Client, galleryId: string, currencyCode: string): Promise<CatalogueWork[]> {
   const { data, error } = await supabase
     .from("catalogue_works")
@@ -183,12 +206,21 @@ export async function getCatalogue(supabase: Client, galleryId: string, currency
     .order("created_at", { ascending: false });
   if (error) throw error;
 
-  return (data ?? []).map((w) => ({
-    title: w.title,
-    artist: w.artist_profiles?.full_name ?? "Unknown artist",
-    price: formatCurrency(Number(w.price ?? 0), currencyCode),
-    status: w.status as CatalogueWork["status"],
-  }));
+  return (data ?? []).map((w) => mapCatalogueRow(w, currencyCode));
+}
+
+export async function getGalleryArtists(supabase: Client, galleryId: string): Promise<GalleryArtist[]> {
+  const { data, error } = await supabase
+    .from("submissions")
+    .select("artist_id, artist_profiles(full_name)")
+    .eq("gallery_id", galleryId);
+  if (error) throw error;
+
+  const seen = new Map<string, string>();
+  for (const s of data ?? []) {
+    if (!seen.has(s.artist_id)) seen.set(s.artist_id, s.artist_profiles?.full_name ?? "Unknown artist");
+  }
+  return Array.from(seen, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function getFrameJobs(supabase: Client, galleryId: string): Promise<FrameJob[]> {
@@ -247,6 +279,18 @@ export async function getArtistWorks(supabase: Client, artistId: string, gallery
     note: s.note || undefined,
     ack: s.ack ?? undefined,
   }));
+}
+
+export async function getArtistCatalogue(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<CatalogueWork[]> {
+  const { data, error } = await supabase
+    .from("catalogue_works")
+    .select("*, artist_profiles(full_name)")
+    .eq("artist_id", artistId)
+    .eq("gallery_id", galleryId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((w) => mapCatalogueRow(w, currencyCode));
 }
 
 export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string): Promise<OpenCall[]> {

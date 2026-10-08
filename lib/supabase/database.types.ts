@@ -148,7 +148,10 @@ export type Database = {
       }
       catalogue_works: {
         Row: {
+          agreed_price: number | null
           artist_id: string
+          commission_rate: number | null
+          consigned_at: string | null
           created_at: string
           gallery_id: string
           id: string
@@ -158,7 +161,10 @@ export type Database = {
           title: string
         }
         Insert: {
+          agreed_price?: number | null
           artist_id: string
+          commission_rate?: number | null
+          consigned_at?: string | null
           created_at?: string
           gallery_id: string
           id?: string
@@ -168,7 +174,10 @@ export type Database = {
           title: string
         }
         Update: {
+          agreed_price?: number | null
           artist_id?: string
+          commission_rate?: number | null
+          consigned_at?: string | null
           created_at?: string
           gallery_id?: string
           id?: string
@@ -195,7 +204,7 @@ export type Database = {
           {
             foreignKeyName: "catalogue_works_submission_id_fkey"
             columns: ["submission_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "submissions"
             referencedColumns: ["id"]
           },
@@ -795,6 +804,7 @@ export type Database = {
       }
       is_platform_owner: { Args: Record<PropertyKey, never>; Returns: boolean }
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
+      submissions_update_artist_ack: { Args: { p_submission_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
