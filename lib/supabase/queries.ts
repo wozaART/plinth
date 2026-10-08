@@ -13,6 +13,8 @@ import type {
   GalleryArtist,
   Sale,
   ArtistSale,
+  Payout,
+  ArtistPayout,
   AuditLogEntry,
   AuditAction,
 } from "@/lib/types";
@@ -245,6 +247,34 @@ export async function getSales(supabase: Client, galleryId: string, currencyCode
   }));
 }
 
+export async function getPayouts(supabase: Client, galleryId: string, currencyCode: string): Promise<Payout[]> {
+  const { data, error } = await supabase
+    .from("payouts")
+    .select("*, sales(payout_due_at, catalogue_works(title)), artist_profiles(full_name)")
+    .eq("gallery_id", galleryId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    saleId: p.sale_id,
+    artistId: p.artist_id,
+    artist: p.artist_profiles?.full_name ?? "Unknown artist",
+    workTitle: p.sales?.catalogue_works?.title ?? "Untitled work",
+    amount: formatCurrency(p.amount_cents / 100, currencyCode),
+    amountCents: p.amount_cents,
+    status: p.status as Payout["status"],
+    dueDate: p.sales?.payout_due_at ? shortDate(p.sales.payout_due_at) : "—",
+    dueDateRaw: p.sales?.payout_due_at ?? null,
+    paidDate: p.paid_at ? shortDate(p.paid_at) : "—",
+    paidDateRaw: p.paid_at,
+    paymentReference: p.payment_reference,
+    hasProofOfPayment: p.proof_of_payment_path != null,
+    acknowledgedDate: p.acknowledged_at ? shortDate(p.acknowledged_at) : "—",
+    acknowledgedDateRaw: p.acknowledged_at,
+  }));
+}
+
 export async function getGalleryArtists(supabase: Client, galleryId: string): Promise<GalleryArtist[]> {
   const { data, error } = await supabase
     .from("submissions")
@@ -386,6 +416,28 @@ export async function getArtistSales(supabase: Client, artistId: string, gallery
   }));
 }
 
+export async function getArtistPayouts(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<ArtistPayout[]> {
+  const { data, error } = await supabase
+    .from("payouts")
+    .select("*, sales(payout_due_at, catalogue_works(title))")
+    .eq("artist_id", artistId)
+    .eq("gallery_id", galleryId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    saleId: p.sale_id,
+    workTitle: p.sales?.catalogue_works?.title ?? "Untitled work",
+    amount: formatCurrency(p.amount_cents / 100, currencyCode),
+    status: p.status as ArtistPayout["status"],
+    dueDate: p.sales?.payout_due_at ? shortDate(p.sales.payout_due_at) : "—",
+    paidDate: p.paid_at ? shortDate(p.paid_at) : "—",
+    paymentReference: p.payment_reference,
+    hasProofOfPayment: p.proof_of_payment_path != null,
+  }));
+}
+
 export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string): Promise<OpenCall[]> {
   const { data, error } = await supabase
     .from("exhibitions")
@@ -442,4 +494,15 @@ export async function getArtistBankDetails(supabase: Client, artistId: string): 
   const { data, error } = await supabase.from("artist_bank_details").select("*").eq("id", artistId).single();
   if (error) return null;
   return data;
+}
+
+export async function getPayoutProofUrl(supabase: Client, payoutId: string): Promise<string | null> {
+  const { data: payout, error } = await supabase.from("payouts").select("proof_of_payment_path").eq("id", payoutId).single();
+  if (error || !payout?.proof_of_payment_path) return null;
+
+  const { data, error: signError } = await supabase.storage
+    .from("payout-proofs")
+    .createSignedUrl(payout.proof_of_payment_path, 60);
+  if (signError) return null;
+  return data.signedUrl;
 }

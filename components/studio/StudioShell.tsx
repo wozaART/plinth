@@ -4,14 +4,14 @@ import { useState, useTransition, type CSSProperties, type ChangeEvent } from "r
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, avatarBg, initials } from "@/lib/utils";
-import { EX_TYPE_META, STATUS_META, CAT_STATUS_META } from "@/lib/constants";
+import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
-import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite } from "@/lib/supabase/actions";
-import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork } from "@/lib/types";
+import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl } from "@/lib/supabase/actions";
+import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork, ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
-type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "catalogue";
+type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "catalogue" | "earnings";
 
 interface ProfileData {
   firstName: string;
@@ -29,10 +29,40 @@ interface StudioShellProps {
   artistCity: string;
   works: MyWork[];
   catalogueWorks: CatalogueWork[];
+  payouts: ArtistPayout[];
   openCalls: OpenCall[];
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
   profile: ProfileData;
+}
+
+function PayoutBanner({ payout, onAcknowledge, onQuery }: { payout: ArtistPayout; onAcknowledge: () => void; onQuery: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 11, color: "var(--pl-pending-dot)", fontWeight: 600, letterSpacing: ".04em" }}>NEEDS YOUR ATTENTION</div>
+          <div style={{ fontSize: 15.5, fontWeight: 600, marginTop: 4 }}>A payout of {payout.amount} for &ldquo;{payout.workTitle}&rdquo; has been paid</div>
+          <div style={{ fontSize: 13, color: "var(--pl-on-dark-soft)", marginTop: 4, lineHeight: 1.5 }}>
+            {payout.paymentReference ? `Reference: ${payout.paymentReference}` : "Please confirm you've received this payment."}
+          </div>
+          {!open && <button onClick={() => setOpen(true)} style={{ fontSize: 12, color: "var(--pl-on-dark-soft)", background: "none", border: "none", cursor: "pointer", marginTop: 4, padding: 0 }}>Review this payout →</button>}
+        </div>
+        <span style={{ fontSize: 11, fontWeight: 600, padding: "5px 11px", borderRadius: 20, background: "var(--pl-pending-bg)", color: "var(--pl-pending-fg)", flexShrink: 0 }}>Paid</span>
+      </div>
+      {open && (
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--pl-border-dark)", display: "flex", gap: 10 }}>
+          <button onClick={onAcknowledge} style={{ background: "var(--pl-on-dark)", color: "var(--pl-surface-dark)", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+            I&apos;ve received this payment
+          </button>
+          <button onClick={onQuery} style={{ background: "none", border: "1px solid var(--pl-border-dark)", color: "var(--pl-on-dark-soft)", borderRadius: 10, padding: "12px 20px", fontSize: 14, cursor: "pointer" }}>
+            Something&apos;s not right
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
@@ -245,14 +275,40 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
+  const [payouts, setPayouts] = useState(initialPayouts);
   const [invites, setInvites] = useState(initialInvites);
   const [showSubmit, setShowSubmit] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [, startInviteTransition] = useTransition();
+
+  const payoutNeedingAck = payouts.find(p => p.status === "paid");
+
+  function handleAcknowledgePayout(id: string) {
+    setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: "acknowledged" } : p));
+    setToast("Payout acknowledged.");
+    setTimeout(() => setToast(null), 3000);
+    void acknowledgePayout(id);
+  }
+
+  function handleQueryPayout(id: string) {
+    setPayouts(prev => prev.map(p => p.id === id ? { ...p, status: "queried" } : p));
+    setToast("We've flagged this payout for the gallery to review.");
+    setTimeout(() => setToast(null), 3500);
+    void queryPayout(id);
+  }
+
+  async function viewProofOfPayment(id: string) {
+    const url = await getPayoutProofSignedUrl(id);
+    if (url) window.open(url, "_blank");
+    else {
+      setToast("No proof of payment has been uploaded for this payout.");
+      setTimeout(() => setToast(null), 3500);
+    }
+  }
 
   function respondInvite(id: string, response: "accepted" | "declined") {
     setInvites(prev => prev.map(i => (i.id === id ? { ...i, status: response, respondedAt: new Date().toISOString() } : i)));
@@ -355,6 +411,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           {tab === "overview" && (
             <div>
               {unacknowledged && <BlockingBanner work={unacknowledged} onAck={ackWork} />}
+              {payoutNeedingAck && <PayoutBanner payout={payoutNeedingAck} onAcknowledge={() => handleAcknowledgePayout(payoutNeedingAck.id)} onQuery={() => handleQueryPayout(payoutNeedingAck.id)} />}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 14, marginBottom: 28 }}>
                 {[
                   { label: "Submitted", value: works.length },
@@ -537,6 +594,48 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)", marginTop: 3 }}>Consigned {w.consignedDate}</div>
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0, textTransform: "capitalize" }}>{w.status}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {tab === "earnings" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {payouts.length === 0 && (
+                <div style={{ fontSize: 13.5, color: "var(--pl-text-soft)" }}>No payouts yet — these show up here once the gallery records a sale of your work.</div>
+              )}
+              {payouts.map((p) => {
+                const meta = PAYOUT_STATUS_META[p.status];
+                return (
+                  <div key={p.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 13, padding: "15px 17px" }}>
+                    <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600 }}>{p.workTitle}</div>
+                        <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", marginTop: 2 }}>{p.amount} · Due {p.dueDate}</div>
+                        {p.status !== "due" && <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)", marginTop: 3 }}>Paid {p.paidDate}{p.paymentReference ? ` · Ref ${p.paymentReference}` : ""}</div>}
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0 }}>{meta.label}</span>
+                    </div>
+                    {(p.status === "paid" || p.hasProofOfPayment) && (
+                      <div style={{ display: "flex", gap: 10, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--pl-divider)" }}>
+                        {p.hasProofOfPayment && (
+                          <button onClick={() => viewProofOfPayment(p.id)} style={{ fontSize: 12.5, padding: "8px 14px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, color: "var(--pl-text-secondary)", cursor: "pointer" }}>
+                            View proof of payment
+                          </button>
+                        )}
+                        {p.status === "paid" && (
+                          <>
+                            <button onClick={() => handleAcknowledgePayout(p.id)} style={{ fontSize: 12.5, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, cursor: "pointer" }}>
+                              I&apos;ve received this
+                            </button>
+                            <button onClick={() => handleQueryPayout(p.id)} style={{ fontSize: 12.5, padding: "8px 14px", background: "none", border: "1px solid var(--pl-border)", borderRadius: 9, color: "var(--pl-text-secondary)", cursor: "pointer" }}>
+                              Something&apos;s not right
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

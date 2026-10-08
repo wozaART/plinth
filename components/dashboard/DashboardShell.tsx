@@ -9,12 +9,13 @@ import ExhibitionsPanel from "@/components/dashboard/ExhibitionsPanel";
 import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
+import PayoutsPanel from "@/components/dashboard/PayoutsPanel";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import ActivityLogPanel from "@/components/dashboard/ActivityLogPanel";
 import { useGalleryConfig } from "@/lib/gallery-context";
-import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob, AuditLogEntry } from "@/lib/types";
+import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob, Payout, AuditLogEntry } from "@/lib/types";
 
-type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings" | "activity";
+type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "payouts" | "settings" | "activity";
 
 interface DashboardShellProps {
   submissions: Submission[];
@@ -24,12 +25,13 @@ interface DashboardShellProps {
   catalogueArtists: GalleryArtist[];
   contacts: Contact[];
   frameJobs: FrameJob[];
+  payouts: Payout[];
   auditLog: AuditLogEntry[];
   customDomain: string | null;
   domainStatus: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, auditLog, customDomain, domainStatus }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
@@ -116,6 +118,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         {tab === "catalogue" && <CataloguePanel data={catalogue} artists={catalogueArtists} />}
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
+        {tab === "payouts" && <PayoutsPanel data={payouts} />}
         {tab === "settings" && <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />}
         {tab === "activity" && <ActivityLogPanel data={auditLog} />}
       </main>

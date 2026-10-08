@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
+import { getPayoutProofUrl } from "@/lib/supabase/queries";
 import type { SubmissionStatus, ExhibitionType, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 
 async function supabaseServer() {
@@ -480,4 +481,57 @@ export async function acceptSubmissionIntoCatalogue(submissionId: string) {
 
   revalidatePath("/dashboard");
   return { id: data.id };
+}
+
+// ── Payouts ──────────────────────────────────────────────────────────────
+
+export interface MarkPayoutPaidInput {
+  payoutId: string;
+  paidDate: string;
+  paymentReference: string | null;
+  proofOfPayment: File | null;
+}
+
+export async function markPayoutPaid(input: MarkPayoutPaidInput) {
+  const supabase = await supabaseServer();
+  const gallery = await getCurrentGallery(supabase);
+
+  let proofPath: string | null = null;
+  if (input.proofOfPayment && input.proofOfPayment.size > 0) {
+    proofPath = `${gallery.id}/${input.payoutId}/${input.proofOfPayment.name}`;
+    const { error: uploadError } = await supabase.storage.from("payout-proofs").upload(proofPath, input.proofOfPayment, {
+      contentType: input.proofOfPayment.type,
+      upsert: true,
+    });
+    if (uploadError) throw uploadError;
+  }
+
+  const { error } = await supabase.rpc("mark_payout_paid", {
+    p_payout_id: input.payoutId,
+    p_paid_at: input.paidDate,
+    p_payment_reference: input.paymentReference ?? undefined,
+    p_proof_of_payment_path: proofPath ?? undefined,
+  });
+  if (error) throw error;
+
+  revalidatePath("/dashboard");
+}
+
+export async function acknowledgePayout(id: string) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.rpc("acknowledge_payout", { p_payout_id: id });
+  if (error) throw error;
+  revalidatePath("/studio");
+}
+
+export async function queryPayout(id: string) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.rpc("query_payout", { p_payout_id: id });
+  if (error) throw error;
+  revalidatePath("/studio");
+}
+
+export async function getPayoutProofSignedUrl(id: string) {
+  const supabase = await supabaseServer();
+  return getPayoutProofUrl(supabase, id);
 }

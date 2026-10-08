@@ -99,7 +99,8 @@ set id = '00000000-0000-4000-8000-000000000002',
       {"id":"exhibitions","label":"Exhibitions","enabled":true},
       {"id":"catalogue","label":"Catalogue","enabled":true},
       {"id":"frameshop","label":"Frameshop","enabled":true},
-      {"id":"contacts","label":"Contacts","enabled":true}
+      {"id":"contacts","label":"Contacts","enabled":true},
+      {"id":"payouts","label":"Payouts","enabled":true}
     ]',
     studio_tabs = '[
       {"id":"overview","label":"Overview","enabled":true},
@@ -107,7 +108,8 @@ set id = '00000000-0000-4000-8000-000000000002',
       {"id":"open-calls","label":"Open calls","enabled":true},
       {"id":"invitations","label":"Invitations","enabled":true},
       {"id":"profile","label":"Profile","enabled":true},
-      {"id":"messages","label":"Messages","enabled":true}
+      {"id":"messages","label":"Messages","enabled":true},
+      {"id":"earnings","label":"Earnings","enabled":true}
     ]',
     currency_code = 'ZAR',
     submit_commission_note_template = 'The gallery commission of {rate}% will be added on top of your asking price for the final sale price shown to collectors.'
@@ -257,7 +259,8 @@ set id = '00000000-0000-4000-9000-000000000002',
       {"id":"exhibitions","label":"Exhibitions","enabled":true},
       {"id":"catalogue","label":"Catalogue","enabled":true},
       {"id":"contacts","label":"Contacts","enabled":true},
-      {"id":"frameshop","label":"Frameshop","enabled":false}
+      {"id":"frameshop","label":"Frameshop","enabled":false},
+      {"id":"payouts","label":"Payouts","enabled":true}
     ]',
     studio_tabs = '[
       {"id":"overview","label":"Overview","enabled":true},
@@ -265,7 +268,8 @@ set id = '00000000-0000-4000-9000-000000000002',
       {"id":"open-calls","label":"Open calls","enabled":true},
       {"id":"invitations","label":"Invitations","enabled":true},
       {"id":"messages","label":"Messages","enabled":true},
-      {"id":"profile","label":"Profile","enabled":false}
+      {"id":"profile","label":"Profile","enabled":false},
+      {"id":"earnings","label":"Earnings","enabled":true}
     ]',
     currency_code = 'ZAR',
     submit_commission_note_template = 'The gallery commission of {rate}% will be added on top of your asking price for the final sale price shown to collectors.'
