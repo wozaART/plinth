@@ -4,14 +4,14 @@ import { useState, useTransition, type CSSProperties, type ChangeEvent } from "r
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, avatarBg, initials } from "@/lib/utils";
-import { EX_TYPE_META, STATUS_META } from "@/lib/constants";
+import { EX_TYPE_META, STATUS_META, CAT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
 import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite } from "@/lib/supabase/actions";
-import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage } from "@/lib/types";
+import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
-type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile";
+type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "catalogue";
 
 interface ProfileData {
   firstName: string;
@@ -28,6 +28,7 @@ interface StudioShellProps {
   artistName: string;
   artistCity: string;
   works: MyWork[];
+  catalogueWorks: CatalogueWork[];
   openCalls: OpenCall[];
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
@@ -244,7 +245,7 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
@@ -517,6 +518,28 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                   <p style={{ fontSize: 13, color: "var(--pl-text-muted)", lineHeight: 1.6, margin: 0 }}>{msg.body}</p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {tab === "catalogue" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {catalogueWorks.length === 0 && (
+                <div style={{ fontSize: 13.5, color: "var(--pl-text-soft)" }}>Nothing in the gallery&apos;s catalogue yet — accepted work will show up here once it&apos;s consigned.</div>
+              )}
+              {catalogueWorks.map((w, i) => {
+                const meta = CAT_STATUS_META[w.status];
+                return (
+                  <div key={w.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 13, display: "flex", gap: 14, padding: "15px 17px", alignItems: "center" }}>
+                    <div style={{ width: 50, height: 62, borderRadius: 5, background: artworkBg(i), flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600 }}>{w.title}</div>
+                      <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", marginTop: 2 }}>{w.price}</div>
+                      <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)", marginTop: 3 }}>Consigned {w.consignedDate}</div>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0, textTransform: "capitalize" }}>{w.status}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
 

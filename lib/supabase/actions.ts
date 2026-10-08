@@ -4,7 +4,7 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import type { SubmissionStatus, ExhibitionType, ExhibitionStatus } from "@/lib/types";
+import type { SubmissionStatus, ExhibitionType, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 
 async function supabaseServer() {
   return createClient(await cookies());
@@ -22,7 +22,7 @@ export async function decideSubmission(id: string, status: SubmissionStatus, not
 
 export async function ackDeclinedSubmission(id: string) {
   const supabase = await supabaseServer();
-  const { error } = await supabase.from("submissions").update({ ack: true }).eq("id", id);
+  const { error } = await supabase.rpc("submissions_update_artist_ack", { p_submission_id: id });
   if (error) throw error;
   revalidatePath("/studio");
 }
@@ -342,4 +342,107 @@ export async function respondToExhibitionInvite(id: string, response: "accepted"
     .eq("id", id);
   if (error) throw error;
   revalidatePath("/studio");
+}
+
+// ── Catalogue ────────────────────────────────────────────────────────────
+
+export interface CatalogueWorkInput {
+  artistId: string;
+  title: string;
+  price: number | null;
+  agreedPrice: number | null;
+  commissionRatePct: number | null;
+  status: CatalogueStatus;
+  consignedDate: string | null;
+}
+
+function toCatalogueRow(input: Partial<CatalogueWorkInput>) {
+  return {
+    ...(input.artistId !== undefined && { artist_id: input.artistId }),
+    ...(input.title !== undefined && { title: input.title }),
+    ...(input.price !== undefined && { price: input.price }),
+    ...(input.agreedPrice !== undefined && { agreed_price: input.agreedPrice }),
+    ...(input.commissionRatePct !== undefined && { commission_rate: input.commissionRatePct == null ? null : input.commissionRatePct / 100 }),
+    ...(input.status !== undefined && { status: input.status }),
+    ...(input.consignedDate !== undefined && { consigned_at: input.consignedDate }),
+  };
+}
+
+export async function createCatalogueWork(input: CatalogueWorkInput) {
+  const supabase = await supabaseServer();
+  const gallery = await getCurrentGallery(supabase);
+
+  const { data, error } = await supabase
+    .from("catalogue_works")
+    .insert({
+      gallery_id: gallery.id,
+      artist_id: input.artistId,
+      title: input.title,
+      ...toCatalogueRow(input),
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+
+  revalidatePath("/dashboard");
+  return { id: data.id };
+}
+
+export async function updateCatalogueWork(id: string, input: Partial<CatalogueWorkInput>) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("catalogue_works").update(toCatalogueRow(input)).eq("id", id);
+  if (error) throw error;
+  revalidatePath("/dashboard");
+}
+
+export async function updateCatalogueWorkStatus(id: string, status: CatalogueStatus) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("catalogue_works").update({ status }).eq("id", id);
+  if (error) throw error;
+  revalidatePath("/dashboard");
+}
+
+export async function deleteCatalogueWork(id: string) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.from("catalogue_works").delete().eq("id", id);
+  if (error) throw error;
+  revalidatePath("/dashboard");
+}
+
+export async function acceptSubmissionIntoCatalogue(submissionId: string) {
+  const supabase = await supabaseServer();
+  const gallery = await getCurrentGallery(supabase);
+
+  const { data: submission, error: subError } = await supabase
+    .from("submissions")
+    .select("title, price, artist_id, status")
+    .eq("id", submissionId)
+    .single();
+  if (subError) throw subError;
+  if (submission.status !== "approved") {
+    throw new Error("Only approved submissions can be accepted into the catalogue.");
+  }
+
+  const { data, error } = await supabase
+    .from("catalogue_works")
+    .insert({
+      gallery_id: gallery.id,
+      artist_id: submission.artist_id,
+      submission_id: submissionId,
+      title: submission.title,
+      price: submission.price,
+      agreed_price: submission.price,
+      commission_rate: gallery.commission_rate,
+      consigned_at: new Date().toISOString().slice(0, 10),
+      status: "available",
+    })
+    .select("id")
+    .single();
+  if (error) {
+    if (error.code === "23505") throw new Error("This submission is already in the catalogue.");
+    throw error;
+  }
+
+  revalidatePath("/dashboard");
+  return { id: data.id };
 }

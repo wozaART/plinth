@@ -1,4 +1,4 @@
-import type { SubmissionStatus } from "./types";
+import type { SubmissionStatus, CatalogueStatus } from "./types";
 
 export const ARTWORK_GRADIENTS = [
   "radial-gradient(circle at 72% 30%, #E9E1D2 0 19%, rgba(233,225,210,0) 19.5%), linear-gradient(155deg,#6E2B2B,#532020)",
@@ -41,7 +41,9 @@ export const EX_TYPE_META: Record<string, string> = {
   solo: "Solo",
 };
 
-export const CAT_STATUS_META: Record<string, { bg: string; fg: string }> = {
+export const CAT_STATUSES: CatalogueStatus[] = ["available", "sold", "reserved", "on loan"];
+
+export const CAT_STATUS_META: Record<CatalogueStatus, { bg: string; fg: string }> = {
   available: { bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
   sold:      { bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)" },
   reserved:  { bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },

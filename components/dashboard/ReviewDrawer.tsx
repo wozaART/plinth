@@ -10,9 +10,12 @@ interface ReviewDrawerProps {
   artworkIdx: number;
   onClose: () => void;
   onDecide: (id: string, status: SubmissionStatus, note: string) => void;
+  inCatalogue: boolean;
+  accepting: boolean;
+  onAcceptIntoCatalogue: (id: string) => void;
 }
 
-export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide }: ReviewDrawerProps) {
+export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCatalogue, accepting, onAcceptIntoCatalogue }: ReviewDrawerProps) {
   const [note, setNote] = useState(sub.note);
   const [mode, setMode] = useState<"view" | "decide">("view");
   const meta = STATUS_META[sub.status];
@@ -91,6 +94,19 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide }: Rev
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Accept into catalogue */}
+        {sub.status === "approved" && (
+          <div style={{ padding: "0 24px 24px", marginTop: "auto" }}>
+            <button
+              onClick={() => onAcceptIntoCatalogue(sub.id)}
+              disabled={inCatalogue || accepting}
+              style={{ width: "100%", padding: "13px", background: inCatalogue ? "var(--pl-approved-panel-bg)" : "var(--pl-solid)", color: inCatalogue ? "var(--pl-approved-fg)" : "var(--pl-on-solid)", borderRadius: 11, border: "none", fontSize: 14, fontWeight: 550, cursor: inCatalogue || accepting ? "default" : "pointer" }}
+            >
+              {inCatalogue ? "In the catalogue" : accepting ? "Adding…" : "Accept into catalogue"}
+            </button>
           </div>
         )}
 

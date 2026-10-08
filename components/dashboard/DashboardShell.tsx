@@ -11,7 +11,7 @@ import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import { useGalleryConfig } from "@/lib/gallery-context";
-import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, Contact, FrameJob } from "@/lib/types";
+import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob } from "@/lib/types";
 
 type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings";
 
@@ -20,13 +20,14 @@ interface DashboardShellProps {
   exhibitions: Exhibition[];
   exhibitionInvites: ExhibitionInvite[];
   catalogue: CatalogueWork[];
+  catalogueArtists: GalleryArtist[];
   contacts: Contact[];
   frameJobs: FrameJob[];
   customDomain: string | null;
   domainStatus: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, contacts, frameJobs, customDomain, domainStatus }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, customDomain, domainStatus }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
@@ -104,9 +105,9 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
           )}
         </div>
 
-        {tab === "submissions" && <SubmissionsPanel initialData={submissions} />}
+        {tab === "submissions" && <SubmissionsPanel initialData={submissions} catalogueSubmissionIds={catalogue.map(w => w.submissionId).filter((id): id is string => id !== null)} />}
         {tab === "exhibitions" && <ExhibitionsPanel data={exhibitions} invites={exhibitionInvites} contacts={contacts} />}
-        {tab === "catalogue" && <CataloguePanel data={catalogue} />}
+        {tab === "catalogue" && <CataloguePanel data={catalogue} artists={catalogueArtists} />}
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
         {tab === "settings" && <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />}
