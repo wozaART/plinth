@@ -170,6 +170,35 @@ select:focus {
 details summary { list-style: none; cursor: pointer; }
 details summary::-webkit-details-marker { display: none; }
 
+/* Docs sidebar / mobile drawer */
+.docs-mobile-topbar { display: none; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #ECE8DE; background: #FBFAF8; position: sticky; top: 0; z-index: 20; }
+.docs-overlay { display: none; }
+
+@media (max-width: 860px) {
+  .docs-aside {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100svh !important;
+    width: min(82vw, 300px) !important;
+    z-index: 50;
+    transform: translateX(-101%);
+    transition: transform .25s ease;
+    box-shadow: 2px 0 24px rgba(0,0,0,.15);
+  }
+  .docs-aside.open { transform: translateX(0); }
+  .docs-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(23,21,15,.4);
+    z-index: 45;
+  }
+  .docs-mobile-topbar { display: flex; }
+  .docs-main { padding: 20px 18px !important; }
+}
+
 @keyframes plScrim { from { opacity: 0; } to { opacity: 1; } }
 @keyframes plDrawer { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes plToast { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
