@@ -81,12 +81,43 @@ export type Database = {
           },
         ]
       }
-      artist_profiles: {
+      artist_bank_details: {
         Row: {
           account_type: string | null
           bank_account_number: string | null
           bank_name: string | null
           branch_code: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_type?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          branch_code?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          branch_code?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_bank_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_profiles: {
+        Row: {
           city: string | null
           created_at: string
           full_name: string | null
@@ -96,10 +127,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          account_type?: string | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          branch_code?: string | null
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -109,10 +136,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          account_type?: string | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          branch_code?: string | null
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -759,6 +782,15 @@ export type Database = {
           full_name: string
           gallery_name: string
           status: string
+        }[]
+      }
+      get_artist_bank_details_for_payout: {
+        Args: { target_artist_id: string }
+        Returns: {
+          bank_name: string | null
+          bank_account_number: string | null
+          branch_code: string | null
+          account_type: string | null
         }[]
       }
       is_platform_owner: { Args: Record<PropertyKey, never>; Returns: boolean }

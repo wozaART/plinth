@@ -298,3 +298,11 @@ export async function getArtistProfile(supabase: Client, artistId: string): Prom
   if (error) return null;
   return data;
 }
+
+export type ArtistBankDetails = Database["public"]["Tables"]["artist_bank_details"]["Row"];
+
+export async function getArtistBankDetails(supabase: Client, artistId: string): Promise<ArtistBankDetails | null> {
+  const { data, error } = await supabase.from("artist_bank_details").select("*").eq("id", artistId).single();
+  if (error) return null;
+  return data;
+}
