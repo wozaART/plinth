@@ -1,4 +1,4 @@
-import type { SubmissionStatus, CatalogueStatus } from "./types";
+import type { SubmissionStatus, CatalogueStatus, PayoutStatus } from "./types";
 
 export const ARTWORK_GRADIENTS = [
   "radial-gradient(circle at 72% 30%, #E9E1D2 0 19%, rgba(233,225,210,0) 19.5%), linear-gradient(155deg,#6E2B2B,#532020)",
@@ -49,6 +49,17 @@ export const CAT_STATUS_META: Record<CatalogueStatus, { bg: string; fg: string }
   reserved:  { bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },
   "on loan": { bg: "var(--pl-changes-bg)",  fg: "var(--pl-changes-fg)" },
 };
+
+export const PAYOUT_STATUSES: PayoutStatus[] = ["due", "paid", "acknowledged", "queried"];
+
+export const PAYOUT_STATUS_META: Record<PayoutStatus, { label: string; bg: string; fg: string }> = {
+  due:          { label: "Due",             bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
+  paid:         { label: "Paid",            bg: "var(--pl-pending-bg)",      fg: "var(--pl-pending-fg)" },
+  acknowledged: { label: "Acknowledged",    bg: "var(--pl-approved-bg)",     fg: "var(--pl-approved-fg)" },
+  queried:      { label: "Queried",         bg: "var(--pl-declined-bg)",     fg: "var(--pl-declined-fg)" },
+};
+
+export const OVERDUE_META = { label: "Overdue", bg: "var(--pl-declined-bg)", fg: "var(--pl-declined-fg)" };
 
 export const FRAME_STAGE_META: Record<string, { label: string; bg: string; fg: string }> = {
   queued:   { label: "Awaiting framing", bg: "var(--pl-pending-bg)",  fg: "var(--pl-pending-fg)" },

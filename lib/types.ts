@@ -109,6 +109,39 @@ export interface ArtistSale {
   payoutDueDate: string;
 }
 
+export type PayoutStatus = "due" | "paid" | "acknowledged" | "queried";
+
+export interface Payout {
+  id: string;
+  saleId: string;
+  artistId: string;
+  artist: string;
+  workTitle: string;
+  amount: string;
+  amountCents: number;
+  status: PayoutStatus;
+  dueDate: string;
+  dueDateRaw: string | null;
+  paidDate: string;
+  paidDateRaw: string | null;
+  paymentReference: string | null;
+  hasProofOfPayment: boolean;
+  acknowledgedDate: string;
+  acknowledgedDateRaw: string | null;
+}
+
+export interface ArtistPayout {
+  id: string;
+  saleId: string;
+  workTitle: string;
+  amount: string;
+  status: PayoutStatus;
+  dueDate: string;
+  paidDate: string;
+  paymentReference: string | null;
+  hasProofOfPayment: boolean;
+}
+
 export interface GalleryArtist {
   id: string;
   name: string;

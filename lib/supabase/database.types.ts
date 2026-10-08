@@ -764,6 +764,77 @@ export type Database = {
           },
         ]
       }
+      payouts: {
+        Row: {
+          acknowledged_at: string | null
+          amount_cents: number
+          artist_id: string
+          created_at: string
+          gallery_id: string
+          id: string
+          paid_at: string | null
+          payment_reference: string | null
+          proof_of_payment_path: string | null
+          sale_id: string
+          status: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          amount_cents: number
+          artist_id: string
+          created_at?: string
+          gallery_id: string
+          id?: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          proof_of_payment_path?: string | null
+          sale_id: string
+          status?: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          amount_cents?: number
+          artist_id?: string
+          created_at?: string
+          gallery_id?: string
+          id?: string
+          paid_at?: string | null
+          payment_reference?: string | null
+          proof_of_payment_path?: string | null
+          sale_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "artist_sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: true
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           ack: boolean | null
@@ -946,6 +1017,10 @@ export type Database = {
           gallery_name: string
         }[]
       }
+      acknowledge_payout: {
+        Args: { p_payout_id: string }
+        Returns: undefined
+      }
       get_artist_bank_details_for_payout: {
         Args: { target_artist_id: string }
         Returns: {
@@ -979,7 +1054,20 @@ export type Database = {
         }[]
       }
       is_platform_owner: { Args: never; Returns: boolean }
+      mark_payout_paid: {
+        Args: {
+          p_paid_at?: string
+          p_payment_reference?: string
+          p_payout_id: string
+          p_proof_of_payment_path?: string
+        }
+        Returns: undefined
+      }
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
+      query_payout: {
+        Args: { p_payout_id: string }
+        Returns: undefined
+      }
       record_sale: {
         Args: {
           p_buyer_email?: string

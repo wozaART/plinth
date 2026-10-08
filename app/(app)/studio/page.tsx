@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getArtistWorks, getArtistCatalogue, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
+import { getArtistWorks, getArtistCatalogue, getArtistPayouts, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
 import StudioShell from "@/components/studio/StudioShell";
 
 export default async function StudioPage() {
@@ -14,9 +14,10 @@ export default async function StudioPage() {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const [works, catalogueWorks, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
+  const [works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
     getArtistWorks(supabase, user.id, gallery.id),
     getArtistCatalogue(supabase, user.id, gallery.id, gallery.currency_code),
+    getArtistPayouts(supabase, user.id, gallery.id, gallery.currency_code),
     getOpenCalls(supabase, gallery.id, gallery.name),
     getMessages(supabase, user.id, gallery.id, gallery.name),
     getArtistProfile(supabase, user.id),
@@ -32,6 +33,7 @@ export default async function StudioPage() {
       artistCity={profile?.city ?? ""}
       works={works}
       catalogueWorks={catalogueWorks}
+      payouts={payouts}
       openCalls={openCalls}
       exhibitionInvites={exhibitionInvites}
       messages={messages}
