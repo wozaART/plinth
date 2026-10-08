@@ -10,10 +10,11 @@ import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
+import ActivityLogPanel from "@/components/dashboard/ActivityLogPanel";
 import { useGalleryConfig } from "@/lib/gallery-context";
-import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob } from "@/lib/types";
+import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob, AuditLogEntry } from "@/lib/types";
 
-type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings";
+type Tab = "submissions" | "exhibitions" | "catalogue" | "contacts" | "frameshop" | "settings" | "activity";
 
 interface DashboardShellProps {
   submissions: Submission[];
@@ -23,11 +24,12 @@ interface DashboardShellProps {
   catalogueArtists: GalleryArtist[];
   contacts: Contact[];
   frameJobs: FrameJob[];
+  auditLog: AuditLogEntry[];
   customDomain: string | null;
   domainStatus: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, customDomain, domainStatus }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, auditLog, customDomain, domainStatus }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
@@ -77,8 +79,12 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         </nav>
 
         <div style={{ padding: "10px 10px 0", borderTop: "1px solid var(--pl-border)" }}>
+          <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--pl-text-eyebrow)", padding: "4px 12px 6px" }}>Profile</div>
           <button onClick={() => setTab("settings")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: tab === "settings" ? "var(--pl-text)" : "var(--pl-text-muted)", background: tab === "settings" ? "var(--pl-surface)" : "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
             <span style={{ fontSize: 14 }}>⚙</span> Settings
+          </button>
+          <button onClick={() => setTab("activity")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: tab === "activity" ? "var(--pl-text)" : "var(--pl-text-muted)", background: tab === "activity" ? "var(--pl-surface)" : "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+            <span style={{ fontSize: 14 }}>🕓</span> Activity log
           </button>
           <Link href="/docs" style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "var(--pl-text-muted)" }}>
             <span style={{ fontSize: 14 }}>📖</span> Documentation
@@ -111,6 +117,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
         {tab === "settings" && <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />}
+        {tab === "activity" && <ActivityLogPanel data={auditLog} />}
       </main>
     </div>
   );

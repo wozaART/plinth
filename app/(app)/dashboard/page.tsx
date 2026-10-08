@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getSubmissions, getExhibitionsWithCounts, getExhibitionInvitesForGallery, getCatalogue, getGalleryArtists, getFrameJobs, getContacts } from "@/lib/supabase/queries";
+import { getSubmissions, getExhibitionsWithCounts, getExhibitionInvitesForGallery, getCatalogue, getGalleryArtists, getFrameJobs, getContacts, getAuditLog } from "@/lib/supabase/queries";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export default async function DashboardPage() {
@@ -14,7 +14,7 @@ export default async function DashboardPage() {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const [submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs] = await Promise.all([
+  const [submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, auditLog] = await Promise.all([
     getSubmissions(supabase, gallery.id, gallery.currency_code),
     getExhibitionsWithCounts(supabase, gallery.id, true),
     getExhibitionInvitesForGallery(supabase, gallery.id),
@@ -22,6 +22,7 @@ export default async function DashboardPage() {
     getGalleryArtists(supabase, gallery.id),
     getContacts(supabase, gallery.id),
     getFrameJobs(supabase, gallery.id),
+    getAuditLog(supabase, gallery.id),
   ]);
 
   return (
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
       catalogueArtists={catalogueArtists}
       contacts={contacts}
       frameJobs={frameJobs}
+      auditLog={auditLog}
       customDomain={gallery.custom_domain}
       domainStatus={gallery.domain_status}
     />

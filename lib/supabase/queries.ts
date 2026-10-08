@@ -13,6 +13,8 @@ import type {
   GalleryArtist,
   Sale,
   ArtistSale,
+  AuditLogEntry,
+  AuditAction,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { relativeTime, shortDate } from "@/lib/utils";
@@ -290,6 +292,41 @@ export async function getContacts(supabase: Client, galleryId: string): Promise<
     focus: c.focus ?? "",
     last: c.last_contact_at ? relativeTime(c.last_contact_at) : "—",
   }));
+}
+
+const AUDIT_ENTITY_LABEL: Record<string, string> = {
+  exhibitions: "Exhibition",
+  contacts: "Contact",
+  catalogue_works: "Artwork",
+};
+
+function auditRecordLabel(tableName: string, record: Record<string, unknown>): string {
+  const field = tableName === "contacts" ? record.name : record.title;
+  return typeof field === "string" && field.length > 0 ? field : "Untitled";
+}
+
+export async function getAuditLog(supabase: Client, galleryId: string, limit = 200): Promise<AuditLogEntry[]> {
+  const { data, error } = await supabase
+    .from("audit_log")
+    .select("*")
+    .eq("gallery_id", galleryId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+
+  return (data ?? []).map((a) => {
+    const record = (a.record ?? {}) as Record<string, unknown>;
+    return {
+      id: a.id,
+      entity: AUDIT_ENTITY_LABEL[a.table_name] ?? a.table_name,
+      action: a.action as AuditAction,
+      recordId: a.record_id,
+      label: auditRecordLabel(a.table_name, record),
+      actorEmail: a.actor_email ?? "Unknown",
+      when: relativeTime(a.created_at),
+      whenRaw: a.created_at,
+    };
+  });
 }
 
 // ── Studio-side reads ───────────────────────────────────────────────────

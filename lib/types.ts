@@ -123,6 +123,19 @@ export interface Contact {
   last: string;
 }
 
+export type AuditAction = "insert" | "update" | "delete";
+
+export interface AuditLogEntry {
+  id: string;
+  entity: string;
+  action: AuditAction;
+  recordId: string;
+  label: string;
+  actorEmail: string;
+  when: string;
+  whenRaw: string;
+}
+
 export interface FrameJob {
   title: string;
   artist: string;
