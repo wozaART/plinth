@@ -5,9 +5,10 @@ import { CAT_STATUS_META, CAT_STATUSES } from "@/lib/constants";
 import { artworkBg } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { useGalleryConfig } from "@/lib/gallery-context";
-import { createCatalogueWork, updateCatalogueWork, updateCatalogueWorkStatus, deleteCatalogueWork, type CatalogueWorkInput } from "@/lib/supabase/actions";
+import { createCatalogueWork, updateCatalogueWork, updateCatalogueWorkStatus, deleteCatalogueWork, recordSale, type CatalogueWorkInput, type RecordSaleInput } from "@/lib/supabase/actions";
 import AddCatalogueWorkDrawer from "./AddCatalogueWorkDrawer";
 import EditCatalogueWorkDrawer from "./EditCatalogueWorkDrawer";
+import MarkAsSoldDrawer from "./MarkAsSoldDrawer";
 import type { CatalogueWork, GalleryArtist } from "@/lib/types";
 
 export default function CataloguePanel({ data, artists }: { data: CatalogueWork[]; artists: GalleryArtist[] }) {
@@ -15,6 +16,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
   const [filter, setFilter] = useState<"all" | string>("all");
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogueWork | null>(null);
+  const [selling, setSelling] = useState<CatalogueWork | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const { business } = useGalleryConfig();
   const fmt = (amount: number | null) => (amount != null ? formatCurrency(amount, business.currencyCode) : "—");
@@ -80,6 +82,11 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
   }
 
   async function handleStatusChange(id: string, status: CatalogueWork["status"]) {
+    if (status === "sold") {
+      const work = works.find(w => w.id === id);
+      if (work) setSelling(work);
+      return;
+    }
     const previous = works;
     setWorks(prev => prev.map(w => w.id === id ? { ...w, status } : w));
     try {
@@ -87,6 +94,19 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
     } catch (err) {
       setWorks(previous);
       notify(err instanceof Error ? err.message : "Couldn't update that status — try again.");
+    }
+  }
+
+  async function handleRecordSale(input: RecordSaleInput) {
+    const work = selling;
+    if (!work) return;
+    try {
+      await recordSale(input);
+      setWorks(prev => prev.map(w => w.id === work.id ? { ...w, status: "sold" } : w));
+      setSelling(null);
+      notify(`"${work.title}" marked as sold.`);
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "Couldn't record that sale — try again.");
     }
   }
 
@@ -158,6 +178,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
 
       {addOpen && <AddCatalogueWorkDrawer artists={artists} onClose={() => setAddOpen(false)} onCreate={handleCreate} />}
       {editing && <EditCatalogueWorkDrawer work={editing} onClose={() => setEditing(null)} onSave={handleSave} onDelete={handleDelete} />}
+      {selling && <MarkAsSoldDrawer work={selling} onClose={() => setSelling(null)} onConfirm={handleRecordSale} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>

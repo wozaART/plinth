@@ -11,6 +11,8 @@ import type {
   OpenCall,
   StudioMessage,
   GalleryArtist,
+  Sale,
+  ArtistSale,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { relativeTime, shortDate } from "@/lib/utils";
@@ -209,6 +211,38 @@ export async function getCatalogue(supabase: Client, galleryId: string, currency
   return (data ?? []).map((w) => mapCatalogueRow(w, currencyCode));
 }
 
+export async function getSales(supabase: Client, galleryId: string, currencyCode: string): Promise<Sale[]> {
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*, catalogue_works(title), artist_profiles(full_name)")
+    .eq("gallery_id", galleryId)
+    .order("sold_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((s) => ({
+    id: s.id,
+    catalogueWorkId: s.catalogue_work_id,
+    artistId: s.artist_id,
+    artist: s.artist_profiles?.full_name ?? "Unknown artist",
+    workTitle: s.catalogue_works?.title ?? "Untitled work",
+    salePrice: formatCurrency(s.sale_price_cents / 100, currencyCode),
+    salePriceCents: s.sale_price_cents,
+    discountCents: s.discount_cents,
+    commissionRatePct: Math.round(Number(s.commission_rate) * 100),
+    commissionAmount: formatCurrency(s.commission_amount_cents / 100, currencyCode),
+    artistAmount: formatCurrency(s.artist_amount_cents / 100, currencyCode),
+    buyerName: s.buyer_name,
+    buyerEmail: s.buyer_email,
+    buyerPhone: s.buyer_phone,
+    soldDate: shortDate(s.sold_at),
+    soldDateRaw: s.sold_at,
+    buyerPaidDate: s.buyer_paid_at ? shortDate(s.buyer_paid_at) : "—",
+    buyerPaidDateRaw: s.buyer_paid_at,
+    payoutDueDate: s.payout_due_at ? shortDate(s.payout_due_at) : "—",
+    payoutDueDateRaw: s.payout_due_at,
+  }));
+}
+
 export async function getGalleryArtists(supabase: Client, galleryId: string): Promise<GalleryArtist[]> {
   const { data, error } = await supabase
     .from("submissions")
@@ -291,6 +325,28 @@ export async function getArtistCatalogue(supabase: Client, artistId: string, gal
   if (error) throw error;
 
   return (data ?? []).map((w) => mapCatalogueRow(w, currencyCode));
+}
+
+export async function getArtistSales(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<ArtistSale[]> {
+  const { data, error } = await supabase
+    .from("artist_sales")
+    .select("*")
+    .eq("artist_id", artistId)
+    .eq("gallery_id", galleryId)
+    .order("sold_at", { ascending: false });
+  if (error) throw error;
+
+  return (data ?? []).map((s) => ({
+    id: s.id!,
+    catalogueWorkId: s.catalogue_work_id!,
+    salePrice: formatCurrency(s.sale_price_cents! / 100, currencyCode),
+    commissionRatePct: Math.round(Number(s.commission_rate) * 100),
+    commissionAmount: formatCurrency(s.commission_amount_cents! / 100, currencyCode),
+    artistAmount: formatCurrency(s.artist_amount_cents! / 100, currencyCode),
+    soldDate: shortDate(s.sold_at!),
+    buyerPaidDate: s.buyer_paid_at ? shortDate(s.buyer_paid_at) : "—",
+    payoutDueDate: s.payout_due_at ? shortDate(s.payout_due_at) : "—",
+  }));
 }
 
 export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string): Promise<OpenCall[]> {

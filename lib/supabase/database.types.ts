@@ -7,33 +7,48 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      artist_bank_details: {
+        Row: {
+          account_type: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          branch_code: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_type?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          branch_code?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          branch_code?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_bank_details_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_invites: {
         Row: {
           accepted_at: string | null
@@ -77,41 +92,6 @@ export type Database = {
             columns: ["gallery_id"]
             isOneToOne: false
             referencedRelation: "galleries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      artist_bank_details: {
-        Row: {
-          account_type: string | null
-          bank_account_number: string | null
-          bank_name: string | null
-          branch_code: string | null
-          id: string
-          updated_at: string
-        }
-        Insert: {
-          account_type?: string | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          branch_code?: string | null
-          id: string
-          updated_at?: string
-        }
-        Update: {
-          account_type?: string | null
-          bank_account_number?: string | null
-          bank_name?: string | null
-          branch_code?: string | null
-          id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "artist_bank_details_id_fkey"
-            columns: ["id"]
-            isOneToOne: true
-            referencedRelation: "artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -210,39 +190,6 @@ export type Database = {
           },
         ]
       }
-      consignment_terms_responses: {
-        Row: {
-          answers: Json
-          contact_email: string | null
-          contact_name: string
-          contact_role: string | null
-          created_at: string
-          gallery_name: string
-          id: string
-          status: string
-        }
-        Insert: {
-          answers: Json
-          contact_email?: string | null
-          contact_name: string
-          contact_role?: string | null
-          created_at?: string
-          gallery_name: string
-          id?: string
-          status?: string
-        }
-        Update: {
-          answers?: Json
-          contact_email?: string | null
-          contact_name?: string
-          contact_role?: string | null
-          created_at?: string
-          gallery_name?: string
-          id?: string
-          status?: string
-        }
-        Relationships: []
-      }
       consignment_terms_followups: {
         Row: {
           created_at: string
@@ -274,6 +221,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      consignment_terms_responses: {
+        Row: {
+          answers: Json
+          contact_email: string | null
+          contact_name: string
+          contact_phone: string | null
+          contact_role: string | null
+          created_at: string
+          gallery_name: string
+          id: string
+          status: string
+        }
+        Insert: {
+          answers: Json
+          contact_email?: string | null
+          contact_name: string
+          contact_phone?: string | null
+          contact_role?: string | null
+          created_at?: string
+          gallery_name: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          answers?: Json
+          contact_email?: string | null
+          contact_name?: string
+          contact_phone?: string | null
+          contact_role?: string | null
+          created_at?: string
+          gallery_name?: string
+          id?: string
+          status?: string
+        }
+        Relationships: []
       }
       contacts: {
         Row: {
@@ -658,6 +641,85 @@ export type Database = {
           },
         ]
       }
+      sales: {
+        Row: {
+          artist_amount_cents: number
+          artist_id: string
+          buyer_email: string | null
+          buyer_name: string | null
+          buyer_paid_at: string | null
+          buyer_phone: string | null
+          catalogue_work_id: string
+          commission_amount_cents: number
+          commission_rate: number
+          created_at: string
+          discount_cents: number
+          gallery_id: string
+          id: string
+          payout_due_at: string | null
+          sale_price_cents: number
+          sold_at: string
+        }
+        Insert: {
+          artist_amount_cents: number
+          artist_id: string
+          buyer_email?: string | null
+          buyer_name?: string | null
+          buyer_paid_at?: string | null
+          buyer_phone?: string | null
+          catalogue_work_id: string
+          commission_amount_cents: number
+          commission_rate: number
+          created_at?: string
+          discount_cents?: number
+          gallery_id: string
+          id?: string
+          payout_due_at?: string | null
+          sale_price_cents: number
+          sold_at?: string
+        }
+        Update: {
+          artist_amount_cents?: number
+          artist_id?: string
+          buyer_email?: string | null
+          buyer_name?: string | null
+          buyer_paid_at?: string | null
+          buyer_phone?: string | null
+          catalogue_work_id?: string
+          commission_amount_cents?: number
+          commission_rate?: number
+          created_at?: string
+          discount_cents?: number
+          gallery_id?: string
+          id?: string
+          payout_due_at?: string | null
+          sale_price_cents?: number
+          sold_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_catalogue_work_id_fkey"
+            columns: ["catalogue_work_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           ack: boolean | null
@@ -746,6 +808,76 @@ export type Database = {
       }
     }
     Views: {
+      artist_sales: {
+        Row: {
+          artist_amount_cents: number | null
+          artist_id: string | null
+          buyer_paid_at: string | null
+          catalogue_work_id: string | null
+          commission_amount_cents: number | null
+          commission_rate: number | null
+          created_at: string | null
+          discount_cents: number | null
+          gallery_id: string | null
+          id: string | null
+          payout_due_at: string | null
+          sale_price_cents: number | null
+          sold_at: string | null
+        }
+        Insert: {
+          artist_amount_cents?: number | null
+          artist_id?: string | null
+          buyer_paid_at?: string | null
+          catalogue_work_id?: string | null
+          commission_amount_cents?: number | null
+          commission_rate?: number | null
+          created_at?: string | null
+          discount_cents?: number | null
+          gallery_id?: string | null
+          id?: string | null
+          payout_due_at?: string | null
+          sale_price_cents?: number | null
+          sold_at?: string | null
+        }
+        Update: {
+          artist_amount_cents?: number | null
+          artist_id?: string | null
+          buyer_paid_at?: string | null
+          catalogue_work_id?: string | null
+          commission_amount_cents?: number | null
+          commission_rate?: number | null
+          created_at?: string | null
+          discount_cents?: number | null
+          gallery_id?: string | null
+          id?: string | null
+          payout_due_at?: string | null
+          sale_price_cents?: number | null
+          sold_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_catalogue_work_id_fkey"
+            columns: ["catalogue_work_id"]
+            isOneToOne: false
+            referencedRelation: "catalogue_works"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_gallery_id_fkey"
+            columns: ["gallery_id"]
+            isOneToOne: false
+            referencedRelation: "galleries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exhibition_counts: {
         Row: {
           applicants: number | null
@@ -768,6 +900,15 @@ export type Database = {
         Returns: {
           exhibition_id: string
           gallery_name: string
+        }[]
+      }
+      get_artist_bank_details_for_payout: {
+        Args: { target_artist_id: string }
+        Returns: {
+          account_type: string
+          bank_account_number: string
+          bank_name: string
+          branch_code: string
         }[]
       }
       get_artist_invite: {
@@ -793,18 +934,27 @@ export type Database = {
           status: string
         }[]
       }
-      get_artist_bank_details_for_payout: {
-        Args: { target_artist_id: string }
-        Returns: {
-          bank_name: string | null
-          bank_account_number: string | null
-          branch_code: string | null
-          account_type: string | null
-        }[]
-      }
-      is_platform_owner: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_platform_owner: { Args: never; Returns: boolean }
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
-      submissions_update_artist_ack: { Args: { p_submission_id: string }; Returns: undefined }
+      record_sale: {
+        Args: {
+          p_buyer_email?: string
+          p_buyer_name?: string
+          p_buyer_paid_at?: string
+          p_buyer_phone?: string
+          p_catalogue_work_id: string
+          p_commission_rate?: number
+          p_discount_cents?: number
+          p_payout_due_at?: string
+          p_sale_price_cents: number
+          p_sold_at?: string
+        }
+        Returns: string
+      }
+      submissions_update_artist_ack: {
+        Args: { p_submission_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -823,12 +973,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -852,11 +1002,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -877,11 +1027,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -902,11 +1052,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -919,11 +1069,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -933,11 +1083,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-

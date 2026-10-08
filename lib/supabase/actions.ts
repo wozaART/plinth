@@ -409,6 +409,41 @@ export async function deleteCatalogueWork(id: string) {
   revalidatePath("/dashboard");
 }
 
+// ── Sales ────────────────────────────────────────────────────────────────
+
+export interface RecordSaleInput {
+  catalogueWorkId: string;
+  salePriceCents: number;
+  discountCents: number;
+  commissionRatePct: number | null;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  buyerPhone: string | null;
+  soldDate: string;
+  buyerPaidDate: string | null;
+  payoutDueDate: string | null;
+}
+
+export async function recordSale(input: RecordSaleInput) {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.rpc("record_sale", {
+    p_catalogue_work_id: input.catalogueWorkId,
+    p_sale_price_cents: input.salePriceCents,
+    p_discount_cents: input.discountCents,
+    p_commission_rate: input.commissionRatePct == null ? undefined : input.commissionRatePct / 100,
+    p_buyer_name: input.buyerName ?? undefined,
+    p_buyer_email: input.buyerEmail ?? undefined,
+    p_buyer_phone: input.buyerPhone ?? undefined,
+    p_sold_at: input.soldDate,
+    p_buyer_paid_at: input.buyerPaidDate ?? undefined,
+    p_payout_due_at: input.payoutDueDate ?? undefined,
+  });
+  if (error) throw error;
+
+  revalidatePath("/dashboard");
+  return { id: data as string };
+}
+
 export async function acceptSubmissionIntoCatalogue(submissionId: string) {
   const supabase = await supabaseServer();
   const gallery = await getCurrentGallery(supabase);

@@ -74,6 +74,41 @@ export interface CatalogueWork {
   submissionId: string | null;
 }
 
+export interface Sale {
+  id: string;
+  catalogueWorkId: string;
+  artistId: string;
+  artist: string;
+  workTitle: string;
+  salePrice: string;
+  salePriceCents: number;
+  discountCents: number;
+  commissionRatePct: number;
+  commissionAmount: string;
+  artistAmount: string;
+  buyerName: string | null;
+  buyerEmail: string | null;
+  buyerPhone: string | null;
+  soldDate: string;
+  soldDateRaw: string;
+  buyerPaidDate: string;
+  buyerPaidDateRaw: string | null;
+  payoutDueDate: string;
+  payoutDueDateRaw: string | null;
+}
+
+export interface ArtistSale {
+  id: string;
+  catalogueWorkId: string;
+  salePrice: string;
+  commissionRatePct: number;
+  commissionAmount: string;
+  artistAmount: string;
+  soldDate: string;
+  buyerPaidDate: string;
+  payoutDueDate: string;
+}
+
 export interface GalleryArtist {
   id: string;
   name: string;
