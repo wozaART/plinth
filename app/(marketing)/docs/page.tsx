@@ -228,6 +228,7 @@ export default function DocsPage() {
   const [activeCat, setActiveCat] = useState("All");
   const [activeId, setActiveId] = useState<string>("welcome");
   const [search, setSearch] = useState("");
+  const [navOpen, setNavOpen] = useState(false);
 
   const filtered = DOCS.filter(d => {
     const matchCat = activeCat === "All" || d.category === activeCat;
@@ -240,8 +241,10 @@ export default function DocsPage() {
   return (
     <div style={{ display: "flex", height: "100svh", overflow: "hidden", background: "#FBFAF8" }}>
 
+      {navOpen && <div className="docs-overlay" onClick={() => setNavOpen(false)} />}
+
       {/* Left sidebar */}
-      <aside style={{ width: 240, flexShrink: 0, background: "#F4F1EA", borderRight: "1px solid #ECE8DE", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
+      <aside className={`docs-aside${navOpen ? " open" : ""}`} style={{ width: 240, flexShrink: 0, background: "#F4F1EA", borderRight: "1px solid #ECE8DE", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
         <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 7, padding: "0 18px 16px" }}>
           <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 21, fontWeight: 600 }}>Woza Art</span>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#B5623C", transform: "translateY(-2px)", display: "inline-block" }} />
@@ -278,7 +281,7 @@ export default function DocsPage() {
               <div key={cat} style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 10.5, letterSpacing: ".12em", textTransform: "uppercase", color: "#A39D8E", padding: "4px 8px 6px", fontWeight: 600 }}>{cat}</div>
                 {items.map(doc => (
-                  <button key={doc.id} onClick={() => setActiveId(doc.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13.5, background: activeId === doc.id ? "#fff" : "transparent", color: activeId === doc.id ? "#17150F" : "#6B655B", fontWeight: activeId === doc.id ? 600 : 400, boxShadow: activeId === doc.id ? "0 1px 3px rgba(0,0,0,.05)" : "none" }}>
+                  <button key={doc.id} onClick={() => { setActiveId(doc.id); setNavOpen(false); }} style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 13.5, background: activeId === doc.id ? "#fff" : "transparent", color: activeId === doc.id ? "#17150F" : "#6B655B", fontWeight: activeId === doc.id ? 600 : 400, boxShadow: activeId === doc.id ? "0 1px 3px rgba(0,0,0,.05)" : "none" }}>
                     {doc.title}
                   </button>
                 ))}
@@ -295,7 +298,17 @@ export default function DocsPage() {
       </aside>
 
       {/* Content */}
-      <main style={{ flex: 1, overflowY: "auto", padding: "clamp(32px,4vw,56px) clamp(28px,5vw,64px)" }} className="scrl">
+      <main style={{ flex: 1, overflowY: "auto", padding: "clamp(32px,4vw,56px) clamp(28px,5vw,64px)" }} className="docs-main scrl">
+        <div className="docs-mobile-topbar">
+          <button
+            onClick={() => setNavOpen(true)}
+            aria-label="Open docs navigation"
+            style={{ background: "none", border: "none", padding: 4, cursor: "pointer", fontSize: 20, lineHeight: 1, color: "#17150F" }}
+          >
+            ☰
+          </button>
+          <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600 }}>Docs</span>
+        </div>
         <div style={{ maxWidth: 720 }}>
           <div style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#A39D8E", marginBottom: 8 }}>{active.category}</div>
           <h1 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: "clamp(26px,3.6vw,36px)", fontWeight: 550, margin: 0, letterSpacing: "-.02em", lineHeight: 1.1 }}>{active.title}</h1>
