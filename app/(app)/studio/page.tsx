@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getArtistWorks, getOpenCalls, getMessages, getArtistProfile, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
+import { getArtistWorks, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
 import StudioShell from "@/components/studio/StudioShell";
 
 export default async function StudioPage() {
@@ -14,11 +14,12 @@ export default async function StudioPage() {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const [works, openCalls, messages, profile, exhibitionInvites] = await Promise.all([
+  const [works, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
     getArtistWorks(supabase, user.id, gallery.id),
     getOpenCalls(supabase, gallery.id, gallery.name),
     getMessages(supabase, user.id, gallery.id, gallery.name),
     getArtistProfile(supabase, user.id),
+    getArtistBankDetails(supabase, user.id),
     getExhibitionInvitesForArtist(supabase, user.id, user.email ?? ""),
   ]);
 
@@ -37,10 +38,10 @@ export default async function StudioPage() {
         lastName: rest.join(" "),
         phone: profile?.phone ?? "",
         email: user.email ?? "",
-        accountNumber: profile?.bank_account_number ?? "",
-        bankName: profile?.bank_name ?? "",
-        branchCode: profile?.branch_code ?? "",
-        accountType: profile?.account_type ?? "Cheque",
+        accountNumber: bankDetails?.bank_account_number ?? "",
+        bankName: bankDetails?.bank_name ?? "",
+        branchCode: bankDetails?.branch_code ?? "",
+        accountType: bankDetails?.account_type ?? "Cheque",
       }}
     />
   );

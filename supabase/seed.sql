@@ -57,9 +57,9 @@ on conflict do nothing;
 -- in place instead of inserting a second row (which would collide with the
 -- one-gallery-per-owner unique constraint).
 
-update public.artist_profiles
-set bank_account_number = '62834571903', account_type = 'Cheque'
-where id = '00000000-0000-4000-8000-000000000108';
+insert into public.artist_bank_details (id, bank_account_number, account_type)
+values ('00000000-0000-4000-8000-000000000108', '62834571903', 'Cheque')
+on conflict (id) do update set bank_account_number = excluded.bank_account_number, account_type = excluded.account_type;
 
 update public.galleries
 set id = '00000000-0000-4000-8000-000000000002',
