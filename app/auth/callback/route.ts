@@ -8,6 +8,8 @@ export async function GET(request: NextRequest) {
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as string | null;
   const next = searchParams.get("next") ?? "/";
+  // Same-origin paths only, so `next` can't be used as an open redirect.
+  const requestedNext = /^\/(?![/\\])/.test(next) && searchParams.has("next") ? next : null;
   const invite = searchParams.get("invite");
   const exhibitionInvite = searchParams.get("exhibition_invite");
   const roleParam = searchParams.get("role");
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
       if (!existingRole && role) {
         await supabase.auth.updateUser({ data: { role } });
       }
-      return NextResponse.redirect(`${origin}${role === "artist" ? "/studio" : "/dashboard"}`);
+      return NextResponse.redirect(`${origin}${requestedNext ?? (role === "artist" ? "/studio" : "/dashboard")}`);
     }
   }
 

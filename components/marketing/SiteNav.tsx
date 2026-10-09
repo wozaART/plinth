@@ -23,7 +23,7 @@ export default async function SiteNav() {
           <Link href="/forms" style={{ fontSize: 13.5, color: "#57534A" }}>Forms</Link>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {!user && (
+          {(!user || isDemoUser(user)) && (
             <Link href="/signin" style={{ fontSize: 13.5, fontWeight: 500, color: "#17150F", padding: "9px 14px" }}>Sign in</Link>
           )}
           {user && !isDemoUser(user) && (

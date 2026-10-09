@@ -252,7 +252,7 @@ function SignInForm() {
   const handleForgotPassword = () =>
     withLoad(async () => {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/account/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/account/update-password${pendingInviteParams}`,
       });
       if (error) { setError(error.message); return; }
       setForgotSent(true);
@@ -290,7 +290,7 @@ function SignInForm() {
   const handleArtistForgotPassword = () =>
     withLoad(async () => {
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/account/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/account/update-password${pendingInviteParams}`,
       });
       if (error) { setError(error.message); return; }
       setForgotSent(true);
