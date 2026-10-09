@@ -133,7 +133,7 @@ export function ArtistForgot({ email, sent, loading, onEmail, onSubmit, onBack, 
 
 // ── Artist · Accept Invite ────────────────────────────────────────
 
-export type InviteStatus = "loading" | "no_token" | "not_found" | "expired" | "accepted" | "revoked" | "ready";
+export type InviteStatus = "loading" | "no_token" | "not_found" | "expired" | "accepted" | "revoked" | "ready" | "ready_signed_in";
 
 interface ArtistInviteProps extends BaseProps {
   status: InviteStatus;
@@ -230,6 +230,32 @@ export function ArtistInvite({
         <p className="text-[14px] text-text-muted leading-relaxed mt-3 mb-7">
           We sent a confirmation link to <strong>{email}</strong>. Click it to finish joining {galleryName} and enter your studio.
         </p>
+      </div>
+    );
+  }
+
+  if (status === "ready_signed_in") {
+    return (
+      <div className="anim-fade">
+        <div className="flex items-center gap-[11px] bg-sidebar border border-border rounded-[var(--pl-radius-card)] px-[15px] py-[13px] mb-[22px]">
+          <div className="w-[38px] h-[38px] rounded-[9px] bg-gradient-to-br from-[#2A2723] to-[#57534A] text-on-dark flex items-center justify-center font-serif text-base font-semibold shrink-0">
+            {galleryName.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-semibold text-foreground">{galleryName}</div>
+            <div className="text-[12px] text-text-soft">invited you to join their artist portal</div>
+          </div>
+        </div>
+
+        <Eyebrow>Accept invitation</Eyebrow>
+        <AuthHeading className="!text-[clamp(26px,3.2vw,34px)]">Add an artist studio.</AuthHeading>
+        <p className="text-[14px] text-text-muted leading-relaxed mt-[11px]">
+          You&apos;re signed in as <strong className="text-foreground">{email}</strong>. Accepting adds an artist studio to this account — your existing access stays as it is.
+        </p>
+
+        <PrimaryButton loading={loading} onClick={onSubmit}>
+          {loading ? "Joining…" : "Accept & open studio"}
+        </PrimaryButton>
       </div>
     );
   }

@@ -9,7 +9,7 @@ export const DEMO_BRAND_COOKIE = "pl_brand";
 export const DEMO_BACK_COOKIE = "pl_demo_back";
 
 export function safeBackPath(raw: string | undefined): string {
-  return raw && /^\/(?!\/)[\w\-./]*$/.test(raw) ? raw : "/";
+  return raw && /^\/(?!\/)[\w\-./]*(\?step=preview)?$/.test(raw) ? raw : "/";
 }
 
 export interface DemoBrand {

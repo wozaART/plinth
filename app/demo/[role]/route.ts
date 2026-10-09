@@ -46,7 +46,7 @@ export async function GET(
   if (referer) {
     try {
       const from = new URL(referer);
-      if (from.origin === request.nextUrl.origin && !from.pathname.startsWith("/demo")) back = from.pathname;
+      if (from.origin === request.nextUrl.origin && !from.pathname.startsWith("/demo")) back = from.pathname === "/review" ? "/review?step=preview" : from.pathname;
     } catch {}
   }
   response.cookies.set(DEMO_BACK_COOKIE, back, { path: "/", httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 });

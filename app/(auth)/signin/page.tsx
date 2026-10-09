@@ -106,7 +106,12 @@ function SignInForm() {
       if (data.status === "accepted") setInviteStatus("accepted");
       else if (data.status === "revoked") setInviteStatus("revoked");
       else if (data.status === "expired" || new Date(data.expires_at) < new Date()) setInviteStatus("expired");
-      else setInviteStatus("ready");
+      else {
+        // Already signed in as the invited address (e.g. a gallery owner
+        // adding an artist studio to their account): skip account creation.
+        const { data: { user: signedInUser } } = await supabase.auth.getUser();
+        setInviteStatus(signedInUser?.email?.toLowerCase() === data.email.toLowerCase() ? "ready_signed_in" : "ready");
+      }
     })();
 
     return () => { cancelled = true; };
@@ -172,11 +177,48 @@ function SignInForm() {
     setLoading(false);
   };
 
+  // An invite token in the URL has to survive whichever sign-in path the
+  // visitor takes (password on either tab, or Google), not just the invite
+  // form's own sign-up.
+  const pendingInviteParams = inviteToken
+    ? `&invite=${inviteToken}`
+    : exhibitionInviteToken
+      ? `&exhibition_invite=${exhibitionInviteToken}`
+      : "";
+
+  const redeemPendingInvites = async (): Promise<string | null> => {
+    if (inviteToken) {
+      const { error } = await supabase.rpc("accept_artist_invite", { p_token: inviteToken });
+      if (error) return error.message;
+    }
+    if (exhibitionInviteToken) {
+      const { error } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInviteToken });
+      if (error) return error.message;
+    }
+    return null;
+  };
+
+  // The email already has an account (e.g. a gallery owner invited as an
+  // artist): signUp can't create it again, so route them to sign in with the
+  // invite token still in the URL.
+  const redirectExistingAccountToSignIn = (email: string) => {
+    setArtistEmail(email);
+    setAView("signin");
+    setError("You already have an account with this email — sign in to accept the invite.");
+  };
+
   // ── Gallery handlers ──────────────────────────────────────────
   const handleGallerySignIn = () =>
     withLoad(async () => {
       const { error } = await supabase.auth.signInWithPassword({ email: gEmail, password: gPassword });
       if (error) { setError(error.message); return; }
+      if (pendingInviteParams) {
+        const inviteError = await redeemPendingInvites();
+        if (inviteError) { setError(inviteError); return; }
+        router.push("/studio");
+        router.refresh();
+        return;
+      }
       // Keep the transition on screen through the navigation — the sign-in
       // form would otherwise flash back to its idle state before /dashboard
       // has finished loading.
@@ -219,15 +261,28 @@ function SignInForm() {
   const handleOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?role=gallery` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?role=gallery${pendingInviteParams}` },
     });
   };
 
   // ── Artist handlers ───────────────────────────────────────────
   const handleArtistSignIn = () =>
     withLoad(async () => {
-      const { error } = await supabase.auth.signInWithPassword({ email: artistEmail, password: artistPassword });
+      const { data, error } = await supabase.auth.signInWithPassword({ email: artistEmail, password: artistPassword });
       if (error) { setError(error.message); return; }
+      const inviteError = await redeemPendingInvites();
+      if (inviteError) { setError(inviteError); return; }
+
+      // A gallery owner signing in on the artist tab gets an artist profile
+      // on the same account (RLS lets users insert their own row).
+      const { data: profile } = await supabase.from("artist_profiles").select("id").eq("id", data.user.id).maybeSingle();
+      if (!profile) {
+        const meta = data.user.user_metadata as { full_name?: string; practice?: string; city?: string };
+        const { error: profileError } = await supabase
+          .from("artist_profiles")
+          .insert({ id: data.user.id, full_name: meta.full_name ?? null, practice: meta.practice ?? null, city: meta.city ?? null });
+        if (profileError) { setError(profileError.message); return; }
+      }
       router.push("/studio");
       router.refresh();
     });
@@ -244,7 +299,7 @@ function SignInForm() {
   const handleArtistOAuth = async (provider: "google") => {
     await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback?role=artist` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?role=artist${pendingInviteParams}` },
     });
   };
 
@@ -263,6 +318,15 @@ function SignInForm() {
   const handleInviteAccept = () =>
     withLoad(async () => {
       if (!inviteToken) return;
+
+      if (inviteStatus === "ready_signed_in") {
+        const { error: acceptError } = await supabase.rpc("accept_artist_invite", { p_token: inviteToken });
+        if (acceptError) { setError(acceptError.message); return; }
+        router.push("/studio");
+        router.refresh();
+        return;
+      }
+
       if (!inviteAgreed) { setError("Please agree to the terms to continue."); return; }
       if (invitePassword.length < 6) { setError("Choose a password with at least 6 characters."); return; }
 
@@ -275,6 +339,9 @@ function SignInForm() {
         },
       });
       if (error) { setError(error.message); return; }
+
+      // Supabase hides "already registered" behind a user with no identities.
+      if (data.user?.identities?.length === 0) { redirectExistingAccountToSignIn(inviteEmail); return; }
 
       if (!data.session) {
         // Email confirmation required before a session exists — the invite
@@ -328,6 +395,8 @@ function SignInForm() {
         },
       });
       if (error) { setError(error.message); return; }
+
+      if (data.user?.identities?.length === 0) { redirectExistingAccountToSignIn(exInviteEmail); return; }
 
       if (!data.session) {
         setExInviteConfirmationPending(true);

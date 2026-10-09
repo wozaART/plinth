@@ -309,6 +309,22 @@ export default function ReviewPage() {
     document.body.removeChild(ta); done();
   }
 
+  // Returning from a demo portal: reopen the preview step with the saved brand.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("step") !== "preview") return;
+    const raw = document.cookie.split("; ").find(c => c.startsWith("pl_brand="))?.slice("pl_brand=".length);
+    if (raw) {
+      try {
+        const b = JSON.parse(decodeURIComponent(raw));
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from cookie after hydration
+        if (b.name) setGalleryName(b.name);
+        setAccent(b.accent); setInk(b.ink); setSidebar(b.sidebar); setFont(b.font);
+        if (b.customFont) { setCustomFont(b.customFont); loadGoogleFont(b.customFont); }
+      } catch {}
+    }
+    setStep("preview");
+  }, []);
+
   // Hand the chosen branding to the demo portals (applied for demo accounts only).
   function saveBrand() {
     const brand = { name: galleryName === "Your Gallery" ? "" : galleryName, accent, ink, sidebar, font, customFont: customFont.trim() };

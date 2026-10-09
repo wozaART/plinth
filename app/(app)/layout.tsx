@@ -76,7 +76,7 @@ export default async function PortalLayout({
           href={backHref}
           style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", zIndex: 60, background: "#17150F", color: "#FBFAF8", fontSize: 13, fontWeight: 500, padding: "9px 16px", borderRadius: 999, boxShadow: "0 6px 20px rgba(0,0,0,.25)" }}
         >
-          ← Back to {backHref === "/review" ? "review" : "site"}
+          ← Back to {backHref.startsWith("/review") ? "review" : "site"}
         </Link>
       )}
       {fontHref && <link rel="stylesheet" href={fontHref} />}

@@ -10,7 +10,12 @@ export default async function StudioPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role !== "artist") redirect("/signin");
+  if (!user) redirect("/signin");
+
+  // Gate on the artist profile, not user_metadata.role: a gallery owner can
+  // also be an artist under the same account.
+  const { data: artistRow } = await supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle();
+  if (!artistRow) redirect("/signin");
 
   const gallery = await getCurrentGallery(supabase);
 
