@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type Step = "intro" | "branding" | "preview" | "feedback" | "done";
@@ -87,23 +87,19 @@ function Stepper({ step }: { step: Step }) {
 }
 
 /* ─── Live brand preview card (branding step sidebar) ─── */
-function BrandPreviewCard({ name, logo, accent, ink, sidebar, fontStack }: {
-  name: string; logo: string | null; accent: string; ink: string; sidebar: string; fontStack: string;
+function BrandPreviewCard({ name, accent, ink, sidebar, fontStack }: {
+  name: string; accent: string; ink: string; sidebar: string; fontStack: string;
 }) {
-  const lbBase = "background-repeat:no-repeat;background-size:contain;background-position:left center";
   return (
     <div style={{ background: "#fff", border: "1px solid #ECE8DE", borderRadius: 16, overflow: "hidden", boxShadow: "0 14px 40px rgba(40,34,28,.08)" }}>
       <div style={{ background: sidebar, padding: "20px 22px", borderBottom: "1px solid rgba(0,0,0,.05)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          {logo
-            ? <div style={{ backgroundImage: `url("${logo}")`, height: 30, width: 160, ...Object.fromEntries(lbBase.split(";").map(s => { const [k, ...v] = s.split(":"); return [k.trim().replace(/-([a-z])/g, (_, c) => c.toUpperCase()), v.join(":").trim()]; }).filter(([k]) => k)) }} />
-            : <>
+          <>
                 <span style={{ fontFamily: fontStack, fontSize: 24, fontWeight: 600, letterSpacing: "-.01em", color: ink }}>
                   {name || "Your Gallery"}
                 </span>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: accent, transform: "translateY(-7px)", display: "inline-block" }} />
               </>
-          }
         </div>
         <div style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "#9A9486", marginTop: 6 }}>
           Gallery operations
@@ -136,19 +132,15 @@ function BrandPreviewCard({ name, logo, accent, ink, sidebar, fontStack }: {
 }
 
 /* ─── Dashboard preview (preview step) ─── */
-function DashboardPreview({ name, logo, accent, ink, sidebar, fontStack }: {
-  name: string; logo: string | null; accent: string; ink: string; sidebar: string; fontStack: string;
+function DashboardPreview({ name, accent, ink, sidebar, fontStack, onOpen }: {
+  name: string; accent: string; ink: string; sidebar: string; fontStack: string; onOpen: () => void;
 }) {
-  const lbBase = { backgroundRepeat: "no-repeat", backgroundSize: "contain", backgroundPosition: "left center" } as const;
   return (
     <div style={{ border: "1px solid #ECE8DE", borderRadius: 16, overflow: "hidden", background: "#fff", boxShadow: "0 12px 36px rgba(40,34,28,.07)" }}>
       <div style={{ display: "flex", height: 230 }}>
         <div style={{ flex: "0 0 92px", background: sidebar, borderRight: "1px solid rgba(0,0,0,.05)", padding: "14px 10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
-            {logo
-              ? <div style={{ ...lbBase, backgroundImage: `url("${logo}")`, height: 20, width: 68, marginBottom: 6 }} />
-              : <div style={{ fontFamily: fontStack, fontSize: 14, fontWeight: 600, color: ink, lineHeight: 1.1 }}>{(name || "Gallery").split(" ")[0]}</div>
-            }
+            <div style={{ fontFamily: fontStack, fontSize: 14, fontWeight: 600, color: ink, lineHeight: 1.1 }}>{(name || "Gallery").split(" ")[0]}</div>
             <div style={{ height: 7 }} />
             <div style={{ fontSize: 10, background: ink, color: "#fff", padding: "4px 9px", borderRadius: 6, width: "100%" }}>Overview</div>
             {["Submissions", "Exhibitions", "Catalogue"].map(l => (
@@ -180,26 +172,23 @@ function DashboardPreview({ name, logo, accent, ink, sidebar, fontStack }: {
           <div style={{ fontSize: 13.5, fontWeight: 600, color: ink }}>Gallery dashboard</div>
           <div style={{ fontSize: 12, color: "#8B8579" }}>Run your whole programme</div>
         </div>
-        <Link href="/dashboard" style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</Link>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/demo/gallery" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
       </div>
     </div>
   );
 }
 
 /* ─── Studio preview (preview step) ─── */
-function StudioPreview({ name, logo, accent, ink, fontStack }: {
-  name: string; logo: string | null; accent: string; ink: string; fontStack: string;
+function StudioPreview({ name, accent, ink, fontStack, onOpen }: {
+  name: string; accent: string; ink: string; fontStack: string; onOpen: () => void;
 }) {
-  const lbBase = { backgroundRepeat: "no-repeat", backgroundSize: "contain", backgroundPosition: "left center" } as const;
   return (
     <div style={{ border: "1px solid #ECE8DE", borderRadius: 16, overflow: "hidden", background: "#fff", boxShadow: "0 12px 36px rgba(40,34,28,.07)" }}>
       <div style={{ display: "flex", height: 230 }}>
         <div style={{ flex: "0 0 92px", background: ink, padding: "14px 10px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "flex-start" }}>
-            {logo
-              ? <div style={{ ...lbBase, backgroundImage: `url("${logo}")`, height: 20, width: 68, marginBottom: 6, filter: "brightness(0) invert(1)" }} />
-              : <div style={{ fontFamily: fontStack, fontSize: 14, fontWeight: 600, color: "#FBFAF8", lineHeight: 1.1 }}>{(name || "Gallery").split(" ")[0]}</div>
-            }
+            <div style={{ fontFamily: fontStack, fontSize: 14, fontWeight: 600, color: "#FBFAF8", lineHeight: 1.1 }}>{(name || "Gallery").split(" ")[0]}</div>
             <div style={{ height: 7 }} />
             <div style={{ fontSize: 10, background: "rgba(255,255,255,.12)", color: "#fff", padding: "4px 9px", borderRadius: 6, width: "100%" }}>Home</div>
             {["My work", "Submit", "Messages"].map(l => (
@@ -222,7 +211,8 @@ function StudioPreview({ name, logo, accent, ink, fontStack }: {
           <div style={{ fontSize: 13.5, fontWeight: 600, color: ink }}>Artist studio</div>
           <div style={{ fontSize: 12, color: "#8B8579" }}>Where your artists submit</div>
         </div>
-        <Link href="/studio" style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</Link>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+        <a href="/demo/artist" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
       </div>
     </div>
   );
@@ -235,7 +225,6 @@ export default function ReviewPage() {
   // Brand state
   const [galleryName, setGalleryName] = useState("Your Gallery");
   const [tagline, setTagline] = useState("");
-  const [logo, setLogo] = useState<string | null>(null);
   const [accent, setAccent] = useState("#B5623C");
   const [ink, setInk] = useState("#17150F");
   const [sidebar, setSidebar] = useState("#F4F1EA");
@@ -254,7 +243,6 @@ export default function ReviewPage() {
   const [reviewerEmail, setReviewerEmail] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Derived
   const cf = customFont.trim();
@@ -272,13 +260,6 @@ export default function ReviewPage() {
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function onLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const rd = new FileReader();
-    rd.onload = () => setLogo(rd.result as string);
-    rd.readAsDataURL(f);
-  }
 
   function buildSummary() {
     const lines: string[] = [];
@@ -328,6 +309,12 @@ export default function ReviewPage() {
     document.body.removeChild(ta); done();
   }
 
+  // Hand the chosen branding to the demo portals (applied for demo accounts only).
+  function saveBrand() {
+    const brand = { name: galleryName === "Your Gallery" ? "" : galleryName, accent, ink, sidebar, font, customFont: customFont.trim() };
+    document.cookie = `pl_brand=${encodeURIComponent(JSON.stringify(brand))}; path=/; max-age=86400; samesite=lax`;
+  }
+
   const showStepper = step === "branding" || step === "preview" || step === "feedback";
 
   const sectionLabel: React.CSSProperties = { fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: "#A39D8E", fontWeight: 600, marginBottom: 13 };
@@ -370,11 +357,11 @@ export default function ReviewPage() {
               See Woza Art as <em style={{ fontStyle: "italic", color: "#6B4A3A" }}>your</em> gallery — then tell us what to change.
             </h1>
             <p style={{ fontSize: "clamp(15px,1.7vw,18px)", color: "#57534A", lineHeight: 1.6, maxWidth: 600, margin: "24px 0 0" }}>
-              You've had a look at the working sample. Now make it yours: add your name, logo and colours, see both portals adopt your brand, then walk through the features and tell us what's valuable and what's missing. It takes about ten minutes.
+              You've had a look at the working sample. Now make it yours: add your name, colours and type, see both portals adopt your brand, then walk through the features and tell us what's valuable and what's missing. It takes about ten minutes.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 16, margin: "40px 0 36px", maxWidth: 760 }}>
               {[
-                { n: "01", title: "Brand it",   desc: "Your logo, colours and type, applied live." },
+                { n: "01", title: "Brand it",   desc: "Your name, colours and type, applied live." },
                 { n: "02", title: "Review it",  desc: "Open both portals dressed in your identity." },
                 { n: "03", title: "Shape it",   desc: "A short walkthrough survey — your feedback guides what we build." },
               ].map(card => (
@@ -423,28 +410,6 @@ export default function ReviewPage() {
                     placeholder="Contemporary art · Cape Town"
                     style={{ width: "100%", border: "1px solid #E0DBCF", borderRadius: 10, padding: "12px 13px", fontFamily: "inherit", fontSize: 14, color: "#17150F", background: "#fff", boxSizing: "border-box" }}
                   />
-                </div>
-
-                {/* Logo */}
-                <div>
-                  <label style={{ display: "block", fontSize: 12.5, fontWeight: 550, marginBottom: 7, color: "#3A372F" }}>
-                    Logo <span style={{ color: "#A39D8E", fontWeight: 400 }}>optional · PNG or SVG</span>
-                  </label>
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    <label style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 9, border: "1.5px dashed #D4CEC0", background: "#FAF8F3", borderRadius: 11, padding: 16, cursor: "pointer", fontSize: 13.5, color: "#57534A", fontWeight: 500 }}>
-                      <svg width={17} height={17} viewBox="0 0 24 24" fill="none" stroke="#A39D8E" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 16V4M7 9l5-5 5 5" /><path d="M5 20h14" />
-                      </svg>
-                      Upload logo
-                      <input ref={logoInputRef} type="file" accept="image/*" onChange={onLogoChange} style={{ display: "none" }} />
-                    </label>
-                    {logo && (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #ECE8DE", borderRadius: 11, padding: "9px 12px" }}>
-                        <div style={{ backgroundImage: `url("${logo}")`, backgroundRepeat: "no-repeat", backgroundSize: "contain", backgroundPosition: "left center", height: 26, width: 90 }} />
-                        <button onClick={() => setLogo(null)} style={{ border: "none", background: "none", cursor: "pointer", color: "#A39D8E", fontSize: 15, padding: "0 2px" }}>✕</button>
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 {/* Accent colour */}
@@ -559,7 +524,6 @@ export default function ReviewPage() {
                 <div style={{ fontSize: 12, letterSpacing: ".1em", textTransform: "uppercase", color: "#A39D8E", fontWeight: 600, marginBottom: 13 }}>Live preview</div>
                 <BrandPreviewCard
                   name={galleryName}
-                  logo={logo}
                   accent={accent}
                   ink={ink}
                   sidebar={sidebar}
@@ -587,8 +551,8 @@ export default function ReviewPage() {
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 20, marginTop: 34 }}>
-              <DashboardPreview name={galleryName} logo={logo} accent={accent} ink={ink} sidebar={sidebar} fontStack={fontStack} />
-              <StudioPreview name={galleryName} logo={logo} accent={accent} ink={ink} fontStack={fontStack} />
+              <DashboardPreview name={galleryName} accent={accent} ink={ink} sidebar={sidebar} fontStack={fontStack} onOpen={saveBrand} />
+              <StudioPreview name={galleryName} accent={accent} ink={ink} fontStack={fontStack} onOpen={saveBrand} />
             </div>
 
             <div style={{ background: "#F4F1EA", border: "1px solid #ECE8DE", borderRadius: 13, padding: "16px 18px", marginTop: 22, display: "flex", gap: 11, alignItems: "flex-start", maxWidth: 760 }}>
