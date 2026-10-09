@@ -42,7 +42,7 @@ export default function PayoutsPanel({ data }: { data: Payout[] }) {
     const payout = paying;
     if (!payout) return;
     try {
-      await markPayoutPaid(input);
+      const { noticeError } = await markPayoutPaid(input);
       setPayouts(prev => prev.map(p => p.id === payout.id ? {
         ...p,
         status: "paid",
@@ -52,7 +52,7 @@ export default function PayoutsPanel({ data }: { data: Payout[] }) {
         hasProofOfPayment: p.hasProofOfPayment || input.proofOfPayment != null,
       } : p));
       setPaying(null);
-      notify(`Marked ${payout.amount} to ${payout.artist} as paid.`);
+      notify(noticeError ? `Marked as paid, but ${payout.artist} wasn't notified: ${noticeError}` : `Marked ${payout.amount} to ${payout.artist} as paid.`);
     } catch (err) {
       notify(err instanceof Error ? err.message : "Couldn't record that payout — try again.");
     }
