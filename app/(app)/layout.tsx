@@ -7,8 +7,6 @@ import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { GalleryConfigProvider } from "@/lib/gallery-context";
 import { buildGalleryRuntimeConfig } from "@/lib/gallery-runtime-config";
 import { themeCssVars } from "@/lib/theme-css";
-import { isDemoUser } from "@/lib/demo";
-import { DEMO_BACK_COOKIE, DEMO_BRAND_COOKIE, demoBrandCssVars, demoBrandFontHref, parseDemoBrand, safeBackPath } from "@/lib/demo-brand";
 
 // Gallery-specific display/body fonts, scoped to the portal route group only —
 // the marketing site and auth pages always use the fixed default fonts loaded
@@ -42,22 +40,9 @@ export default async function PortalLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient(await cookies());
   const gallery = await getCurrentGallery(supabase);
   const runtimeConfig = buildGalleryRuntimeConfig(gallery);
-
-  // Demo visitors who styled the portals on /review see their own brand.
-  const { data: { user } } = await supabase.auth.getUser();
-  const isDemo = isDemoUser(user);
-  const backHref = safeBackPath(cookieStore.get(DEMO_BACK_COOKIE)?.value);
-  const brand = isDemo ? parseDemoBrand(cookieStore.get(DEMO_BRAND_COOKIE)?.value) : null;
-  if (brand?.name) {
-    runtimeConfig.identity.name = brand.name;
-    runtimeConfig.identity.shortName = brand.name;
-    runtimeConfig.identity.logoWordmark = undefined;
-  }
-  const fontHref = brand ? demoBrandFontHref(brand) : null;
 
   const fontDisplay = gallery.font_display as unknown as { googleFont: string };
   const fontBody = gallery.font_body as unknown as { googleFont: string };
@@ -68,19 +53,8 @@ export default async function PortalLayout({
   return (
     <div
       className={`${cinzel.variable} ${poppins.variable} h-full`}
-      style={{ ...themeCssVars(gallery), ...fontOverrides, ...(brand ? demoBrandCssVars(brand) : {}) } as CSSProperties}
+      style={{ ...themeCssVars(gallery), ...fontOverrides } as CSSProperties}
     >
-      {isDemo && (
-        // Plain anchor: /demo/exit is a route handler that signs the demo out.
-        // eslint-disable-next-line @next/next/no-html-link-for-pages
-        <a
-          href="/demo/exit"
-          style={{ position: "fixed", left: "50%", bottom: 16, transform: "translateX(-50%)", zIndex: 60, background: "#17150F", color: "#FBFAF8", fontSize: 13, fontWeight: 500, padding: "9px 16px", borderRadius: 999, boxShadow: "0 6px 20px rgba(0,0,0,.25)" }}
-        >
-          ← Back to {backHref.startsWith("/review") ? "review" : "site"}
-        </a>
-      )}
-      {fontHref && <link rel="stylesheet" href={fontHref} />}
       <GalleryConfigProvider value={runtimeConfig}>{children}</GalleryConfigProvider>
     </div>
   );

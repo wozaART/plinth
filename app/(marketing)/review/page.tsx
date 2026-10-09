@@ -173,7 +173,7 @@ function DashboardPreview({ name, accent, ink, sidebar, fontStack, onOpen }: {
           <div style={{ fontSize: 12, color: "#8B8579" }}>Run your whole programme</div>
         </div>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/demo/gallery" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
+        <a href="/demo/gallery?from=review" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
       </div>
     </div>
   );
@@ -212,7 +212,7 @@ function StudioPreview({ name, accent, ink, fontStack, onOpen }: {
           <div style={{ fontSize: 12, color: "#8B8579" }}>Where your artists submit</div>
         </div>
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-        <a href="/demo/artist" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
+        <a href="/demo/artist?from=review" onClick={onOpen} style={{ background: ink, color: "#fff", fontSize: 13, fontWeight: 500, padding: "10px 16px", borderRadius: 9, whiteSpace: "nowrap" }}>Open →</a>
       </div>
     </div>
   );
@@ -325,7 +325,7 @@ export default function ReviewPage() {
     setStep("preview");
   }, []);
 
-  // Hand the chosen branding to the demo portals (applied for demo accounts only).
+  // Hand the chosen branding to the demo portals (applied to the demo portals).
   function saveBrand() {
     const brand = { name: galleryName === "Your Gallery" ? "" : galleryName, accent, ink, sidebar, font, customFont: customFont.trim() };
     document.cookie = `pl_brand=${encodeURIComponent(JSON.stringify(brand))}; path=/; max-age=86400; samesite=lax`;

@@ -1,16 +1,8 @@
 import type { CSSProperties } from "react";
 
-// Branding picked on /review travels into the live demo portals via this
-// cookie. It is only ever applied to demo accounts (see the portal layout),
-// and every value is validated here because the cookie is user-controlled.
+// Branding picked on /review travels into the demo portals via this cookie.
+// Every value is validated here because the cookie is user-controlled.
 export const DEMO_BRAND_COOKIE = "pl_brand";
-
-// Same-origin path the visitor entered the demo from (set by /demo/[role]).
-export const DEMO_BACK_COOKIE = "pl_demo_back";
-
-export function safeBackPath(raw: string | undefined): string {
-  return raw && /^\/(?!\/)[\w\-./]*(\?step=preview)?$/.test(raw) ? raw : "/";
-}
 
 export interface DemoBrand {
   name: string;
