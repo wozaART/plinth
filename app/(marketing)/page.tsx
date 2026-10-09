@@ -30,12 +30,12 @@ export default function Home() {
               Woza Art is the quiet operating system for small galleries — submissions, exhibitions, catalogue and collectors in one place, with artists kept informed at every step. So your curators can do the one thing software can&apos;t: welcome people through the door.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 12, marginTop: 34 }}>
-              <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#17150F", color: "#FBFAF8", padding: "14px 22px", borderRadius: 11, fontSize: 14.5, fontWeight: 500 }}>
+              <a href="/demo/gallery" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#17150F", color: "#FBFAF8", padding: "14px 22px", borderRadius: 11, fontSize: 14.5, fontWeight: 500 }}>
                 Explore the gallery dashboard <span style={{ fontSize: 16, lineHeight: 0 }}>→</span>
-              </Link>
-              <Link href="/studio" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#fff", border: "1px solid #E0DBCF", color: "#17150F", padding: "14px 22px", borderRadius: 11, fontSize: 14.5, fontWeight: 500 }}>
+              </a>
+              <a href="/demo/artist" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#fff", border: "1px solid #E0DBCF", color: "#17150F", padding: "14px 22px", borderRadius: 11, fontSize: 14.5, fontWeight: 500 }}>
                 See the artist studio
-              </Link>
+              </a>
             </div>
             <div style={{ fontSize: 12.5, color: "#9A9486", marginTop: 22 }}>Two live demos · no sign-up · explore both sides of the platform</div>
           </div>
@@ -153,9 +153,9 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#17150F", color: "#FBFAF8", padding: "12px 19px", borderRadius: 10, fontSize: 13.5, fontWeight: 500 }}>
+              <a href="/demo/gallery" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#17150F", color: "#FBFAF8", padding: "12px 19px", borderRadius: 10, fontSize: 13.5, fontWeight: 500 }}>
                 Open the gallery dashboard <span style={{ fontSize: 15, lineHeight: 0 }}>→</span>
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -191,9 +191,9 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <Link href="/studio" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#FBFAF8", color: "#17150F", padding: "12px 19px", borderRadius: 10, fontSize: 13.5, fontWeight: 500 }}>
+              <a href="/demo/artist" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#FBFAF8", color: "#17150F", padding: "12px 19px", borderRadius: 10, fontSize: 13.5, fontWeight: 500 }}>
                 Open the artist studio <span style={{ fontSize: 15, lineHeight: 0 }}>→</span>
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -369,12 +369,12 @@ export default function Home() {
         <h2 style={{ fontFamily: "var(--font-newsreader), serif", fontSize: "clamp(30px,5vw,54px)", fontWeight: 500, letterSpacing: "-.025em", lineHeight: 1.05, margin: "0 auto", maxWidth: 740 }}>Bring a little calm to your gallery.</h2>
         <p style={{ fontSize: 16, color: "#57534A", lineHeight: 1.6, margin: "20px auto 0", maxWidth: 520 }}>Explore both portals as a live demo. When you&apos;re ready, we&apos;ll help you set up your own gallery in an afternoon.</p>
         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 12, justifyContent: "center", marginTop: 34 }}>
-          <Link href="/dashboard" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#17150F", color: "#FBFAF8", padding: "15px 26px", borderRadius: 11, fontSize: 15, fontWeight: 500 }}>
+          <a href="/demo/gallery" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#17150F", color: "#FBFAF8", padding: "15px 26px", borderRadius: 11, fontSize: 15, fontWeight: 500 }}>
             Explore the gallery dashboard <span style={{ fontSize: 16, lineHeight: 0 }}>→</span>
-          </Link>
-          <Link href="/studio" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#fff", border: "1px solid #E0DBCF", color: "#17150F", padding: "15px 26px", borderRadius: 11, fontSize: 15, fontWeight: 500 }}>
+          </a>
+          <a href="/demo/artist" style={{ display: "inline-flex", alignItems: "center", gap: 9, background: "#fff", border: "1px solid #E0DBCF", color: "#17150F", padding: "15px 26px", borderRadius: 11, fontSize: 15, fontWeight: 500 }}>
             See the artist studio
-          </Link>
+          </a>
         </div>
       </section>
 
