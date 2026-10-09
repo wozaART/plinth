@@ -4,18 +4,10 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { isDemoUser } from "@/lib/demo";
 import { addDomainToProject, removeDomainFromProject, getDomainStatus, dnsInstructionsFor } from "@/lib/vercel/domains";
 
 async function supabaseServer() {
   return createClient(await cookies());
-}
-
-// Demo accounts share one gallery, so domain changes (which hit the Vercel
-// API and the shared gallery row) are skipped; the settings UI still works.
-async function isDemoSession(supabase: Awaited<ReturnType<typeof supabaseServer>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  return isDemoUser(user);
 }
 
 const DOMAIN_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)(\.(?!-)[a-z0-9-]{1,63}(?<!-))+$/i;
@@ -25,7 +17,6 @@ export async function connectCustomDomain(formData: FormData) {
   if (!DOMAIN_RE.test(domain)) throw new Error(`"${domain}" doesn't look like a valid domain.`);
 
   const supabase = await supabaseServer();
-  if (await isDemoSession(supabase)) return dnsInstructionsFor(domain);
   const gallery = await getCurrentGallery(supabase);
 
   await addDomainToProject(domain);
@@ -42,7 +33,6 @@ export async function connectCustomDomain(formData: FormData) {
 
 export async function refreshDomainStatus() {
   const supabase = await supabaseServer();
-  if (await isDemoSession(supabase)) return;
   const gallery = await getCurrentGallery(supabase);
   if (!gallery.custom_domain) return;
 
@@ -57,7 +47,6 @@ export async function refreshDomainStatus() {
 
 export async function disconnectCustomDomain() {
   const supabase = await supabaseServer();
-  if (await isDemoSession(supabase)) return;
   const gallery = await getCurrentGallery(supabase);
   if (!gallery.custom_domain) return;
 
