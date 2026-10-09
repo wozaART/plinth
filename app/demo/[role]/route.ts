@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { DEMO_BACK_COOKIE } from "@/lib/demo-brand";
 
 // One-tap demo access for the marketing site. The demo accounts' credentials
 // live in server-side env vars (never shipped to the client): the route signs
@@ -36,5 +37,18 @@ export async function GET(
   const url = request.nextUrl.clone();
   url.pathname = demo.destination;
   url.search = "";
-  return NextResponse.redirect(url);
+  const response = NextResponse.redirect(url);
+
+  // Remember where the visitor came from (same-origin pages only) so the demo
+  // portals can offer a way back.
+  const referer = request.headers.get("referer");
+  let back = "/";
+  if (referer) {
+    try {
+      const from = new URL(referer);
+      if (from.origin === request.nextUrl.origin && !from.pathname.startsWith("/demo")) back = from.pathname;
+    } catch {}
+  }
+  response.cookies.set(DEMO_BACK_COOKIE, back, { path: "/", httpOnly: true, sameSite: "lax", maxAge: 60 * 60 * 24 });
+  return response;
 }

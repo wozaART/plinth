@@ -5,6 +5,13 @@ import type { CSSProperties } from "react";
 // and every value is validated here because the cookie is user-controlled.
 export const DEMO_BRAND_COOKIE = "pl_brand";
 
+// Same-origin path the visitor entered the demo from (set by /demo/[role]).
+export const DEMO_BACK_COOKIE = "pl_demo_back";
+
+export function safeBackPath(raw: string | undefined): string {
+  return raw && /^\/(?!\/)[\w\-./]*$/.test(raw) ? raw : "/";
+}
+
 export interface DemoBrand {
   name: string;
   accent: string;
