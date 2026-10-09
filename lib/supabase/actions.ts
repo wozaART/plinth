@@ -568,3 +568,39 @@ export async function getPayoutProofSignedUrl(id: string) {
   const supabase = await supabaseServer();
   return getPayoutProofUrl(supabase, id);
 }
+
+export interface ArtistProfileInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  bankName: string;
+  accountNumber: string;
+  branchCode: string;
+  accountType: string;
+}
+
+export async function updateArtistProfile(input: ArtistProfileInput) {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const fullName = [input.firstName, input.lastName].map(s => s.trim()).filter(Boolean).join(" ");
+  if (!fullName) throw new Error("Name is required.");
+
+  const { error: profileError } = await supabase
+    .from("artist_profiles")
+    .update({ full_name: fullName, phone: input.phone.trim() || null })
+    .eq("id", user.id);
+  if (profileError) throw profileError;
+
+  const { error: bankError } = await supabase.from("artist_bank_details").upsert({
+    id: user.id,
+    bank_name: input.bankName.trim() || null,
+    bank_account_number: input.accountNumber.trim() || null,
+    branch_code: input.branchCode.trim() || null,
+    account_type: input.accountType.trim() || null,
+  });
+  if (bankError) throw bankError;
+
+  revalidatePath("/studio");
+}
