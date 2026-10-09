@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { TERMS_QUESTIONS, type TermsResult } from "@/lib/consignment-terms";
 import { validateAnswers } from "@/lib/form-validation";
-import { isDemoUser } from "@/lib/demo";
 
 // Public: the respondent is a gallery with no Woza Art account, so there is no
 // auth check. Every value is validated against the question list, and the
@@ -79,8 +78,6 @@ export async function markConsignmentResponseReviewed(id: string) {
 
 export async function sendConsignmentTermsFollowup(id: string, message: string) {
   const supabase = createClient(await cookies());
-  const { data: { user } } = await supabase.auth.getUser();
-  if (isDemoUser(user)) return { demo: true };
   const { data, error } = await supabase.functions.invoke("send-consignment-terms-followup", {
     body: { responseId: id, message },
   });
@@ -103,7 +100,6 @@ export async function sendConsignmentTermsInvite(input: { contactName: string; c
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
-  if (isDemoUser(user)) return { demo: true };
 
   const { data, error } = await supabase.functions.invoke("send-consignment-terms-invite", {
     body: {
