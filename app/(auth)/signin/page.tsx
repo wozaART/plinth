@@ -37,6 +37,13 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [forgotSent, setForgotSent] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 6000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   // ── Gallery form state ────────────────────────────────────────
   const [gEmail, setGEmail] = useState("");
@@ -180,14 +187,22 @@ function SignInForm() {
 
   const handleGallerySignUp = () =>
     withLoad(async () => {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
           data: { role: "gallery", gallery_name: signupGalleryName, full_name: signupFullName, city: signupCity },
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         },
       });
       if (error) { setError(error.message); return; }
+      if (!data.session) {
+        // Email confirmation required before a session exists.
+        setToast(`Check your email — we sent a confirmation link to ${signupEmail}.`);
+        setGEmail(signupEmail);
+        setGView("signin");
+        return;
+      }
       router.push("/dashboard");
       router.refresh();
     });
@@ -475,6 +490,16 @@ function SignInForm() {
       </div>
 
       {redirecting && <RedirectingTransition />}
+
+      {toast && (
+        <div
+          role="status"
+          className="anim-toast"
+          style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, width: "max-content", maxWidth: "calc(100vw - 32px)", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}
+        >
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
