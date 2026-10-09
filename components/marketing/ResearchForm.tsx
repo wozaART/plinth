@@ -2,27 +2,26 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Field } from "@/components/marketing/FormFields";
-import { submitConsignmentTerms } from "@/lib/supabase/consignment-terms-actions";
-import {
-  TERMS_SECTIONS,
-  isTermsQuestionShown,
-  type TermsResult,
-  type TermsValues,
-} from "@/lib/consignment-terms";
+import { submitResearchResponse } from "@/lib/supabase/research-actions";
+import { isTermsQuestionShown, type TermsResult, type TermsValues } from "@/lib/consignment-terms";
+import { getResearchForm, researchSections } from "@/lib/research-forms";
 
 const SERIF = "var(--font-newsreader), serif";
 
-export default function ConsignmentTermsForm({ initial }: { initial: TermsValues }) {
-  const [values, setValues] = useState<TermsValues>(initial);
+export default function ResearchForm({ slug }: { slug: string }) {
+  const form = getResearchForm(slug);
+  const [values, setValues] = useState<TermsValues>({});
   const [result, setResult] = useState<TermsResult | null>(null);
   const [pending, startTransition] = useTransition();
+
+  if (!form) return null;
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       try {
-        setResult(await submitConsignmentTerms(formData));
+        setResult(await submitResearchResponse(slug, formData));
       } catch {
         setResult({ ok: false, message: "We couldn't reach the server. Check your connection and try again.", errors: {} });
       }
@@ -30,9 +29,10 @@ export default function ConsignmentTermsForm({ initial }: { initial: TermsValues
   }
 
   if (result?.ok) {
+    const first = values.respondent_name?.trim().split(" ")[0];
     return (
       <div role="status" style={{ background: "var(--pl-approved-panel-bg)", border: "1px solid var(--pl-approved-panel-border)", borderRadius: "var(--pl-radius-card-lg)", padding: "28px 24px" }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 500, letterSpacing: "-.01em", margin: 0 }}>Thank you{values.contact_name ? `, ${values.contact_name.split(" ")[0]}` : ""}.</h2>
+        <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 500, letterSpacing: "-.01em", margin: 0 }}>Thank you{first ? `, ${first}` : ""}.</h2>
         <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--pl-approved-fg)", margin: "10px 0 0" }}>
           Your answers are saved. You can close this page.
         </p>
@@ -44,7 +44,7 @@ export default function ConsignmentTermsForm({ initial }: { initial: TermsValues
 
   return (
     <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      {TERMS_SECTIONS.map((section) => (
+      {researchSections(form).map((section) => (
         <section key={section.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: "var(--pl-radius-card-lg)", padding: "22px clamp(16px,4vw,24px) 24px" }}>
           <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 500, letterSpacing: "-.01em", margin: 0 }}>{section.title}</h2>
           {section.intro && <p style={{ fontSize: 14, lineHeight: 1.55, color: "var(--pl-text-muted)", margin: "6px 0 0" }}>{section.intro}</p>}

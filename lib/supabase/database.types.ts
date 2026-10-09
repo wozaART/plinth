@@ -685,6 +685,36 @@ export type Database = {
           },
         ]
       }
+      research_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          form_slug: string
+          id: string
+          respondent_email: string | null
+          respondent_name: string
+          respondent_role: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          form_slug: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name: string
+          respondent_role: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          form_slug?: string
+          id?: string
+          respondent_email?: string | null
+          respondent_name?: string
+          respondent_role?: string
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           artist_amount_cents: number

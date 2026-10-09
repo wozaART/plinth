@@ -19,6 +19,7 @@ export default async function SiteNav() {
           <a href="#workflow" style={{ fontSize: 13.5, color: "#57534A" }}>How it works</a>
           <a href="#resources" style={{ fontSize: 13.5, color: "#57534A" }}>Resources</a>
           <Link href="/review" style={{ fontSize: 13.5, color: "#57534A" }}>Personalise</Link>
+          <Link href="/forms" style={{ fontSize: 13.5, color: "#57534A" }}>Forms</Link>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {!user && (
