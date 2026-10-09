@@ -15,7 +15,7 @@ export default function SiteFooter() {
           <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 48 }}>
             {[
               { heading: "Product", links: [["Gallery dashboard", "/dashboard"], ["Artist studio", "/studio"], ["How it works", "#workflow"]] as [string, string][] },
-              { heading: "Resources", links: [["Documentation", "/docs"], ["Articles", "#resources"], ["Tutorials", "#resources"]] as [string, string][] },
+              { heading: "Resources", links: [["Documentation", "/docs"], ["Forms", "/forms"], ["Articles", "#resources"], ["Tutorials", "#resources"]] as [string, string][] },
               { heading: "Gallery", links: [["About", "#top"], ["Pricing", "#resources"], ["Contact", "#top"]] as [string, string][] },
             ].map(({ heading, links }) => (
               <div key={heading}>
