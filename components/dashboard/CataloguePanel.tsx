@@ -101,10 +101,10 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
     const work = selling;
     if (!work) return;
     try {
-      await recordSale(input);
+      const { noticeError } = await recordSale(input);
       setWorks(prev => prev.map(w => w.id === work.id ? { ...w, status: "sold" } : w));
       setSelling(null);
-      notify(`"${work.title}" marked as sold.`);
+      notify(noticeError ? `"${work.title}" marked as sold, but the artist wasn't notified: ${noticeError}` : `"${work.title}" marked as sold.`);
     } catch (err) {
       notify(err instanceof Error ? err.message : "Couldn't record that sale — try again.");
     }

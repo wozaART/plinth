@@ -11,6 +11,33 @@ async function supabaseServer() {
   return createClient(await cookies());
 }
 
+async function resolveAppUrl() {
+  let appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!appUrl) {
+    const requestHeaders = await headers();
+    const host = requestHeaders.get("host") ?? "localhost:3000";
+    const protocol = host.startsWith("localhost") ? "http" : "https";
+    appUrl = `${protocol}://${host}`;
+  }
+  return appUrl;
+}
+
+// Notices go out after the sale/payout is already committed, so a failed
+// email must never fail the action — it's returned for the UI to surface.
+async function sendNotice(fn: "send-sale-notice" | "send-payout-notice", body: Record<string, string>) {
+  try {
+    const supabase = await supabaseServer();
+    const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, appUrl: await resolveAppUrl() } });
+    if (error) {
+      const detail = await error.context?.json?.().catch(() => null);
+      return detail?.error || error.message;
+    }
+    return data?.error as string | undefined;
+  } catch (err) {
+    return err instanceof Error ? err.message : "Failed to send notification.";
+  }
+}
+
 export async function decideSubmission(id: string, status: SubmissionStatus, note: string) {
   const supabase = await supabaseServer();
   const { error } = await supabase
@@ -441,8 +468,11 @@ export async function recordSale(input: RecordSaleInput) {
   });
   if (error) throw error;
 
+  const saleId = data as string;
+  const noticeError = await sendNotice("send-sale-notice", { saleId });
+
   revalidatePath("/dashboard");
-  return { id: data as string };
+  return { id: saleId, noticeError };
 }
 
 export async function acceptSubmissionIntoCatalogue(submissionId: string) {
@@ -514,7 +544,10 @@ export async function markPayoutPaid(input: MarkPayoutPaidInput) {
   });
   if (error) throw error;
 
+  const noticeError = await sendNotice("send-payout-notice", { payoutId: input.payoutId });
+
   revalidatePath("/dashboard");
+  return { noticeError };
 }
 
 export async function acknowledgePayout(id: string) {
