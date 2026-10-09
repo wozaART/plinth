@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { getPayoutProofUrl } from "@/lib/supabase/queries";
+import { isDemoUser } from "@/lib/demo";
 import type { SubmissionStatus, ExhibitionType, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 
 async function supabaseServer() {
@@ -27,6 +28,8 @@ async function resolveAppUrl() {
 async function sendNotice(fn: "send-sale-notice" | "send-payout-notice", body: Record<string, string>) {
   try {
     const supabase = await supabaseServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (isDemoUser(user)) return undefined;
     const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, appUrl: await resolveAppUrl() } });
     if (error) {
       const detail = await error.context?.json?.().catch(() => null);
@@ -167,6 +170,12 @@ export async function inviteArtist(email: string, fullName: string) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
 
+  // Demo accounts: no email is sent, but the UI behaves as if it was.
+  if (isDemoUser(user)) {
+    revalidatePath("/dashboard");
+    return { demo: true };
+  }
+
   const gallery = await getCurrentGallery(supabase);
 
   let appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -305,6 +314,12 @@ export async function inviteArtistToExhibition(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
+
+  // Demo accounts: no email is sent, but the UI behaves as if it was.
+  if (isDemoUser(user)) {
+    revalidatePath("/dashboard");
+    return { demo: true };
+  }
 
   const gallery = await getCurrentGallery(supabase);
 

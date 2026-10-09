@@ -10,6 +10,7 @@ import {
   type TermsResult,
   type TermsValues,
 } from "@/lib/consignment-terms";
+import { isDemoUser } from "@/lib/demo";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -119,6 +120,8 @@ export async function markConsignmentResponseReviewed(id: string) {
 
 export async function sendConsignmentTermsFollowup(id: string, message: string) {
   const supabase = createClient(await cookies());
+  const { data: { user } } = await supabase.auth.getUser();
+  if (isDemoUser(user)) return { demo: true };
   const { data, error } = await supabase.functions.invoke("send-consignment-terms-followup", {
     body: { responseId: id, message },
   });
@@ -141,6 +144,7 @@ export async function sendConsignmentTermsInvite(input: { contactName: string; c
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
+  if (isDemoUser(user)) return { demo: true };
 
   const { data, error } = await supabase.functions.invoke("send-consignment-terms-invite", {
     body: {
