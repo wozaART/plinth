@@ -7,7 +7,7 @@ import { artworkBg, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
-import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl } from "@/lib/supabase/actions";
+import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
 import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork, ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
@@ -228,12 +228,24 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
 const inputStyle: CSSProperties = { background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", width: "100%" };
 const labelStyle: CSSProperties = { fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" };
 
-function ProfilePanel({ initial }: { initial: ProfileData }) {
+function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (message: string) => void }) {
   const [showAccount, setShowAccount] = useState(false);
+  const [saving, startSaving] = useTransition();
   const [profile, setProfile] = useState(initial);
 
   function set<K extends keyof typeof profile>(key: K) {
     return (e: ChangeEvent<HTMLInputElement>) => setProfile(p => ({ ...p, [key]: e.target.value }));
+  }
+
+  function handleSave() {
+    startSaving(async () => {
+      try {
+        await updateArtistProfile(profile);
+        onNotify("Profile saved.");
+      } catch (err) {
+        onNotify(err instanceof Error ? err.message : "Couldn't save your profile.");
+      }
+    });
   }
 
   return (
@@ -243,7 +255,7 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>First name</span><input value={profile.firstName} onChange={set("firstName")} style={inputStyle} /></label>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Last name</span><input value={profile.lastName} onChange={set("lastName")} style={inputStyle} /></label>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Contact number</span><input value={profile.phone} onChange={set("phone")} placeholder="082 000 0000" style={inputStyle} /></label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Email</span><input value={profile.email} onChange={set("email")} placeholder="you@example.com" style={inputStyle} /></label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Email</span><input value={profile.email} readOnly style={{ ...inputStyle, opacity: 0.7, cursor: "not-allowed" }} /></label>
       </div>
 
       <div style={{ fontSize: 17, fontWeight: 600, margin: "28px 0 20px", fontFamily: "var(--font-newsreader, serif)" }}>Bank details</div>
@@ -267,8 +279,8 @@ function ProfilePanel({ initial }: { initial: ProfileData }) {
       </div>
 
       <div style={{ display: "flex", justifyContent: "center", marginTop: 30 }}>
-        <button style={{ background: "var(--pl-accent)", color: "var(--pl-on-accent)", border: "none", borderRadius: 10, padding: "12px 34px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          Update &amp; save
+        <button type="button" onClick={handleSave} disabled={saving} style={{ background: "var(--pl-accent)", color: "var(--pl-on-accent)", border: "none", borderRadius: 10, padding: "12px 34px", fontSize: 14, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.7 : 1 }}>
+          {saving ? "Saving…" : "Update & save"}
         </button>
       </div>
     </div>
@@ -642,7 +654,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </div>
           )}
 
-          {tab === "profile" && <ProfilePanel initial={profile} />}
+          {tab === "profile" && <ProfilePanel initial={profile} onNotify={message => { setToast(message); setTimeout(() => setToast(null), 3000); }} />}
         </div>
       </main>
 
