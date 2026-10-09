@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { isDemoUser } from "@/lib/demo";
 import { createClient } from "@/utils/supabase/server";
 
 export default async function SiteNav() {
@@ -25,7 +26,7 @@ export default async function SiteNav() {
           {!user && (
             <Link href="/signin" style={{ fontSize: 13.5, fontWeight: 500, color: "#17150F", padding: "9px 14px" }}>Sign in</Link>
           )}
-          {user && (
+          {user && !isDemoUser(user) && (
             <Link href="/dashboard" style={{ fontSize: 13, fontWeight: 500, background: "#17150F", color: "#FBFAF8", padding: "10px 17px", borderRadius: 9 }}>Open dashboard</Link>
           )}
         </div>
