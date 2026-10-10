@@ -124,7 +124,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(["all", ...CAT_STATUSES] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer", textTransform: "capitalize" }}>
@@ -135,8 +135,8 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
         <button onClick={() => setAddOpen(true)} style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add work</button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl dash-pad">
+        <table className="dash-table" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--pl-border)" }}>
               {["Work", "Artist", "Price", "Status"].map(h => (

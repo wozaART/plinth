@@ -23,7 +23,7 @@ export default function ActivityLogPanel({ data }: { data: AuditLogEntry[] }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center" }}>
+      <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center" }}>
         {entities.map(e => (
           <button key={e} onClick={() => setFilter(e)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === e ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === e ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === e ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer" }}>
             {e}
@@ -31,7 +31,7 @@ export default function ActivityLogPanel({ data }: { data: AuditLogEntry[] }) {
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl">
+      <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl dash-pad">
         {filtered.length === 0 ? (
           <div style={{ fontSize: 13, color: "var(--pl-text-muted)", padding: "20px 0" }}>No activity recorded yet.</div>
         ) : (
@@ -40,7 +40,7 @@ export default function ActivityLogPanel({ data }: { data: AuditLogEntry[] }) {
               const open = openId === entry.id;
               return (
                 <div key={entry.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, overflow: "hidden" }}>
-                  <button type="button" aria-expanded={open} onClick={() => setOpenId(open ? null : entry.id)} style={{ width: "100%", padding: "12px 16px", display: "flex", alignItems: "center", gap: 13, background: "transparent", border: "none", cursor: "pointer", textAlign: "left", font: "inherit", color: "inherit" }}>
+                  <button type="button" aria-expanded={open} onClick={() => setOpenId(open ? null : entry.id)} style={{ width: "100%", padding: "12px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", font: "inherit", color: "inherit" }}>
                     <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 14, background: ACTION_COLOR[entry.action].bg, color: ACTION_COLOR[entry.action].fg, flexShrink: 0 }}>
                       {ACTION_LABEL[entry.action]}
                     </span>

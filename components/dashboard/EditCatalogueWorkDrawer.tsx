@@ -56,7 +56,7 @@ export default function EditCatalogueWorkDrawer({ work, onClose, onSave, onDelet
             <input value={title} onChange={e => setTitle(e.target.value)} style={inputStyle} />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Listed price</span>
               <input value={price} onChange={e => setPrice(e.target.value)} style={inputStyle} />
@@ -67,7 +67,7 @@ export default function EditCatalogueWorkDrawer({ work, onClose, onSave, onDelet
             </label>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Commission %</span>
               <input value={commissionRatePct} onChange={e => setCommissionRatePct(e.target.value)} placeholder="Gallery default" style={inputStyle} />

@@ -51,7 +51,7 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
             <span style={{ fontSize: 14, fontWeight: 500 }}>{sub.artist}</span>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
             {[
               ["Year", sub.year],
               ["Medium", sub.medium],
@@ -97,7 +97,7 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
                   placeholder="Write a kind, honest response…"
                   style={{ width: "100%", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, padding: "11px 13px", fontSize: 13.5, resize: "none", fontFamily: "inherit", color: "var(--pl-text)" }}
                 />
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+                <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                   <button onClick={() => onDecide(sub.id, "approved", note)} style={{ padding: "12px", background: "var(--pl-approved-panel-bg)", color: "var(--pl-approved-fg)", border: "1px solid var(--pl-approved-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>Approve</button>
                   <button onClick={() => onDecide(sub.id, "changes", note)} style={{ padding: "12px", background: "var(--pl-changes-panel-bg)", color: "var(--pl-changes-fg)", border: "1px solid var(--pl-changes-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>Request changes</button>
                   <button onClick={() => onDecide(sub.id, "declined", note)} style={{ padding: "12px", background: "var(--pl-declined-panel-bg)", color: "var(--pl-declined-fg)", border: "1px solid var(--pl-declined-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer", gridColumn: "1/-1" }}>Decline</button>

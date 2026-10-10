@@ -37,7 +37,9 @@ interface DashboardShellProps {
 }
 
 export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist = false, artistName = "Artist", artistCity = "" }: DashboardShellProps) {
-  const [tab, setTab] = useState<Tab>("submissions");
+  const [tab, setTabState] = useState<Tab>("submissions");
+  const [navOpen, setNavOpen] = useState(false);
+  const setTab = (t: Tab) => { setTabState(t); setNavOpen(false); };
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
 
@@ -56,10 +58,12 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
   }
 
   return (
-    <div style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-bg-app)", color: "var(--pl-text)" }}>
+    <div className="dash-root" style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-bg-app)", color: "var(--pl-text)" }}>
+
+      {navOpen && <div className="dash-overlay" onClick={() => setNavOpen(false)} />}
 
       {/* Sidebar */}
-      <aside style={{ width: 228, flexShrink: 0, background: "var(--pl-sidebar)", borderRight: "1px solid var(--pl-border)", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
+      <aside className={`dash-aside${navOpen ? " open" : ""}`} style={{ width: 228, flexShrink: 0, background: "var(--pl-sidebar)", borderRight: "1px solid var(--pl-border)", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
         <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 7, padding: "0 18px 20px" }}>
           <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 21, fontWeight: 600 }}>{identity.logoWordmark?.primary ?? identity.shortName}</span>
           {identity.logoWordmark?.secondary && (
@@ -115,7 +119,12 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
 
       {/* Main */}
       <main style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ height: 56, borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", padding: "0 24px", gap: 14, flexShrink: 0 }}>
+        <div className="dash-mobile-bar">
+          <button onClick={() => setNavOpen(true)} aria-label="Open navigation" style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid var(--pl-border)", background: "var(--pl-surface)", color: "var(--pl-text)", fontSize: 18, cursor: "pointer", flexShrink: 0 }}>☰</button>
+          <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{identity.logoWordmark?.primary ?? identity.shortName}</span>
+          {pendingCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, background: "var(--pl-accent)", color: "var(--pl-on-accent)", padding: "2px 8px", borderRadius: 12 }}>{pendingCount}</span>}
+        </div>
+        <div className="dash-head" style={{ height: 56, borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", padding: "0 24px", gap: 14, flexShrink: 0 }}>
           <h1 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0, flex: 1, textTransform: "capitalize" }}>{tab}</h1>
           {ackCount > 0 && (
             <div style={{ display: "flex", gap: 6, alignItems: "center", fontSize: 12.5, color: "var(--pl-declined-fg)", background: "var(--pl-declined-panel-bg)", border: "1px solid var(--pl-declined-panel-border)", padding: "5px 11px", borderRadius: 20 }}>

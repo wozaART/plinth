@@ -160,7 +160,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
   }
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
+    <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl dash-pad">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap" as const, gap: 10 }}>
         <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 22, fontWeight: 550, margin: 0 }}>Exhibitions</h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

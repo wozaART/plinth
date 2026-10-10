@@ -81,7 +81,7 @@ export default function ExhibitionFormFields({
         <input value={form.theme} onChange={(e) => onChange({ theme: e.target.value })} placeholder="e.g. Landscape & memory of the interior" style={inputStyle} />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Medium requirements</span>
           <input value={form.mediumRequirements} onChange={(e) => onChange({ mediumRequirements: e.target.value })} placeholder="e.g. Oil or acrylic only" style={inputStyle} />
@@ -108,7 +108,7 @@ export default function ExhibitionFormFields({
         <input type="number" min={0} value={form.slots} onChange={(e) => onChange({ slots: e.target.value })} style={inputStyle} />
       </label>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={labelStyle}>Online submission deadline</span>
           <input type="date" value={form.submissionDeadline} onChange={(e) => onChange({ submissionDeadline: e.target.value })} style={inputStyle} />
