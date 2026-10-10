@@ -60,6 +60,15 @@ export async function GET(request: NextRequest) {
       if (!existingRole && role) {
         await supabase.auth.updateUser({ data: { role } });
       }
+      // Gallery sign-in for an account with no gallery: don't strand them on a
+      // dashboard they can't open.
+      if (roleParam === "gallery" && !invite && !exhibitionInvite && existingRole === "artist") {
+        const { data: owned } = await supabase.from("galleries").select("id").eq("owner_id", data.user.id).maybeSingle();
+        if (!owned) {
+          await supabase.auth.signOut();
+          return NextResponse.redirect(`${origin}/signin?notice=no-gallery`);
+        }
+      }
       return NextResponse.redirect(`${origin}${requestedNext ?? (role === "artist" ? "/studio" : "/dashboard")}`);
     }
   }

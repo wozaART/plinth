@@ -134,6 +134,7 @@ export type Database = {
           created_at: string
           gallery_id: string
           id: string
+          old_record: Json | null
           record: Json
           record_id: string
           table_name: string
@@ -145,6 +146,7 @@ export type Database = {
           created_at?: string
           gallery_id: string
           id?: string
+          old_record?: Json | null
           record: Json
           record_id: string
           table_name: string
@@ -156,6 +158,7 @@ export type Database = {
           created_at?: string
           gallery_id?: string
           id?: string
+          old_record?: Json | null
           record?: Json
           record_id?: string
           table_name?: string

@@ -37,7 +37,7 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [forgotSent, setForgotSent] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(searchParams.get("notice") === "no-gallery" ? "No gallery account found for this email. Create your gallery, or use the Artist tab." : null);
 
   useEffect(() => {
     if (!toast) return;
@@ -212,11 +212,17 @@ function SignInForm() {
     withLoad(async () => {
       const { error } = await supabase.auth.signInWithPassword({ email: gEmail, password: gPassword });
       if (error) { setError(error.message); return; }
-      if (pendingInviteParams) {
-        const inviteError = await redeemPendingInvites();
-        if (inviteError) { setError(inviteError); return; }
-        router.push("/studio");
-        router.refresh();
+
+      // The Gallery tab only ever leads to the gallery dashboard, even for
+      // accounts that are also artists. Accounts with no gallery get a toast.
+      const { data: { user: galleryUser } } = await supabase.auth.getUser();
+      const { data: ownedGallery } = galleryUser
+        ? await supabase.from("galleries").select("id").eq("owner_id", galleryUser.id).maybeSingle()
+        : { data: null };
+      const isArtistOnly = (galleryUser?.user_metadata as { role?: string } | undefined)?.role === "artist";
+      if (!galleryUser || (!ownedGallery && isArtistOnly)) {
+        await supabase.auth.signOut();
+        setToast("No gallery account found for this email. Create your gallery, or use the Artist tab.");
         return;
       }
       // Keep the transition on screen through the navigation — the sign-in

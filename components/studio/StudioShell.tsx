@@ -7,12 +7,13 @@ import { artworkBg, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
+import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
 import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork, ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
-type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "catalogue" | "earnings";
+type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "settings" | "catalogue" | "earnings";
 
 interface ProfileData {
   firstName: string;
@@ -379,6 +380,16 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--pl-accent)", transform: "translateY(-2px)", display: "inline-block" }} />
         </Link>
 
+        {isGalleryOwner ? (
+          <ProfileDropdown
+            current="artist"
+            tone="dark"
+            options={[
+              { kind: "gallery", name: identity.name, detail: identity.city, href: "/dashboard" },
+              { kind: "artist", name: artistName, detail: artistCity || "Artist studio", href: "/studio" },
+            ]}
+          />
+        ) : (
         <div style={{ padding: "11px 18px", borderTop: "1px solid var(--pl-border-dark)", borderBottom: "1px solid var(--pl-border-dark)", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: avatarBg(7), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials(artistName)}</div>
@@ -388,6 +399,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </div>
           </div>
         </div>
+        )}
 
         <nav style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
           {studioNav.map(item => (
@@ -399,6 +411,9 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </nav>
 
         <div style={{ padding: "10px 10px 0", borderTop: "1px solid var(--pl-border-dark)" }}>
+          <button onClick={() => setTab("settings")} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: tab === "settings" ? "var(--pl-on-dark)" : "var(--pl-on-dark-faint)", background: tab === "settings" ? "rgba(255,255,255,.08)" : "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
+            <span style={{ fontSize: 14 }}>⚙</span> Settings
+          </button>
           <button onClick={handleSignOut} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", borderRadius: 9, fontSize: 13, color: "var(--pl-declined-fg)", background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>
             <span style={{ fontSize: 14 }}>→</span> Sign out
           </button>
@@ -656,7 +671,11 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </div>
           )}
 
-          {tab === "profile" && isGalleryOwner && <ProfileSwitcher current="artist" />}
+          {tab === "settings" && (
+            isGalleryOwner
+              ? <ProfileSwitcher current="artist" />
+              : <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 16, padding: "22px 24px", maxWidth: 720, fontSize: 13, color: "var(--pl-text-muted)" }}>No settings to manage yet. If you also run a gallery, sign in from the Gallery tab to set it up and you can switch between profiles here.</div>
+          )}
           {tab === "profile" && <ProfilePanel initial={profile} onNotify={message => { setToast(message); setTimeout(() => setToast(null), 3000); }} />}
         </div>
       </main>
