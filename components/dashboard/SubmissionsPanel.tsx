@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ReviewDrawer from "./ReviewDrawer";
 import { STATUS_META } from "@/lib/constants";
-import { artworkBg } from "@/lib/utils";
+import { artworkFill } from "@/lib/utils";
 import { decideSubmission, acceptSubmissionIntoCatalogue } from "@/lib/supabase/actions";
 import type { Submission, SubmissionStatus } from "@/lib/types";
 
@@ -68,7 +68,7 @@ export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }
             const meta = STATUS_META[s.status];
             return (
               <button key={s.id} onClick={() => { setActive(s); setActiveIdx(i); }} style={{ textAlign: "left", background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, overflow: "hidden", cursor: "pointer", padding: 0 }}>
-                <div style={{ height: 110, background: artworkBg(i) }} />
+                <div style={{ height: 110, ...artworkFill(s.imageUrl, i) }} />
                 <div style={{ padding: "11px 13px 13px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6 }}>
                     <div>

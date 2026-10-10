@@ -55,6 +55,28 @@ export async function ackDeclinedSubmission(id: string) {
   revalidatePath("/studio");
 }
 
+// The image is uploaded straight from the browser to Supabase Storage
+// (server actions cap request bodies at 1 MB, well under the 10 MB bucket
+// limit); the action receives only the resulting storage path. It must live
+// under the caller's own `{user}/{submission}/` folder.
+function submissionImageUrl(supabase: Awaited<ReturnType<typeof supabaseServer>>, userId: string, submissionId: string, imagePath: string) {
+  if (!imagePath.startsWith(`${userId}/${submissionId}/`) || imagePath.includes("..")) {
+    throw new Error("Invalid image upload.");
+  }
+  return supabase.storage.from("submission-images").getPublicUrl(imagePath).data.publicUrl;
+}
+
+function parseSubmissionFields(formData: FormData) {
+  return {
+    title: String(formData.get("title") || "Untitled"),
+    medium: String(formData.get("medium") || ""),
+    dim: String(formData.get("dim") || ""),
+    year: Number(formData.get("year")) || new Date().getFullYear(),
+    price: Number(String(formData.get("price") || "").replace(/[^0-9.]/g, "")) || null,
+    statement: String(formData.get("statement") || ""),
+  };
+}
+
 export async function createSubmission(formData: FormData) {
   const supabase = await supabaseServer();
 
@@ -65,54 +87,62 @@ export async function createSubmission(formData: FormData) {
 
   const gallery = await getCurrentGallery(supabase);
 
-  const title = String(formData.get("title") || "Untitled");
-  const medium = String(formData.get("medium") || "");
-  const dim = String(formData.get("dim") || "");
-  const year = Number(formData.get("year")) || new Date().getFullYear();
-  const price = Number(String(formData.get("price") || "").replace(/[^0-9.]/g, "")) || null;
-  const statement = String(formData.get("statement") || "");
+  const fields = parseSubmissionFields(formData);
   const exhibitionId = String(formData.get("exhibitionId") || "") || null;
   const rulesAck = formData.get("rulesAck") === "true";
 
-  // Generated up front (rather than reading it back after insert) so the
-  // image can be uploaded and the row inserted with image_url already set
-  // in one shot — an artist's update-after-insert would otherwise be
-  // rejected by RLS, since the artist update policy only covers declined
-  // submissions they're acknowledging.
-  const submissionId = crypto.randomUUID();
-
-  let imageUrl: string | null = null;
-  const imageFile = formData.get("image");
-  if (imageFile instanceof File && imageFile.size > 0) {
-    const ext = imageFile.name.split(".").pop() || "jpg";
-    const path = `${user.id}/${submissionId}/original.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("submission-images").upload(path, imageFile, {
-      contentType: imageFile.type,
-      upsert: true,
-    });
-    if (!uploadError) {
-      imageUrl = supabase.storage.from("submission-images").getPublicUrl(path).data.publicUrl;
-    }
-  }
+  // Generated client-side so the image can be uploaded to its final path
+  // before the row exists; the artist update policy doesn't allow a
+  // follow-up update to attach it afterwards.
+  const submissionId = String(formData.get("id") || "") || crypto.randomUUID();
+  const imagePath = String(formData.get("imagePath") || "");
+  const imageUrl = imagePath ? submissionImageUrl(supabase, user.id, submissionId, imagePath) : null;
 
   const { error } = await supabase.from("submissions").insert({
     id: submissionId,
     gallery_id: gallery.id,
     exhibition_id: exhibitionId,
     artist_id: user.id,
-    title,
-    medium,
-    dim,
-    year,
-    price,
-    statement,
+    ...fields,
     image_url: imageUrl,
     rules_ack: rulesAck,
   });
   if (error) throw error;
 
   revalidatePath("/studio");
-  return { id: submissionId, title };
+  revalidatePath("/dashboard");
+  return { id: submissionId, title: fields.title };
+}
+
+// Artists can edit while a submission is pending (or the gallery asked for
+// changes); the database function rejects edits once it's approved/declined.
+export async function updateSubmission(id: string, formData: FormData) {
+  const supabase = await supabaseServer();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const fields = parseSubmissionFields(formData);
+  const imagePath = String(formData.get("imagePath") || "");
+  const imageUrl = imagePath ? submissionImageUrl(supabase, user.id, id, imagePath) : undefined;
+
+  const { error } = await supabase.rpc("submissions_update_artist_edit", {
+    p_submission_id: id,
+    p_title: fields.title,
+    p_medium: fields.medium,
+    p_dim: fields.dim,
+    p_year: fields.year,
+    p_price: fields.price,
+    p_statement: fields.statement,
+    p_image_url: imageUrl,
+  });
+  if (error) throw error;
+
+  revalidatePath("/studio");
+  revalidatePath("/dashboard");
+  return { id, title: fields.title };
 }
 
 export async function createContact(input: { name: string; email: string; role: "Artist" | "Collector"; focus: string; sendInvite: boolean }) {

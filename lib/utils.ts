@@ -1,7 +1,15 @@
+import type { CSSProperties } from "react";
 import { ARTWORK_GRADIENTS, AVATAR_COLORS } from "./constants";
 
 export function artworkBg(index: number): string {
   return ARTWORK_GRADIENTS[index % ARTWORK_GRADIENTS.length];
+}
+
+// Uploaded artwork photo when there is one, otherwise the placeholder gradient.
+export function artworkFill(imageUrl: string | undefined, index: number): CSSProperties {
+  return imageUrl
+    ? { backgroundImage: `url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--pl-sidebar)" }
+    : { background: artworkBg(index) };
 }
 
 export function avatarBg(index: number): string {

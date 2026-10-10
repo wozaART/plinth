@@ -128,28 +128,56 @@ describe("createSubmission", () => {
     expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ price: null, rules_ack: false });
   });
 
-  it("uploads the image under the user/submission path and stores its public URL", async () => {
+  it("stores the public URL for an image the browser already uploaded", async () => {
     signIn("artist");
-    const image = new File(["x"], "piece.PNG", { type: "image/png" });
-    const res = await actions.createSubmission(form({ title: "Dusk", image }));
-    expect(h.fake.uploads).toHaveLength(1);
-    expect(h.fake.uploads[0].path).toBe(`user-1/${res.id}/original.PNG`);
+    const res = await actions.createSubmission(form({ title: "Dusk", id: "sub-9", imagePath: "user-1/sub-9/123.png" }));
+    expect(res.id).toBe("sub-9");
     expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({
-      image_url: `https://cdn.test/submission-images/user-1/${res.id}/original.PNG`,
+      id: "sub-9",
+      image_url: "https://cdn.test/submission-images/user-1/sub-9/123.png",
     });
   });
 
-  it("still inserts the submission when the upload fails", async () => {
+  it("rejects an image path outside the artist's own submission folder", async () => {
     signIn("artist");
-    h.fake.state.uploadError = { message: "nope" };
-    await actions.createSubmission(form({ image: new File(["x"], "a.jpg", { type: "image/jpeg" }) }));
-    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ image_url: null });
+    await expect(actions.createSubmission(form({ id: "sub-9", imagePath: "someone-else/sub-9/x.png" }))).rejects.toThrow("Invalid image upload.");
+    await expect(actions.createSubmission(form({ id: "sub-9", imagePath: "user-1/other/x.png" }))).rejects.toThrow("Invalid image upload.");
+    expect(h.fake.last("submissions", "insert")).toBeUndefined();
+  });
+});
+
+describe("updateSubmission", () => {
+  const form = (fields: Record<string, string>) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+    return fd;
+  };
+
+  it("requires a signed-in user", async () => {
+    await expect(actions.updateSubmission("s1", form({}))).rejects.toThrow("Not signed in.");
   });
 
-  it("skips upload for an empty file", async () => {
+  it("calls the edit function with the new fields and image URL", async () => {
     signIn("artist");
-    await actions.createSubmission(form({ image: new File([], "empty.jpg") }));
-    expect(h.fake.uploads).toHaveLength(0);
+    const res = await actions.updateSubmission("s1", form({ title: "Dawn", price: "R 1,200", imagePath: "user-1/s1/9.jpg" }));
+    expect(res).toEqual({ id: "s1", title: "Dawn" });
+    expect(h.fake.rpcCalls.at(-1)).toMatchObject({
+      fn: "submissions_update_artist_edit",
+      args: { p_submission_id: "s1", p_title: "Dawn", p_price: 1200, p_image_url: "https://cdn.test/submission-images/user-1/s1/9.jpg" },
+    });
+    expect(h.revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("keeps the existing image when none is supplied", async () => {
+    signIn("artist");
+    await actions.updateSubmission("s1", form({ title: "Dawn" }));
+    expect((h.fake.rpcCalls.at(-1)?.args as { p_image_url?: string }).p_image_url).toBeUndefined();
+  });
+
+  it("surfaces the database's lock when the submission was already approved", async () => {
+    signIn("artist");
+    h.fake.onRpc("submissions_update_artist_edit", { data: null, error: new Error("This submission can no longer be edited.") });
+    await expect(actions.updateSubmission("s1", form({ title: "Dawn" }))).rejects.toThrow("can no longer be edited");
   });
 });
 
