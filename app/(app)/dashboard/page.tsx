@@ -16,7 +16,7 @@ export default async function DashboardPage() {
   // rather than on user_metadata.role (which only records the first role).
   const [{ data: ownedGallery }, { data: artistRow }] = await Promise.all([
     supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle(),
-    supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle(),
+    supabase.from("artist_profiles").select("id, full_name, city").eq("id", user.id).maybeSingle(),
   ]);
   if (user.user_metadata?.role === "artist" && !ownedGallery) redirect("/signin");
 
@@ -48,6 +48,8 @@ export default async function DashboardPage() {
       customDomain={gallery.custom_domain}
       domainStatus={gallery.domain_status}
       isArtist={!!artistRow}
+      artistName={artistRow?.full_name ?? "Artist"}
+      artistCity={artistRow?.city ?? ""}
     />
   );
 }

@@ -10,6 +10,7 @@ import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import PayoutsPanel from "@/components/dashboard/PayoutsPanel";
+import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import ActivityLogPanel from "@/components/dashboard/ActivityLogPanel";
@@ -31,9 +32,11 @@ interface DashboardShellProps {
   customDomain: string | null;
   domainStatus: string;
   isArtist: boolean;
+  artistName: string;
+  artistCity: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist, artistName, artistCity }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
@@ -65,11 +68,22 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--pl-accent)", transform: "translateY(-2px)", display: "inline-block" }} />
         </Link>
 
-        <div style={{ padding: "11px 18px", borderTop: "1px solid var(--pl-border)", borderBottom: "1px solid var(--pl-border)", marginBottom: 8 }}>
-          <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--pl-text-eyebrow)" }}>Gallery</div>
-          <div style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{identity.name}</div>
-          <div style={{ fontSize: 11.5, color: "var(--pl-text-soft)", marginTop: 1 }}>{identity.city}</div>
-        </div>
+        {isArtist ? (
+          <ProfileDropdown
+            current="gallery"
+            tone="light"
+            options={[
+              { kind: "gallery", name: identity.name, detail: identity.city, href: "/dashboard" },
+              { kind: "artist", name: artistName, detail: artistCity || "Artist studio", href: "/studio" },
+            ]}
+          />
+        ) : (
+          <div style={{ padding: "11px 18px", borderTop: "1px solid var(--pl-border)", borderBottom: "1px solid var(--pl-border)", marginBottom: 8 }}>
+            <div style={{ fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: "var(--pl-text-eyebrow)" }}>Gallery</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{identity.name}</div>
+            <div style={{ fontSize: 11.5, color: "var(--pl-text-soft)", marginTop: 1 }}>{identity.city}</div>
+          </div>
+        )}
 
         <nav style={{ flex: 1, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 3 }}>
           {NAV.map(item => (
