@@ -48,7 +48,7 @@ export default function ProfileDropdown({ current, options, tone }: { current: "
           <span style={{ display: "block", fontSize: 14, fontWeight: 600, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{active.name}</span>
           <span style={{ display: "block", fontSize: 11.5, color: soft, marginTop: 1 }}>{active.detail}</span>
         </span>
-        <span aria-hidden style={{ fontSize: 11, color: soft, transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        <svg aria-hidden width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: soft, transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}><path d="M5 7.5l5 5 5-5" /></svg>
       </button>
       {open && (
         <div role="listbox" style={{ position: "absolute", top: "100%", left: 10, right: 10, zIndex: 20, marginTop: 4, background: dark ? "var(--pl-surface-dark)" : "var(--pl-surface)", border: `1px solid ${border}`, borderRadius: 10, boxShadow: "0 12px 30px rgba(0,0,0,.18)", padding: 4 }}>
