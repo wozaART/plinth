@@ -10,7 +10,15 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role === "artist") redirect("/signin");
+  if (!user) redirect("/signin");
+
+  // A user can be both gallery owner and artist, so gate on owning a gallery
+  // rather than on user_metadata.role (which only records the first role).
+  const [{ data: ownedGallery }, { data: artistRow }] = await Promise.all([
+    supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle(),
+    supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle(),
+  ]);
+  if (user.user_metadata?.role === "artist" && !ownedGallery) redirect("/signin");
 
   const gallery = await getCurrentGallery(supabase);
 
@@ -39,6 +47,7 @@ export default async function DashboardPage() {
       auditLog={auditLog}
       customDomain={gallery.custom_domain}
       domainStatus={gallery.domain_status}
+      isArtist={!!artistRow}
     />
   );
 }

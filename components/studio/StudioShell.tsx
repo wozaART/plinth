@@ -7,6 +7,7 @@ import { artworkBg, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
+import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
 import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork, ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
@@ -34,6 +35,7 @@ interface StudioShellProps {
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
   profile: ProfileData;
+  isGalleryOwner: boolean;
 }
 
 function PayoutBanner({ payout, onAcknowledge, onQuery }: { payout: ArtistPayout; onAcknowledge: () => void; onQuery: () => void }) {
@@ -287,7 +289,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, isGalleryOwner }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
@@ -654,6 +656,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </div>
           )}
 
+          {tab === "profile" && isGalleryOwner && <ProfileSwitcher current="artist" />}
           {tab === "profile" && <ProfilePanel initial={profile} onNotify={message => { setToast(message); setTimeout(() => setToast(null), 3000); }} />}
         </div>
       </main>

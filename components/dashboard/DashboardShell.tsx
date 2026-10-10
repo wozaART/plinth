@@ -10,6 +10,7 @@ import CataloguePanel from "@/components/dashboard/CataloguePanel";
 import ContactsPanel from "@/components/dashboard/ContactsPanel";
 import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import PayoutsPanel from "@/components/dashboard/PayoutsPanel";
+import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import SettingsPanel from "@/components/dashboard/SettingsPanel";
 import ActivityLogPanel from "@/components/dashboard/ActivityLogPanel";
 import { useGalleryConfig } from "@/lib/gallery-context";
@@ -29,9 +30,10 @@ interface DashboardShellProps {
   auditLog: AuditLogEntry[];
   customDomain: string | null;
   domainStatus: string;
+  isArtist: boolean;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();
@@ -119,7 +121,12 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}
         {tab === "payouts" && <PayoutsPanel data={payouts} />}
-        {tab === "settings" && <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />}
+        {tab === "settings" && (
+          <>
+            {isArtist && <div style={{ padding: "24px 24px 0" }}><ProfileSwitcher current="gallery" /></div>}
+            <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} />
+          </>
+        )}
         {tab === "activity" && <ActivityLogPanel data={auditLog} />}
       </main>
     </div>

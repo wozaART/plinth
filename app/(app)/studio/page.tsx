@@ -17,6 +17,8 @@ export default async function StudioPage() {
   const { data: artistRow } = await supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle();
   if (!artistRow) redirect("/signin");
 
+  const { data: ownedGallery } = await supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle();
+
   const gallery = await getCurrentGallery(supabase);
 
   const [works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
@@ -34,6 +36,7 @@ export default async function StudioPage() {
 
   return (
     <StudioShell
+      isGalleryOwner={!!ownedGallery}
       artistName={profile?.full_name ?? "Artist"}
       artistCity={profile?.city ?? ""}
       works={works}
