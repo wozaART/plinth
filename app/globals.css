@@ -218,6 +218,7 @@ details summary::-webkit-details-marker { display: none; }
 }
 
 /* Gallery dashboard — mobile */
+.dash-root { height: 100vh; height: 100svh; }
 .dash-mobile-bar { display: none; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--pl-border); background: var(--pl-sidebar); flex-shrink: 0; }
 .dash-overlay { display: none; }
 .dash-table { min-width: 560px; }
@@ -226,6 +227,7 @@ details summary::-webkit-details-marker { display: none; }
   .dash-aside {
     position: fixed !important;
     top: 0; left: 0; bottom: 0;
+    height: 100vh;
     height: 100svh;
     width: min(82vw, 300px) !important;
     z-index: 60;

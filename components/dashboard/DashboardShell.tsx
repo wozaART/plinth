@@ -58,7 +58,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
   }
 
   return (
-    <div className="dash-root" style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-bg-app)", color: "var(--pl-text)" }}>
+    <div className="dash-root" style={{ display: "flex", overflow: "hidden", background: "var(--pl-bg-app)", color: "var(--pl-text)" }}>
 
       {navOpen && <div className="dash-overlay" onClick={() => setNavOpen(false)} />}
 
