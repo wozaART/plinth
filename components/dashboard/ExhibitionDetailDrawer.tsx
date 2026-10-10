@@ -119,7 +119,7 @@ export default function ExhibitionDetailDrawer({
               <div style={{ fontSize: 13, color: "var(--pl-text-soft)", marginTop: 6 }}>{ex.dates}</div>
               {ex.blurb && <p style={{ fontSize: 13.5, color: "var(--pl-text-muted)", marginTop: 10 }}>{ex.blurb}</p>}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
+              <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
                 {[
                   ["Slots", `${ex.filled}/${ex.slots} filled`],
                   ["Applicants", ex.applicants],

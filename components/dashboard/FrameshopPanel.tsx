@@ -4,7 +4,7 @@ import type { FrameJob } from "@/lib/types";
 
 export default function FrameshopPanel({ data }: { data: FrameJob[] }) {
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
+    <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl dash-pad">
       <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: "var(--pl-radius-card-lg)", padding: "16px 18px", display: "flex", gap: 14, alignItems: "center", marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>In-house framing queue</div>
@@ -12,7 +12,7 @@ export default function FrameshopPanel({ data }: { data: FrameJob[] }) {
         </div>
       </div>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <table className="dash-table" style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--pl-border)" }}>
             {["Work", "Frame spec", "Stage", "Due by"].map(h => (

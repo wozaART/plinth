@@ -46,7 +46,7 @@ interface StudioShellProps {
 function PayoutBanner({ payout, onAcknowledge, onQuery }: { payout: ArtistPayout; onAcknowledge: () => void; onQuery: () => void }) {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }}>
+    <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }} className="dash-card">
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: "var(--pl-pending-dot)", fontWeight: 600, letterSpacing: ".04em" }}>NEEDS YOUR ATTENTION</div>
@@ -59,7 +59,7 @@ function PayoutBanner({ payout, onAcknowledge, onQuery }: { payout: ArtistPayout
         <span style={{ fontSize: 11, fontWeight: 600, padding: "5px 11px", borderRadius: 20, background: "var(--pl-pending-bg)", color: "var(--pl-pending-fg)", flexShrink: 0 }}>Paid</span>
       </div>
       {open && (
-        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--pl-border-dark)", display: "flex", gap: 10 }}>
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: "1px solid var(--pl-border-dark)", display: "flex", gap: 10, flexWrap: "wrap" }}>
           <button onClick={onAcknowledge} style={{ background: "var(--pl-on-dark)", color: "var(--pl-surface-dark)", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
             I&apos;ve received this payment
           </button>
@@ -76,7 +76,7 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   const [open, setOpen] = useState(false);
   const meta = STATUS_META.declined;
   return (
-    <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }}>
+    <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }} className="dash-card">
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
         <div style={{ width: 42, height: 50, borderRadius: 5, ...artworkFill(work.imageUrl, 0), flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
@@ -169,7 +169,7 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
 
         <div style={{ height: 3, background: "var(--pl-border)" }}><div style={{ width: `${(step / 3) * 100}%`, height: "100%", background: "var(--pl-accent)", borderRadius: 2 }} /></div>
 
-        <div style={{ padding: 24, flex: 1 }}>
+        <div className="dash-pad" style={{ padding: 24, flex: 1 }}>
           {step === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -303,7 +303,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
   return (
     <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 16, padding: "28px 30px 32px", maxWidth: 720 }}>
       <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 20, fontFamily: "var(--font-newsreader, serif)" }}>Personal details</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 28px" }}>
+      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 28px" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>First name</span><input value={profile.firstName} onChange={set("firstName")} style={inputStyle} /></label>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Last name</span><input value={profile.lastName} onChange={set("lastName")} style={inputStyle} /></label>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}><span style={labelStyle}>Contact number</span><input value={profile.phone} onChange={set("phone")} placeholder="082 000 0000" style={inputStyle} /></label>
@@ -311,7 +311,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
       </div>
 
       <div style={{ fontSize: 17, fontWeight: 600, margin: "28px 0 20px", fontFamily: "var(--font-newsreader, serif)" }}>Bank details</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 28px" }}>
+      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px 28px" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <span style={labelStyle}>Account number</span>
           <div style={{ position: "relative" }}>
@@ -341,7 +341,9 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
 
 export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, isGalleryOwner = false }: StudioShellProps) {
   const router = useRouter();
-  const [tab, setTab] = useState<StudioTab>("overview");
+  const [tab, setTabState] = useState<StudioTab>("overview");
+  const [navOpen, setNavOpen] = useState(false);
+  const setTab = (t: StudioTab) => { setTabState(t); setNavOpen(false); };
   const [works, setWorks] = useState(initialWorks);
   // Re-sync after router.refresh() brings in new/edited submissions.
   const [seenWorks, setSeenWorks] = useState(initialWorks);
@@ -456,9 +458,10 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
   const commissionNote = renderCommissionNote(copy.submitCommissionNoteTemplate, Math.round(business.commissionRate * 100));
 
   return (
-    <div style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
+    <div className="dash-root" style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
+      {navOpen && <div className="dash-overlay" onClick={() => setNavOpen(false)} />}
       {/* Sidebar */}
-      <aside style={{ width: 220, flexShrink: 0, background: "var(--pl-surface-dark)", borderRight: "1px solid var(--pl-border-dark)", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
+      <aside className={`dash-aside${navOpen ? " open" : ""}`} style={{ width: 220, flexShrink: 0, background: "var(--pl-surface-dark)", borderRight: "1px solid var(--pl-border-dark)", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
         <Link href="/" style={{ display: "flex", alignItems: "baseline", gap: 7, padding: "0 18px 20px" }}>
           <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 21, fontWeight: 600, color: "var(--pl-on-dark)" }}>{identity.logoWordmark?.primary ?? identity.shortName}</span>
           {identity.logoWordmark?.secondary && (
@@ -509,7 +512,11 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
 
       {/* Main */}
       <main style={{ flex: 1, minWidth: 0, background: "var(--pl-bg-app)", color: "var(--pl-text)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ height: 56, borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", padding: "0 24px", gap: 14, flexShrink: 0, background: "var(--pl-bg-app)" }}>
+        <div className="dash-mobile-bar">
+          <button onClick={() => setNavOpen(true)} aria-label="Open navigation" style={{ width: 40, height: 40, borderRadius: 10, border: "1px solid var(--pl-border)", background: "var(--pl-surface)", color: "var(--pl-text)", fontSize: 18, cursor: "pointer", flexShrink: 0 }}>☰</button>
+          <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{identity.logoWordmark?.primary ?? identity.shortName}</span>
+        </div>
+        <div className="dash-head" style={{ height: 56, borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", padding: "0 24px", gap: 14, flexShrink: 0, background: "var(--pl-bg-app)" }}>
           <h1 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0, flex: 1, textTransform: "capitalize" }}>
             {tab === "open-calls" ? "Open calls" : tab}
           </h1>
@@ -523,7 +530,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           )}
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
+        <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl dash-pad">
           {tab === "overview" && (
             <div>
               {unacknowledged && <BlockingBanner work={unacknowledged} onAck={ackWork} />}
@@ -677,7 +684,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                     </span>
                   </div>
                   {inv.status === "pending" && (
-                    <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                    <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
                       <button onClick={() => respondInvite(inv.id, "accepted")} style={{ padding: "9px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 550, cursor: "pointer" }}>Accept</button>
                       <button onClick={() => respondInvite(inv.id, "declined")} style={{ padding: "9px 16px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, fontSize: 13, color: "var(--pl-text-secondary)", cursor: "pointer" }}>Decline</button>
                     </div>
@@ -745,7 +752,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0 }}>{meta.label}</span>
                     </div>
                     {(p.status === "paid" || p.hasProofOfPayment) && (
-                      <div style={{ display: "flex", gap: 10, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--pl-divider)" }}>
+                      <div style={{ display: "flex", gap: 10, marginTop: 12, paddingTop: 12, borderTop: "1px solid var(--pl-divider)", flexWrap: "wrap" }}>
                         {p.hasProofOfPayment && (
                           <button onClick={() => viewProofOfPayment(p.id)} style={{ fontSize: 12.5, padding: "8px 14px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, color: "var(--pl-text-secondary)", cursor: "pointer" }}>
                             View proof of payment

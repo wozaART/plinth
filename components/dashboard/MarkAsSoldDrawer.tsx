@@ -83,7 +83,7 @@ export default function MarkAsSoldDrawer({ work, onClose, onConfirm }: MarkAsSol
         </div>
 
         <div style={{ padding: "24px 24px 32px", display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Sale price <span style={{ color: "var(--pl-declined-fg)", textTransform: "none", letterSpacing: 0 }}>required</span></span>
               <input value={salePrice} onChange={e => setSalePrice(e.target.value)} placeholder="e.g. 18000" style={inputStyle} />
@@ -94,7 +94,7 @@ export default function MarkAsSoldDrawer({ work, onClose, onConfirm }: MarkAsSol
             </label>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Commission %</span>
               <input value={commissionRatePct} onChange={e => setCommissionRatePct(e.target.value)} style={inputStyle} />
@@ -117,7 +117,7 @@ export default function MarkAsSoldDrawer({ work, onClose, onConfirm }: MarkAsSol
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Buyer name</span>
               <input value={buyerName} onChange={e => setBuyerName(e.target.value)} style={inputStyle} />
@@ -133,7 +133,7 @@ export default function MarkAsSoldDrawer({ work, onClose, onConfirm }: MarkAsSol
             <input value={buyerEmail} onChange={e => setBuyerEmail(e.target.value)} style={inputStyle} />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Buyer paid on</span>
               <input type="date" value={buyerPaidDate} onChange={e => setBuyerPaidDate(e.target.value)} style={inputStyle} />

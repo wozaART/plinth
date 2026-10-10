@@ -62,7 +62,7 @@ export default function SettingsPanel({ customDomain, domainStatus }: SettingsPa
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 560 }}>
+    <div className="dash-pad" style={{ padding: 24, maxWidth: 560 }}>
       <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>Custom domain</h2>
         <p style={{ fontSize: 13, color: "var(--pl-text-muted)", margin: 0 }}>

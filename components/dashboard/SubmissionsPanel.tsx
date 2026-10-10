@@ -50,7 +50,7 @@ export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }
   return (
     <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
       {/* Filter strip */}
-      <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap" }}>
+      <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap" }}>
         {(["all", "pending", "approved", "declined", "changes"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
             {f === "all" ? "All" : STATUS_META[f].label}
@@ -60,7 +60,7 @@ export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }
       </div>
 
       {/* Cards */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 18 }} className="scrl">
+      <div style={{ flex: 1, overflowY: "auto", padding: 18 }} className="scrl dash-pad">
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 0", color: "var(--pl-text-eyebrow)", fontSize: 14 }}>No submissions in this filter.</div>
         )}

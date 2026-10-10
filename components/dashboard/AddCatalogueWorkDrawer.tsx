@@ -69,7 +69,7 @@ export default function AddCatalogueWorkDrawer({ artists, onClose, onCreate }: A
             <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Harbour at dusk" style={inputStyle} />
           </label>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Listed price</span>
               <input value={price} onChange={e => setPrice(e.target.value)} placeholder="e.g. 18000" style={inputStyle} />
@@ -80,7 +80,7 @@ export default function AddCatalogueWorkDrawer({ artists, onClose, onCreate }: A
             </label>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={labelStyle}>Commission %</span>
               <input value={commissionRatePct} onChange={e => setCommissionRatePct(e.target.value)} placeholder="Gallery default" style={inputStyle} />

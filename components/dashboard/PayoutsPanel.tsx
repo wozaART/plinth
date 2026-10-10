@@ -60,7 +60,7 @@ export default function PayoutsPanel({ data }: { data: Payout[] }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap" }}>
+      <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap" }}>
         {FILTERS.map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f.id ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f.id ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f.id ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer" }}>
             {f.label}
@@ -68,8 +68,8 @@ export default function PayoutsPanel({ data }: { data: Payout[] }) {
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl">
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: 24 }} className="scrl dash-pad">
+        <table className="dash-table" style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--pl-border)" }}>
               {["Work", "Artist", "Amount", "Due", "Status", ""].map(h => (

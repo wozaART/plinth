@@ -71,8 +71,8 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", gap: 8 }}>
+      <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(["All", "Artist", "Collector"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer" }}>
               {f}
@@ -82,10 +82,10 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
         <button onClick={() => setAddOpen(true)} style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add contact</button>
       </div>
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl">
+      <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl dash-pad">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.map((c, i) => (
-            <div key={c.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13 }}>
+            <div key={c.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: avatarBg(i), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{initials(c.name)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
