@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${origin}/signin?error=${encodeURIComponent(exhibitionInviteError)}`);
       }
       const existingRole = (data.user.user_metadata as { role?: string })?.role;
-      const role = invite || exhibitionInvite ? "artist" : existingRole ?? roleParam;
+      const role = invite || exhibitionInvite ? "artist" : roleParam ?? existingRole;
       if (!existingRole && role) {
         await supabase.auth.updateUser({ data: { role } });
       }

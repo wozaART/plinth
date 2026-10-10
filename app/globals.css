@@ -212,3 +212,7 @@ details summary::-webkit-details-marker { display: none; }
 .anim-pop { animation: plPop .25s ease; }
 .anim-fade { animation: plFade .25s ease; }
 .anim-spin { animation: plSpin .8s linear infinite; }
+
+@media (max-width: 767px) {
+  .site-nav-links { display: none !important; }
+}

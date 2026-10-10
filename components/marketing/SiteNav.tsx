@@ -14,7 +14,7 @@ export default async function SiteNav() {
           <span style={{ fontFamily: "var(--font-newsreader), serif", fontSize: 23, fontWeight: 600, letterSpacing: "-.01em" }}>Woza Art</span>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#B5623C", transform: "translateY(-2px)", display: "inline-block" }} />
         </Link>
-        <nav style={{ display: "flex", alignItems: "center", gap: 26 }}>
+        <nav className="site-nav-links" style={{ display: "flex", alignItems: "center", gap: 26 }}>
           <a href="#portals" style={{ fontSize: 13.5, color: "#57534A" }}>Product</a>
           <a href="#workflow" style={{ fontSize: 13.5, color: "#57534A" }}>How it works</a>
           <a href="#resources" style={{ fontSize: 13.5, color: "#57534A" }}>Resources</a>
