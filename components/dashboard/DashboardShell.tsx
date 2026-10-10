@@ -31,12 +31,12 @@ interface DashboardShellProps {
   auditLog: AuditLogEntry[];
   customDomain: string | null;
   domainStatus: string;
-  isArtist: boolean;
-  artistName: string;
-  artistCity: string;
+  isArtist?: boolean;
+  artistName?: string;
+  artistCity?: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist, artistName, artistCity }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, isArtist = false, artistName = "Artist", artistCity = "" }: DashboardShellProps) {
   const [tab, setTab] = useState<Tab>("submissions");
   const router = useRouter();
   const { identity, nav } = useGalleryConfig();

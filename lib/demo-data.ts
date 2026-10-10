@@ -68,8 +68,8 @@ export const demoPayouts: Payout[] = [
 ];
 
 export const demoAuditLog: AuditLogEntry[] = [
-  { id: "l1", entity: "Submission", action: "update", recordId: "s3", label: "Veld at First Light approved", actorEmail: "gallery@example.com", when: "2 days ago", whenRaw: "2026-01-10T09:00:00Z" },
-  { id: "l2", entity: "Catalogue work", action: "insert", recordId: "c3", label: "Karoo Study II added", actorEmail: "gallery@example.com", when: "1 week ago", whenRaw: "2026-01-04T09:00:00Z" },
+  { id: "l1", entity: "Submission", action: "update", recordId: "s3", label: "Veld at First Light approved", actorEmail: "gallery@example.com", when: "2 days ago", whenRaw: "2026-01-10T09:00:00Z", changes: [] },
+  { id: "l2", entity: "Catalogue work", action: "insert", recordId: "c3", label: "Karoo Study II added", actorEmail: "gallery@example.com", when: "1 week ago", whenRaw: "2026-01-04T09:00:00Z", changes: [] },
 ];
 
 export const demoWorks: MyWork[] = [
