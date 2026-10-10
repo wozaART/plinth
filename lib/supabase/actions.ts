@@ -39,6 +39,7 @@ async function sendNotice(fn: "send-sale-notice" | "send-payout-notice", body: R
 }
 
 export async function decideSubmission(id: string, status: SubmissionStatus, note: string) {
+  if (status !== "approved" && !note.trim()) throw new Error("A note to the artist is required.");
   const supabase = await supabaseServer();
   const { error } = await supabase
     .from("submissions")

@@ -18,6 +18,7 @@ interface ReviewDrawerProps {
 
 export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCatalogue, accepting, onAcceptIntoCatalogue }: ReviewDrawerProps) {
   const [note, setNote] = useState(sub.note);
+  const noteMissing = note.trim() === "";
   const [zoomed, setZoomed] = useState(false);
   const [mode, setMode] = useState<"view" | "decide">("view");
   const meta = STATUS_META[sub.status];
@@ -99,8 +100,8 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
                 />
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                   <button onClick={() => onDecide(sub.id, "approved", note)} style={{ padding: "12px", background: "var(--pl-approved-panel-bg)", color: "var(--pl-approved-fg)", border: "1px solid var(--pl-approved-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>Approve</button>
-                  <button onClick={() => onDecide(sub.id, "changes", note)} style={{ padding: "12px", background: "var(--pl-changes-panel-bg)", color: "var(--pl-changes-fg)", border: "1px solid var(--pl-changes-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>Request changes</button>
-                  <button onClick={() => onDecide(sub.id, "declined", note)} style={{ padding: "12px", background: "var(--pl-declined-panel-bg)", color: "var(--pl-declined-fg)", border: "1px solid var(--pl-declined-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: "pointer", gridColumn: "1/-1" }}>Decline</button>
+                  <button disabled={noteMissing} title={noteMissing ? "Add a note to the artist first" : undefined} onClick={() => onDecide(sub.id, "changes", note.trim())} style={{ opacity: noteMissing ? 0.5 : 1, padding: "12px", background: "var(--pl-changes-panel-bg)", color: "var(--pl-changes-fg)", border: "1px solid var(--pl-changes-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: noteMissing ? "not-allowed" : "pointer" }}>Request changes</button>
+                  <button disabled={noteMissing} title={noteMissing ? "Add a note to the artist first" : undefined} onClick={() => onDecide(sub.id, "declined", note.trim())} style={{ opacity: noteMissing ? 0.5 : 1, padding: "12px", background: "var(--pl-declined-panel-bg)", color: "var(--pl-declined-fg)", border: "1px solid var(--pl-declined-panel-border)", borderRadius: 10, fontSize: 13.5, fontWeight: 550, cursor: noteMissing ? "not-allowed" : "pointer", gridColumn: "1/-1" }}>Decline</button>
                 </div>
               </div>
             )}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { artworkBg, artworkFill, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
+import { formatCurrency } from "@/lib/currency";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
 import ImageLightbox from "@/components/shared/ImageLightbox";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
@@ -100,12 +101,19 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   );
 }
 
-function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; editing?: MyWork; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
+function parseDim(dim?: string | null): [string, string, string] {
+  const nums = (dim ?? "").match(/\d+(?:\.\d+)?/g) ?? [];
+  return [nums[0] ?? "", nums[1] ?? "", nums[2] ?? ""];
+}
+
+function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: editing?.title ?? "",
     medium: editing?.medium ?? "",
-    dim: editing?.dim ?? "",
+    height: parseDim(editing?.dim)[0],
+    width: parseDim(editing?.dim)[1],
+    depth: parseDim(editing?.dim)[2],
     year: editing?.year ? String(editing.year) : "",
     price: editing?.price != null ? String(editing.price) : "",
     exhibitionId: openCalls.find(o => o.accepting)?.id ?? "",
@@ -119,7 +127,14 @@ function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }:
 
   const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
   const needsRulesAck = !editing && Boolean(selectedCall?.rules);
-  const canAdvance = step < 3 || !needsRulesAck || rulesAck;
+  const hasImage = Boolean(image || editing?.imageUrl);
+  const priceNum = Number(form.price.replace(/[^0-9.]/g, ""));
+  const salePrice = priceNum > 0 ? formatCurrency(priceNum * (1 + commissionRatePct / 100), "ZAR") : null;
+  const stepValid =
+    step === 1 ? Boolean(form.title.trim() && form.medium.trim() && form.year.trim() && hasImage) :
+    step === 2 ? Boolean(Number(form.height) > 0 && Number(form.width) > 0 && Number(form.depth) > 0 && priceNum > 0) :
+    !needsRulesAck || rulesAck;
+  const canAdvance = stepValid;
 
   function next() {
     if (step < 3) {
@@ -128,9 +143,9 @@ function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }:
     }
     if (!canAdvance) return;
     const formData = new FormData();
-    formData.set("title", form.title || "Untitled");
+    formData.set("title", form.title.trim());
     formData.set("medium", form.medium);
-    formData.set("dim", form.dim);
+    formData.set("dim", `${form.height} × ${form.width} × ${form.depth} cm`);
     formData.set("year", form.year);
     formData.set("price", form.price);
     formData.set("exhibitionId", form.exhibitionId);
@@ -186,12 +201,12 @@ function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }:
                 </div>
               )}
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>{editing?.imageUrl ? "Replace image" : "Image (optional)"}</span>
+                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>{editing?.imageUrl ? "Replace image" : "Image"}</span>
                 {(imagePreview || editing?.imageUrl) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imagePreview ?? editing?.imageUrl} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "contain", background: "var(--pl-sidebar)", borderRadius: 9 }} />
                 )}
-                <input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_IMAGE_BYTES) { e.target.value = ""; setImageError("Image must be 10 MB or smaller."); setImage(null); return; } setImageError(null); setImage(f); }} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
+                <input type="file" accept="image/*" required onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_IMAGE_BYTES) { e.target.value = ""; setImageError("Image must be 10 MB or smaller."); setImage(null); return; } setImageError(null); setImage(f); }} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
                 {imageError && <span style={{ fontSize: 12, color: "var(--pl-declined-fg)" }}>{imageError}</span>}
               </label>
             </div>
@@ -199,14 +214,30 @@ function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }:
 
           {step === 2 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Dimensions</span>
-                <input value={form.dim} onChange={e => setForm(f => ({ ...f, dim: e.target.value }))} placeholder="e.g. 80 × 60 cm" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
-              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Height (cm)</span>
+                  <input inputMode="decimal" value={form.height} onChange={e => setForm(f => ({ ...f, height: e.target.value }))} placeholder="e.g. 80" style={{ minWidth: 0, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Width (cm)</span>
+                  <input inputMode="decimal" value={form.width} onChange={e => setForm(f => ({ ...f, width: e.target.value }))} placeholder="e.g. 60" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", minWidth: 0 }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Depth (cm)</span>
+                  <input inputMode="decimal" value={form.depth} onChange={e => setForm(f => ({ ...f, depth: e.target.value }))} placeholder="e.g. 4" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", minWidth: 0 }} />
+                </label>
+              </div>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Asking price (excl. commission)</span>
                 <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="e.g. R 18 000" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
               </label>
+              {salePrice && (
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13.5, color: "var(--pl-text)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
+                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Sale price to collectors</span>
+                  <strong>{salePrice}</strong>
+                </div>
+              )}
               <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
                 {commissionNote}
               </div>
@@ -216,7 +247,7 @@ function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }:
           {step === 3 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Artist statement</span>
+                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Artist statement (optional)</span>
                 <textarea value={form.statement} onChange={e => setForm(f => ({ ...f, statement: e.target.value }))} rows={5} placeholder="Briefly describe the work — your intent, materials, series context. 80–150 words is ideal." style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", resize: "none" }} />
               </label>
               {needsRulesAck && selectedCall && (
@@ -748,7 +779,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
       </main>
 
       {zoomImage && <ImageLightbox url={zoomImage.url} alt={zoomImage.title} onClose={() => setZoomImage(null)} />}
-      {showSubmit && <SubmitDrawer key={editingWork?.id ?? "new"} openCalls={openCalls} commissionNote={commissionNote} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); }} onSubmit={handleSubmitWork} />}
+      {showSubmit && <SubmitDrawer key={editingWork?.id ?? "new"} openCalls={openCalls} commissionNote={commissionNote} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); }} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
