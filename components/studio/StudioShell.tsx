@@ -458,7 +458,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
   const commissionNote = renderCommissionNote(copy.submitCommissionNoteTemplate, Math.round(business.commissionRate * 100));
 
   return (
-    <div className="dash-root" style={{ display: "flex", height: "100svh", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
+    <div className="dash-root" style={{ display: "flex", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
       {navOpen && <div className="dash-overlay" onClick={() => setNavOpen(false)} />}
       {/* Sidebar */}
       <aside className={`dash-aside${navOpen ? " open" : ""}`} style={{ width: 220, flexShrink: 0, background: "var(--pl-surface-dark)", borderRight: "1px solid var(--pl-border-dark)", display: "flex", flexDirection: "column", padding: "18px 0 20px" }}>
