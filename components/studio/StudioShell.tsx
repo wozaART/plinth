@@ -36,7 +36,7 @@ interface StudioShellProps {
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
   profile: ProfileData;
-  isGalleryOwner: boolean;
+  isGalleryOwner?: boolean;
 }
 
 function PayoutBanner({ payout, onAcknowledge, onQuery }: { payout: ArtistPayout; onAcknowledge: () => void; onQuery: () => void }) {
@@ -290,7 +290,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, isGalleryOwner }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, isGalleryOwner = false }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
