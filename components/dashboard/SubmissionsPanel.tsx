@@ -22,6 +22,7 @@ export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }
   for (const s of submissions) counts[s.status] = (counts[s.status] ?? 0) + 1;
 
   function decide(id: string, status: SubmissionStatus, note: string) {
+    if (status !== "approved" && !note.trim()) return;
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status, note, ack: status === "declined" ? false : undefined } : s));
     setActive(null);
     setToast(
