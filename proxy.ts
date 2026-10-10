@@ -60,8 +60,15 @@ export async function proxy(request: NextRequest) {
     !request.nextUrl.searchParams.has("exhibition_invite")
   ) {
     const role = (user.user_metadata as { role?: string })?.role;
+    // `role` only records the account's first role, so a dual account that
+    // started as an artist would otherwise always land in the studio.
+    let toStudio = role === "artist";
+    if (toStudio) {
+      const { data: owned } = await supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle();
+      if (owned) toStudio = false;
+    }
     const url = request.nextUrl.clone();
-    url.pathname = role === "artist" ? "/studio" : "/dashboard";
+    url.pathname = toStudio ? "/studio" : "/dashboard";
     return NextResponse.redirect(url);
   }
 
