@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, useTransition, type CSSProperties, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { artworkBg, avatarBg, initials } from "@/lib/utils";
+import { artworkBg, artworkFill, avatarBg, initials } from "@/lib/utils";
 import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
+import ImageLightbox from "@/components/shared/ImageLightbox";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
-import { ackDeclinedSubmission, createSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
-import type { ExhibitionInvite, MyWork, OpenCall, StudioMessage, CatalogueWork, ArtistPayout } from "@/lib/types";
+import { ackDeclinedSubmission, createSubmission, updateSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
+import { isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // matches the submission-images bucket limit
 
 type StudioTab = "overview" | "submissions" | "open-calls" | "invitations" | "messages" | "profile" | "settings" | "catalogue" | "earnings";
 
@@ -74,7 +77,7 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   return (
     <div style={{ background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", borderRadius: 14, padding: "20px 22px", marginBottom: 20 }}>
       <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
-        <div style={{ width: 42, height: 50, borderRadius: 5, background: artworkBg(0), flexShrink: 0 }} />
+        <div style={{ width: 42, height: 50, borderRadius: 5, ...artworkFill(work.imageUrl, 0), flexShrink: 0 }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11, color: meta.dot, fontWeight: 600, letterSpacing: ".04em" }}>NEEDS YOUR ATTENTION</div>
           <div style={{ fontSize: 15.5, fontWeight: 600, marginTop: 4 }}>A decision is waiting for {work.title}</div>
@@ -97,14 +100,25 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   );
 }
 
-function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; onClose: () => void; onSubmit: (formData: FormData) => void }) {
+function SubmitDrawer({ openCalls, commissionNote, editing, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; editing?: MyWork; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState({ title: "", medium: "", dim: "", year: "", price: "", exhibitionId: openCalls.find(o => o.accepting)?.id ?? "", statement: "" });
+  const [form, setForm] = useState({
+    title: editing?.title ?? "",
+    medium: editing?.medium ?? "",
+    dim: editing?.dim ?? "",
+    year: editing?.year ? String(editing.year) : "",
+    price: editing?.price != null ? String(editing.price) : "",
+    exhibitionId: openCalls.find(o => o.accepting)?.id ?? "",
+    statement: editing?.statement ?? "",
+  });
   const [image, setImage] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const [rulesAck, setRulesAck] = useState(false);
+  const imagePreview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
+  useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
   const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
-  const needsRulesAck = Boolean(selectedCall?.rules);
+  const needsRulesAck = !editing && Boolean(selectedCall?.rules);
   const canAdvance = step < 3 || !needsRulesAck || rulesAck;
 
   function next() {
@@ -122,8 +136,7 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
     formData.set("exhibitionId", form.exhibitionId);
     formData.set("statement", form.statement);
     formData.set("rulesAck", String(rulesAck));
-    if (image) formData.set("image", image);
-    onSubmit(formData);
+    onSubmit(formData, image);
   }
   const stepLabels = ["Work details", "Dimensions & price", "Statement"];
 
@@ -133,7 +146,7 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
       <div className="anim-drawer" style={{ width: "min(500px,100%)", background: "var(--pl-bg-app)", borderLeft: "1px solid var(--pl-border)", display: "flex", flexDirection: "column", height: "100%", overflowY: "auto" }}>
         <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "var(--pl-bg-app)" }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>Submit work</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>{editing ? "Edit submission" : "Submit work"}</div>
             <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 2 }}>Step {step} of 3 · {stepLabels[step - 1]}</div>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--pl-border)", background: "none", cursor: "pointer", fontSize: 17, color: "var(--pl-text-soft)" }}>×</button>
@@ -156,7 +169,7 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Year</span>
                 <input value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} placeholder="2024" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {!editing && <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Submitting for</span>
                 <select value={form.exhibitionId} onChange={e => { setForm(f => ({ ...f, exhibitionId: e.target.value })); setRulesAck(false); }} style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", appearance: "none" }}>
                   <option value="">Open submissions</option>
@@ -164,8 +177,8 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
                     <option key={o.id} value={o.id}>{o.title}</option>
                   ))}
                 </select>
-              </label>
-              {selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
+              </label>}
+              {!editing && selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
                   {selectedCall.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {selectedCall.theme}</div>}
                   {selectedCall.mediumRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {selectedCall.mediumRequirements}</div>}
@@ -173,8 +186,13 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
                 </div>
               )}
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Image (optional)</span>
-                <input type="file" accept="image/*" onChange={e => setImage(e.target.files?.[0] ?? null)} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
+                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>{editing?.imageUrl ? "Replace image" : "Image (optional)"}</span>
+                {(imagePreview || editing?.imageUrl) && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imagePreview ?? editing?.imageUrl} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "contain", background: "var(--pl-sidebar)", borderRadius: 9 }} />
+                )}
+                <input type="file" accept="image/*" onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_IMAGE_BYTES) { e.target.value = ""; setImageError("Image must be 10 MB or smaller."); setImage(null); return; } setImageError(null); setImage(f); }} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
+                {imageError && <span style={{ fontSize: 12, color: "var(--pl-declined-fg)" }}>{imageError}</span>}
               </label>
             </div>
           )}
@@ -220,7 +238,7 @@ function SubmitDrawer({ openCalls, commissionNote, onClose, onSubmit }: { openCa
         <div style={{ padding: "16px 24px", borderTop: "1px solid var(--pl-border)", display: "flex", gap: 10 }}>
           {step > 1 && <button onClick={() => setStep(step - 1)} style={{ flex: 1, padding: "12px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Back</button>}
           <button onClick={next} disabled={!canAdvance} style={{ flex: 2, padding: "12px", background: canAdvance ? "var(--pl-solid)" : "var(--pl-border-strong)", color: canAdvance ? "var(--pl-on-solid)" : "var(--pl-text-faint)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: canAdvance ? "pointer" : "not-allowed" }}>
-            {step < 3 ? "Continue →" : "Submit for review"}
+            {step < 3 ? "Continue →" : editing ? "Save changes" : "Submit for review"}
           </button>
         </div>
       </div>
@@ -294,9 +312,17 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
   const router = useRouter();
   const [tab, setTab] = useState<StudioTab>("overview");
   const [works, setWorks] = useState(initialWorks);
+  // Re-sync after router.refresh() brings in new/edited submissions.
+  const [seenWorks, setSeenWorks] = useState(initialWorks);
+  if (seenWorks !== initialWorks) {
+    setSeenWorks(initialWorks);
+    setWorks(initialWorks);
+  }
   const [payouts, setPayouts] = useState(initialPayouts);
   const [invites, setInvites] = useState(initialInvites);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [zoomImage, setZoomImage] = useState<{ url: string; title: string } | null>(null);
+  const [editingWork, setEditingWork] = useState<MyWork | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [, startInviteTransition] = useTransition();
 
@@ -352,13 +378,43 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
     router.push("/");
   }
 
-  async function handleSubmitWork(formData: FormData) {
+  // Uploads straight from the browser to Storage (server actions cap bodies
+  // at 1 MB). Returns the object path, or throws so the caller can tell the
+  // artist rather than silently dropping the image.
+  async function uploadSubmissionImage(submissionId: string, image: File) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not signed in.");
+    const ext = (image.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    // Unique name per upload so a replaced image never serves a stale CDN copy.
+    const path = `${user.id}/${submissionId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("submission-images").upload(path, image, { contentType: image.type });
+    if (error) throw error;
+    return path;
+  }
+
+  async function handleSubmitWork(formData: FormData, image: File | null) {
+    const editing = editingWork;
     setShowSubmit(false);
+    setEditingWork(null);
     try {
-      const result = await createSubmission(formData);
-      setToast(`"${result.title}" submitted for review.`);
-    } catch {
-      setToast("Something went wrong submitting your work.");
+      const submissionId = editing?.id ?? crypto.randomUUID();
+      if (image) formData.set("imagePath", await uploadSubmissionImage(submissionId, image));
+      if (editing) {
+        const result = await updateSubmission(editing.id, formData);
+        setWorks(prev => prev.map(w => w.id === editing.id ? { ...w, status: "pending", title: result.title } : w));
+        setToast(`"${result.title}" updated.`);
+        router.refresh();
+      } else {
+        formData.set("id", submissionId);
+        const result = await createSubmission(formData);
+        setToast(`"${result.title}" submitted for review.`);
+        router.refresh();
+      }
+    } catch (err) {
+      setToast(err instanceof Error && err.message ? err.message : "Something went wrong submitting your work.");
     }
     setTimeout(() => setToast(null), 3500);
   }
@@ -432,7 +488,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </span>
           )}
           {tab === "submissions" && (
-            <button onClick={() => setShowSubmit(true)} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
+            <button onClick={() => { setEditingWork(null); setShowSubmit(true); }} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
           )}
         </div>
 
@@ -464,7 +520,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                   const meta = STATUS_META[w.status];
                   return (
                     <div key={w.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "13px 15px", display: "flex", alignItems: "center", gap: 13 }}>
-                      <div style={{ width: 42, height: 52, borderRadius: 5, background: artworkBg(i), flexShrink: 0 }} />
+                      <div style={{ width: 42, height: 52, borderRadius: 5, ...artworkFill(w.imageUrl, i), flexShrink: 0 }} />
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 15, fontWeight: 600 }}>{w.title}</div>
                         <div style={{ fontSize: 12, color: "var(--pl-text-soft)", marginTop: 2 }}>{w.medium} · {w.year}</div>
@@ -491,13 +547,24 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                   return (
                     <div key={w.id} style={{ background: "var(--pl-surface)", border: "1px solid", borderColor: w.status === "declined" && w.ack === false ? "var(--pl-declined-panel-border)" : "var(--pl-border)", borderRadius: 13, overflow: "hidden" }}>
                       <div style={{ display: "flex", gap: 14, padding: "15px 17px", alignItems: "center" }}>
-                        <div style={{ width: 50, height: 62, borderRadius: 5, background: artworkBg(i), flexShrink: 0 }} />
+                        <div
+                          onClick={w.imageUrl ? () => setZoomImage({ url: w.imageUrl!, title: w.title }) : undefined}
+                          role={w.imageUrl ? "button" : undefined}
+                          aria-label={w.imageUrl ? `View ${w.title} full size` : undefined}
+                          title={w.imageUrl ? "View full size" : undefined}
+                          style={{ width: 50, height: 62, borderRadius: 5, ...artworkFill(w.imageUrl, i), flexShrink: 0, cursor: w.imageUrl ? "zoom-in" : undefined }}
+                        />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600 }}>{w.title}</div>
                           <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", marginTop: 2 }}>{w.medium} · {w.year}</div>
                           <div style={{ fontSize: 11.5, color: "var(--pl-text-faint)", marginTop: 3 }}>Submitted {w.date}</div>
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0 }}>{meta.label}</span>
+                        {isSubmissionEditable(w.status) ? (
+                          <button onClick={() => { setEditingWork(w); setShowSubmit(true); }} style={{ fontSize: 12, padding: "6px 12px", border: "1px solid var(--pl-border-strong)", borderRadius: 8, background: "none", color: "var(--pl-text-secondary)", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                        ) : w.status === "approved" ? (
+                          <span title="Approved works can no longer be edited" style={{ fontSize: 11.5, color: "var(--pl-text-faint)", flexShrink: 0 }}>🔒 Locked</span>
+                        ) : null}
                       </div>
                       {w.note && (
                         <div style={{ padding: "12px 17px", borderTop: "1px solid var(--pl-divider)", background: w.status === "declined" && w.ack === false ? "var(--pl-declined-panel-bg)" : "var(--pl-sidebar)" }}>
@@ -553,7 +620,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                     </div>
                   )}
                   {oc.accepting && (
-                    <button onClick={() => setShowSubmit(true)} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
+                    <button onClick={() => { setEditingWork(null); setShowSubmit(true); }} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
                       Submit for this call
                     </button>
                   )}
@@ -680,7 +747,8 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
         </div>
       </main>
 
-      {showSubmit && <SubmitDrawer openCalls={openCalls} commissionNote={commissionNote} onClose={() => setShowSubmit(false)} onSubmit={handleSubmitWork} />}
+      {zoomImage && <ImageLightbox url={zoomImage.url} alt={zoomImage.title} onClose={() => setZoomImage(null)} />}
+      {showSubmit && <SubmitDrawer key={editingWork?.id ?? "new"} openCalls={openCalls} commissionNote={commissionNote} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); }} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>

@@ -85,6 +85,7 @@ export async function getSubmissions(supabase: Client, galleryId: string, curren
     ack: s.ack ?? undefined,
     rulesAck: s.rules_ack ?? undefined,
     statement: s.statement ?? "",
+    imageUrl: s.image_url ?? undefined,
   }));
 }
 
@@ -417,6 +418,10 @@ export async function getArtistWorks(supabase: Client, artistId: string, gallery
     date: relativeTime(s.created_at),
     note: s.note || undefined,
     ack: s.ack ?? undefined,
+    dim: s.dim ?? "",
+    price: s.price == null ? null : Number(s.price),
+    statement: s.statement ?? "",
+    imageUrl: s.image_url ?? undefined,
   }));
 }
 

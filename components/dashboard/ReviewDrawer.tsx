@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import ImageLightbox from "@/components/shared/ImageLightbox";
 import { STATUS_META } from "@/lib/constants";
-import { artworkBg, avatarBg, initials } from "@/lib/utils";
+import { artworkFill, avatarBg, initials } from "@/lib/utils";
 import type { Submission, SubmissionStatus } from "@/lib/types";
 
 interface ReviewDrawerProps {
@@ -17,6 +18,7 @@ interface ReviewDrawerProps {
 
 export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCatalogue, accepting, onAcceptIntoCatalogue }: ReviewDrawerProps) {
   const [note, setNote] = useState(sub.note);
+  const [zoomed, setZoomed] = useState(false);
   const [mode, setMode] = useState<"view" | "decide">("view");
   const meta = STATUS_META[sub.status];
 
@@ -31,7 +33,15 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
         </div>
 
         {/* Artwork */}
-        <div style={{ height: 220, background: artworkBg(artworkIdx), flexShrink: 0 }} />
+        <div
+          onClick={sub.imageUrl ? () => setZoomed(true) : undefined}
+          role={sub.imageUrl ? "button" : undefined}
+          aria-label={sub.imageUrl ? "View full size" : undefined}
+          style={{ height: 220, ...artworkFill(sub.imageUrl, artworkIdx), flexShrink: 0, cursor: sub.imageUrl ? "zoom-in" : undefined, position: "relative" }}
+        >
+          {sub.imageUrl && <span style={{ position: "absolute", right: 10, bottom: 10, fontSize: 11, padding: "4px 9px", borderRadius: 20, background: "rgba(0,0,0,.55)", color: "#fff" }}>View full size</span>}
+        </div>
+        {zoomed && sub.imageUrl && <ImageLightbox url={sub.imageUrl} alt={sub.title} onClose={() => setZoomed(false)} />}
 
         {/* Info */}
         <div style={{ padding: "22px 24px 0" }}>

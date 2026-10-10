@@ -1120,6 +1120,19 @@ export type Database = {
         Args: { p_submission_id: string }
         Returns: undefined
       }
+      submissions_update_artist_edit: {
+        Args: {
+          p_submission_id: string
+          p_title: string
+          p_medium: string
+          p_dim: string
+          p_year: number
+          p_price: number | null
+          p_statement: string
+          p_image_url?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

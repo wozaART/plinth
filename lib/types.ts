@@ -1,5 +1,8 @@
 export type SubmissionStatus = "pending" | "approved" | "declined" | "changes";
 
+// An artist can edit their submission until the gallery approves or declines it.
+export const isSubmissionEditable = (status: SubmissionStatus) => status === "pending" || status === "changes";
+
 export interface Submission {
   id: string;
   title: string;
@@ -15,6 +18,7 @@ export interface Submission {
   ack?: boolean;
   rulesAck?: boolean;
   statement: string;
+  imageUrl?: string;
 }
 
 export type ExhibitionType = "group" | "solo";
@@ -193,6 +197,10 @@ export interface MyWork {
   date: string;
   note?: string;
   ack?: boolean;
+  dim?: string;
+  price?: number | null;
+  statement?: string;
+  imageUrl?: string;
 }
 
 export interface OpenCall {
