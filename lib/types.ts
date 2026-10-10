@@ -158,6 +158,12 @@ export interface Contact {
 
 export type AuditAction = "insert" | "update" | "delete";
 
+export interface AuditChange {
+  field: string;
+  from: string | null;
+  to: string | null;
+}
+
 export interface AuditLogEntry {
   id: string;
   entity: string;
@@ -167,6 +173,7 @@ export interface AuditLogEntry {
   actorEmail: string;
   when: string;
   whenRaw: string;
+  changes: AuditChange[];
 }
 
 export interface FrameJob {

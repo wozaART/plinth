@@ -17,6 +17,7 @@ import type {
   ArtistPayout,
   AuditLogEntry,
   AuditAction,
+  AuditChange,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
 import { relativeTime, shortDate } from "@/lib/utils";
@@ -330,6 +331,38 @@ const AUDIT_ENTITY_LABEL: Record<string, string> = {
   catalogue_works: "Artwork",
 };
 
+const AUDIT_HIDDEN_FIELDS = new Set(["id", "gallery_id", "created_at", "updated_at"]);
+
+function auditFieldName(key: string): string {
+  const spaced = key.replace(/_/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
+function auditValue(v: unknown): string | null {
+  if (v === null || v === undefined || v === "") return null;
+  return typeof v === "object" ? JSON.stringify(v) : String(v);
+}
+
+function auditChanges(
+  action: AuditAction,
+  record: Record<string, unknown>,
+  previous: Record<string, unknown> | null,
+): AuditChange[] {
+  const keys = Object.keys(record).filter((k) => !AUDIT_HIDDEN_FIELDS.has(k));
+  if (action === "update") {
+    if (!previous) return [];
+    return keys
+      .filter((k) => auditValue(previous[k]) !== auditValue(record[k]))
+      .map((k) => ({ field: auditFieldName(k), from: auditValue(previous[k]), to: auditValue(record[k]) }));
+  }
+  const filled = keys.filter((k) => auditValue(record[k]) !== null);
+  return filled.map((k) =>
+    action === "insert"
+      ? { field: auditFieldName(k), from: null, to: auditValue(record[k]) }
+      : { field: auditFieldName(k), from: auditValue(record[k]), to: null },
+  );
+}
+
 function auditRecordLabel(tableName: string, record: Record<string, unknown>): string {
   const field = tableName === "contacts" ? record.name : record.title;
   return typeof field === "string" && field.length > 0 ? field : "Untitled";
@@ -344,8 +377,12 @@ export async function getAuditLog(supabase: Client, galleryId: string, limit = 2
     .limit(limit);
   if (error) throw error;
 
-  return (data ?? []).map((a) => {
+  const rows = data ?? [];
+  return rows.map((a, i) => {
     const record = (a.record ?? {}) as Record<string, unknown>;
+    // Entries predating old_record fall back to the next-older entry for the same record.
+    const older = rows.slice(i + 1).find((r) => r.record_id === a.record_id);
+    const previous = (a.old_record ?? older?.record ?? null) as Record<string, unknown> | null;
     return {
       id: a.id,
       entity: AUDIT_ENTITY_LABEL[a.table_name] ?? a.table_name,
@@ -355,6 +392,7 @@ export async function getAuditLog(supabase: Client, galleryId: string, limit = 2
       actorEmail: a.actor_email ?? "Unknown",
       when: relativeTime(a.created_at),
       whenRaw: a.created_at,
+      changes: auditChanges(a.action as AuditAction, record, previous),
     };
   });
 }
