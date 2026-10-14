@@ -15,6 +15,7 @@ import {
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import CreateExhibitionDrawer from "./CreateExhibitionDrawer";
 import ArchiveExhibitionDialog from "./ArchiveExhibitionDialog";
+import AcceptedWorksDialog from "./AcceptedWorksDialog";
 import ExhibitionDetailDrawer from "./ExhibitionDetailDrawer";
 
 interface ExhibitionsPanelProps {
@@ -32,6 +33,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
   const [createOpen, setCreateOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [archiveId, setArchiveId] = useState<string | null>(null);
+  const [worksOpen, setWorksOpen] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -227,14 +229,24 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
         <ExhibitionDetailDrawer
           ex={openEx}
           invites={invites.filter((inv) => inv.exhibitionId === openEx.id)}
+          submissions={submissions.filter((sub) => sub.exhibitionId === openEx.id)}
           artistContacts={artistContacts}
-          onClose={() => setOpenId(null)}
+          onClose={() => { setOpenId(null); setWorksOpen(false); }}
+          onViewAcceptedWorks={() => setWorksOpen(true)}
           onUpdate={handleUpdate}
           onArchive={setArchiveId}
           onUnarchive={handleUnarchive}
           onDelete={handleDelete}
           onInvite={handleInvite}
           onRevokeInvite={handleRevokeInvite}
+        />
+      )}
+
+      {openEx && worksOpen && (
+        <AcceptedWorksDialog
+          ex={openEx}
+          works={submissions.filter((sub) => sub.exhibitionId === openEx.id && sub.status === "approved")}
+          onClose={() => setWorksOpen(false)}
         />
       )}
 

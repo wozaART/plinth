@@ -91,6 +91,43 @@ describe("ExhibitionsPanel creating", () => {
 describe("ExhibitionsPanel detail drawer", () => {
   const openDetail = (title: string) => fireEvent.click(screen.getByText(title));
 
+  it("lists only the accepted works for the opened exhibition", () => {
+    const subs = [
+      submission({ id: "a1", title: "Accepted Piece", status: "approved", exhibitionId: "e1" }),
+      submission({ id: "p1", title: "Pending Piece", status: "pending", exhibitionId: "e1" }),
+      submission({ id: "o1", title: "Elsewhere Piece", status: "approved", exhibitionId: "e2" }),
+    ];
+    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
+    openDetail("Highveld Light");
+    expect(screen.getByText("Accepted works (1)")).toBeTruthy();
+    expect(screen.getByText("Accepted Piece")).toBeTruthy();
+    expect(screen.queryByText("Pending Piece")).toBeNull();
+    expect(screen.queryByText("Elsewhere Piece")).toBeNull();
+  });
+
+  it("previews three accepted works and opens the rest on the page with zoomable images", () => {
+    const subs = ["One", "Two", "Three", "Four"].map((t, i) =>
+      submission({ id: `a${i}`, title: `Work ${t}`, status: "approved", exhibitionId: "e1", imageUrl: `https://img.test/${i}.jpg` }));
+    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
+    openDetail("Highveld Light");
+    expect(screen.queryByText("Work Four")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /View more/ }));
+    expect(screen.getByRole("dialog", { name: /Accepted works/ })).toBeTruthy();
+    expect(screen.getByText("Work Four")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "View Work Four full size" }));
+    expect(screen.getByRole("dialog", { name: "Work Four" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog", { name: "Work Four" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Close accepted works" }));
+    expect(screen.queryByRole("dialog", { name: /Accepted works/ })).toBeNull();
+  });
+
+  it("says so when no works are accepted yet", () => {
+    setup();
+    openDetail("Highveld Light");
+    expect(screen.getByText("No works have been accepted yet.")).toBeTruthy();
+  });
+
   it("opens an exhibition's details and closes them", () => {
     setup();
     openDetail("Highveld Light");

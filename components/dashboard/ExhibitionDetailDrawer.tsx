@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
-import type { Contact, Exhibition, ExhibitionInvite } from "@/lib/types";
+import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import type { ExhibitionInput } from "@/lib/supabase/actions";
 import ExhibitionFormFields, { type ExhibitionFormState } from "./ExhibitionFormFields";
 
@@ -23,6 +23,13 @@ function toForm(ex: Exhibition): ExhibitionFormState {
   };
 }
 
+const ACCEPTED_PREVIEW = 3;
+
+const inviteInputStyle: CSSProperties = {
+  width: "100%", minWidth: 0, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9,
+  padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--pl-text)",
+};
+
 const inviteStatusMeta: Record<string, { label: string; bg: string; fg: string }> = {
   pending: { label: "Pending", bg: "var(--pl-pending-bg)", fg: "var(--pl-pending-fg)" },
   accepted: { label: "Accepted", bg: "var(--pl-approved-bg)", fg: "var(--pl-approved-fg)" },
@@ -34,8 +41,10 @@ const inviteStatusMeta: Record<string, { label: string; bg: string; fg: string }
 interface ExhibitionDetailDrawerProps {
   ex: Exhibition;
   invites: ExhibitionInvite[];
+  submissions?: Submission[];
   artistContacts: Contact[];
   onClose: () => void;
+  onViewAcceptedWorks: () => void;
   onUpdate: (id: string, input: Partial<ExhibitionInput>) => void;
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
@@ -45,7 +54,7 @@ interface ExhibitionDetailDrawerProps {
 }
 
 export default function ExhibitionDetailDrawer({
-  ex, invites, artistContacts, onClose, onUpdate, onArchive, onUnarchive, onDelete, onInvite, onRevokeInvite,
+  ex, invites, submissions = [], artistContacts, onClose, onViewAcceptedWorks, onUpdate, onArchive, onUnarchive, onDelete, onInvite, onRevokeInvite,
 }: ExhibitionDetailDrawerProps) {
   const [mode, setMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<ExhibitionFormState>(() => toForm(ex));
@@ -57,6 +66,8 @@ export default function ExhibitionDetailDrawer({
 
   const meta = EX_STATUS_META[ex.status];
   const isArchived = ex.status === "archived";
+  const acceptedWorks = submissions.filter((s) => s.status === "approved");
+  const shownWorks = acceptedWorks.slice(0, ACCEPTED_PREVIEW);
 
   function saveEdit() {
     if (!form.title.trim()) return;
@@ -103,7 +114,7 @@ export default function ExhibitionDetailDrawer({
   return (
     <div className="anim-scrim" style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex" }}>
       <div style={{ flex: 1, background: "var(--pl-scrim, rgba(23,21,15,.32))" }} onClick={onClose} />
-      <div className="anim-drawer scrl" style={{ width: "min(620px,100%)", background: "var(--pl-bg-app)", borderLeft: "1px solid var(--pl-border)", display: "flex", flexDirection: "column", height: "100%", overflowY: "auto" }}>
+      <div className="anim-drawer scrl" style={{ width: "min(620px,100%)", background: "var(--pl-bg-app)", borderLeft: "1px solid var(--pl-border)", display: "flex", flexDirection: "column", height: "100%", overflowY: "auto", overflowX: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px", borderBottom: "1px solid var(--pl-border)", position: "sticky", top: 0, background: "var(--pl-bg-app)", zIndex: 1 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg }}>{meta.label}</span>
@@ -162,12 +173,33 @@ export default function ExhibitionDetailDrawer({
         {mode === "view" && (
           <>
             <div style={{ margin: "26px 24px 0", borderTop: "1px solid var(--pl-border)", paddingTop: 20 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Accepted works ({acceptedWorks.length})</div>
+              {acceptedWorks.length === 0 ? (
+                <div style={{ fontSize: 13, color: "var(--pl-text-eyebrow)" }}>No works have been accepted yet.</div>
+              ) : (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {shownWorks.map((s) => (
+                      <div key={s.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 8, padding: "6px 11px", minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 550, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.title}</div>
+                        <div style={{ fontSize: 11.5, color: "var(--pl-text-soft)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{[s.artist, s.medium].filter(Boolean).join(" · ")}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={onViewAcceptedWorks} style={{ marginTop: 10, background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: 12.5, fontWeight: 550, color: "var(--pl-text-muted)", cursor: "pointer", textDecoration: "underline" }}>
+                    {acceptedWorks.length > ACCEPTED_PREVIEW ? `View more (${acceptedWorks.length - ACCEPTED_PREVIEW} more, with images)` : "View with images"}
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div style={{ margin: "26px 24px 0", borderTop: "1px solid var(--pl-border)", paddingTop: 20 }}>
               <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Invite an artist</div>
-              <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
                 <select
                   value={inviteExistingId}
                   onChange={(e) => { setInviteExistingId(e.target.value); setInviteEmail(""); setInviteName(""); }}
-                  style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--pl-text)" }}
+                  style={inviteInputStyle}
                 >
                   <option value="">— Invite by email instead —</option>
                   {artistContacts.map((c) => (
@@ -175,16 +207,16 @@ export default function ExhibitionDetailDrawer({
                   ))}
                 </select>
                 {!inviteExistingId && (
-                  <div style={{ display: "flex", gap: 10 }}>
-                    <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" style={{ flex: 1, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--pl-text)" }} />
-                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="name@studio.co.za" type="email" style={{ flex: 1, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--pl-text)" }} />
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                    <input value={inviteName} onChange={(e) => setInviteName(e.target.value)} placeholder="Name" style={{ ...inviteInputStyle, flex: "1 1 160px" }} />
+                    <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} placeholder="name@studio.co.za" type="email" style={{ ...inviteInputStyle, flex: "1 1 160px" }} />
                   </div>
                 )}
-                <input value={inviteMessage} onChange={(e) => setInviteMessage(e.target.value)} placeholder="Personal note (optional)" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "10px 12px", fontSize: 13.5, fontFamily: "inherit", color: "var(--pl-text)" }} />
+                <input value={inviteMessage} onChange={(e) => setInviteMessage(e.target.value)} placeholder="Personal note (optional)" style={inviteInputStyle} />
                 <button
                   onClick={submitInvite}
                   disabled={!inviteExistingId && !inviteEmail.trim()}
-                  style={{ padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 550, cursor: "pointer", alignSelf: "flex-start" }}
+                  style={{ padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13, fontWeight: 550, cursor: "pointer", alignSelf: "flex-start", maxWidth: "100%" }}
                 >
                   Send invite
                 </button>
@@ -213,7 +245,7 @@ export default function ExhibitionDetailDrawer({
               )}
             </div>
 
-            <div style={{ margin: "26px 24px 28px", borderTop: "1px solid var(--pl-border)", paddingTop: 20, display: "flex", gap: 10 }}>
+            <div style={{ margin: "26px 24px 28px", borderTop: "1px solid var(--pl-border)", paddingTop: 20, display: "flex", flexWrap: "wrap", gap: 10 }}>
               {isArchived ? (
                 <button onClick={() => onUnarchive(ex.id)} style={{ padding: "10px 16px", background: "var(--pl-surface)", border: "1px solid var(--pl-border-strong)", borderRadius: 9, fontSize: 13, color: "var(--pl-text-muted)", cursor: "pointer" }}>
                   Restore from archive
