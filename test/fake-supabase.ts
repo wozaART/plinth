@@ -59,6 +59,10 @@ export function createFakeSupabase() {
       q.filters.push([`${col}!=`, val]);
       return b;
     };
+    b.is = (col: string, val: unknown) => {
+      q.filters.push([`${col} is`, val]);
+      return b;
+    };
     b.or = (expr: string) => {
       q.filters.push(["or", expr]);
       return b;

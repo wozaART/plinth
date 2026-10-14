@@ -5,35 +5,41 @@ import { EX_STATUS_META } from "@/lib/constants";
 import {
   createExhibition,
   updateExhibition,
-  archiveExhibition,
+  archiveExhibitionWithCatalogue,
   unarchiveExhibition,
   deleteExhibition,
   inviteArtistToExhibition,
   revokeExhibitionInvite,
   type ExhibitionInput,
 } from "@/lib/supabase/actions";
-import type { Contact, Exhibition, ExhibitionInvite } from "@/lib/types";
+import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import CreateExhibitionDrawer from "./CreateExhibitionDrawer";
+import ArchiveExhibitionDialog from "./ArchiveExhibitionDialog";
 import ExhibitionDetailDrawer from "./ExhibitionDetailDrawer";
 
 interface ExhibitionsPanelProps {
   data: Exhibition[];
   invites: ExhibitionInvite[];
   contacts: Contact[];
+  submissions?: Submission[];
+  catalogueSubmissionIds?: string[];
 }
 
-export default function ExhibitionsPanel({ data, invites: initialInvites, contacts }: ExhibitionsPanelProps) {
+export default function ExhibitionsPanel({ data, invites: initialInvites, contacts, submissions = [], catalogueSubmissionIds = [] }: ExhibitionsPanelProps) {
   const [exhibitions, setExhibitions] = useState(data);
   const [invites, setInvites] = useState(initialInvites);
   const [showArchived, setShowArchived] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [archiveId, setArchiveId] = useState<string | null>(null);
+  const [archiving, setArchiving] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const artistContacts = contacts.filter((c) => c.role === "Artist");
   const visible = exhibitions.filter((ex) => showArchived || ex.status !== "archived");
   const openEx = exhibitions.find((ex) => ex.id === openId) ?? null;
+  const archiveEx = exhibitions.find((ex) => ex.id === archiveId) ?? null;
 
   function flash(msg: string) {
     setToast(msg);
@@ -87,15 +93,19 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
     });
   }
 
-  function handleArchive(id: string) {
-    setExhibitions((prev) => prev.map((ex) => (ex.id === id ? { ...ex, status: "archived" } : ex)));
-    startTransition(async () => {
-      try {
-        await archiveExhibition(id);
-      } catch (err) {
-        flash(err instanceof Error ? err.message : "Couldn't archive exhibition");
-      }
-    });
+  // The exhibition only archives once the dialog is completed, so nothing is
+  // changed optimistically: a failure leaves the dialog open to retry.
+  async function handleArchive(id: string, catalogueSubmissionIds: string[]) {
+    setArchiving(true);
+    try {
+      await archiveExhibitionWithCatalogue(id, catalogueSubmissionIds);
+      setExhibitions((prev) => prev.map((ex) => (ex.id === id ? { ...ex, status: "archived" } : ex)));
+      setArchiveId(null);
+      flash(catalogueSubmissionIds.length > 0 ? `Exhibition archived — ${catalogueSubmissionIds.length} added to the catalogue` : "Exhibition archived");
+    } catch (err) {
+      flash(err instanceof Error ? err.message : "Couldn't archive exhibition");
+    }
+    setArchiving(false);
   }
 
   function handleUnarchive(id: string) {
@@ -220,11 +230,22 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
           artistContacts={artistContacts}
           onClose={() => setOpenId(null)}
           onUpdate={handleUpdate}
-          onArchive={handleArchive}
+          onArchive={setArchiveId}
           onUnarchive={handleUnarchive}
           onDelete={handleDelete}
           onInvite={handleInvite}
           onRevokeInvite={handleRevokeInvite}
+        />
+      )}
+
+      {archiveEx && (
+        <ArchiveExhibitionDialog
+          ex={archiveEx}
+          submissions={submissions.filter((sub) => sub.exhibitionId === archiveEx.id)}
+          inCatalogueIds={new Set(catalogueSubmissionIds)}
+          saving={archiving}
+          onCancel={() => setArchiveId(null)}
+          onConfirm={(ids) => void handleArchive(archiveEx.id, ids)}
         />
       )}
 

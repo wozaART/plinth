@@ -67,6 +67,7 @@ export async function getSubmissions(supabase: Client, galleryId: string, curren
     .from("submissions")
     .select("*, artist_profiles(full_name), exhibitions(title)")
     .eq("gallery_id", galleryId)
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -79,6 +80,7 @@ export async function getSubmissions(supabase: Client, galleryId: string, curren
     dim: s.dim ?? "",
     price: formatCurrency(Number(s.price ?? 0), currencyCode),
     forEx: s.exhibitions?.title ?? "Open submissions",
+    exhibitionId: s.exhibition_id ?? undefined,
     date: relativeTime(s.created_at),
     status: s.status as Submission["status"],
     note: s.note,

@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { contact, exhibition } from "@/test/fixtures";
+import { contact, exhibition, submission } from "@/test/fixtures";
 
 const h = vi.hoisted(() => ({
   createExhibition: vi.fn(),
   updateExhibition: vi.fn(),
-  archiveExhibition: vi.fn(),
+  archiveExhibitionWithCatalogue: vi.fn(),
   unarchiveExhibition: vi.fn(),
   deleteExhibition: vi.fn(),
   inviteArtistToExhibition: vi.fn(),
@@ -29,7 +29,7 @@ const type = (label: RegExp, v: string) => fireEvent.change(screen.getByLabelTex
 beforeEach(() => {
   for (const fn of Object.values(h)) fn.mockReset();
   h.createExhibition.mockResolvedValue({ id: "new-id" });
-  for (const k of ["updateExhibition", "archiveExhibition", "unarchiveExhibition", "deleteExhibition", "inviteArtistToExhibition", "revokeExhibitionInvite"] as const) {
+  for (const k of ["updateExhibition", "archiveExhibitionWithCatalogue", "unarchiveExhibition", "deleteExhibition", "inviteArtistToExhibition", "revokeExhibitionInvite"] as const) {
     h[k].mockResolvedValue(undefined);
   }
 });
@@ -99,20 +99,66 @@ describe("ExhibitionsPanel detail drawer", () => {
     expect(screen.queryByRole("heading", { name: "Highveld Light", level: 2 })).toBeNull();
   });
 
-  it("archives an exhibition, which then drops out of the list", async () => {
-    setup();
+  const subs = [
+    submission({ id: "a1", title: "Approved One", status: "approved", exhibitionId: "e2" }),
+    submission({ id: "a2", title: "Approved Two", status: "approved", exhibitionId: "e2" }),
+    submission({ id: "p1", title: "Still Pending", status: "pending", exhibitionId: "e2" }),
+    submission({ id: "c1", title: "Already Catalogued", status: "approved", exhibitionId: "e2" }),
+    submission({ id: "x1", title: "Other Show", status: "approved", exhibitionId: "e1" }),
+  ];
+  const archiveSetup = () => {
+    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} catalogueSubmissionIds={["c1"]} />);
     openDetail("Quiet Rooms");
-    fireEvent.click(screen.getByRole("button", { name: /Archive/ }));
-    await waitFor(() => expect(h.archiveExhibition).toHaveBeenCalledWith("e2"));
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+  };
+  const box = (title: string) => screen.getByLabelText(`Add ${title} to catalogue`) as HTMLInputElement;
+
+  it("does not archive until the dialog is completed, and cancelling leaves it unchanged", () => {
+    archiveSetup();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(h.archiveExhibitionWithCatalogue).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(h.archiveExhibitionWithCatalogue).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "×" }));
+    expect(listed()).toEqual(["Highveld Light", "Quiet Rooms"]);
+  });
+
+  it("lists only this exhibition's submissions; any not already catalogued is selectable", () => {
+    archiveSetup();
+    expect(screen.queryByText("Other Show")).toBeNull();
+    expect(box("Approved One").disabled).toBe(false);
+    expect(box("Still Pending").disabled).toBe(false);
+    expect(box("Already Catalogued").disabled).toBe(true);
+    expect(box("Already Catalogued").checked).toBe(true);
+    expect(screen.getByText("0 to catalogue · 3 to archive")).toBeTruthy();
+  });
+
+  it("archives with the chosen submissions, which then drops the exhibition from the list", async () => {
+    archiveSetup();
+    fireEvent.click(box("Approved Two"));
+    expect(screen.getByText("1 to catalogue · 2 to archive")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Archive exhibition" }));
+    await waitFor(() => expect(h.archiveExhibitionWithCatalogue).toHaveBeenCalledWith("e2", ["a2"]));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "×" }));
     expect(listed()).toEqual(["Highveld Light"]);
   });
 
-  it("reports when archiving fails", async () => {
-    h.archiveExhibition.mockRejectedValue(new Error("Has open submissions"));
+  it("archives an exhibition with no submissions", async () => {
     setup();
     openDetail("Quiet Rooms");
-    fireEvent.click(screen.getByRole("button", { name: /Archive/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Archive" }));
+    expect(screen.getByText("This exhibition has no submissions.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Archive exhibition" }));
+    await waitFor(() => expect(h.archiveExhibitionWithCatalogue).toHaveBeenCalledWith("e2", []));
+  });
+
+  it("reports when archiving fails and keeps the dialog open", async () => {
+    h.archiveExhibitionWithCatalogue.mockRejectedValue(new Error("Has open submissions"));
+    archiveSetup();
+    fireEvent.click(screen.getByRole("button", { name: "Archive exhibition" }));
     expect(await screen.findByText("Has open submissions")).toBeTruthy();
+    expect(screen.getByRole("dialog")).toBeTruthy();
   });
 });

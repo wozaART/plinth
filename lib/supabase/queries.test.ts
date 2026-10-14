@@ -135,6 +135,7 @@ describe("getSubmissions", () => {
     });
     const [full, bare] = await q.getSubmissions(db, "g1", ZAR);
     expect(filter(fake.last("submissions"), "gallery_id")).toBe("g1");
+    expect(filter(fake.last("submissions"), "archived_at is")).toBeNull();
     expect(full).toMatchObject({
       artist: "Ana",
       forEx: "Spring",
