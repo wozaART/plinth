@@ -38,6 +38,9 @@ async function sendNotice(fn: "send-sale-notice" | "send-payout-notice", body: R
   }
 }
 
+// Approving a work accepts it straight into the catalogue, so a failure to
+// catalogue it surfaces here rather than leaving an approved-but-uncatalogued
+// work behind. Re-approving something already catalogued is fine.
 export async function decideSubmission(id: string, status: SubmissionStatus, note: string) {
   if (status !== "approved" && !note.trim()) throw new Error("A note to the artist is required.");
   const supabase = await supabaseServer();
@@ -46,6 +49,7 @@ export async function decideSubmission(id: string, status: SubmissionStatus, not
     .update({ status, note, ack: status === "declined" ? false : null })
     .eq("id", id);
   if (error) throw error;
+  if (status === "approved") await acceptSubmissionIntoCatalogue(id, { allowExisting: true });
   revalidatePath("/dashboard");
 }
 
@@ -522,7 +526,7 @@ export async function recordSale(input: RecordSaleInput) {
   return { id: saleId, noticeError };
 }
 
-export async function acceptSubmissionIntoCatalogue(submissionId: string) {
+export async function acceptSubmissionIntoCatalogue(submissionId: string, { allowExisting = false } = {}) {
   const supabase = await supabaseServer();
   const gallery = await getCurrentGallery(supabase);
 
@@ -552,7 +556,10 @@ export async function acceptSubmissionIntoCatalogue(submissionId: string) {
     .select("id")
     .single();
   if (error) {
-    if (error.code === "23505") throw new Error("This submission is already in the catalogue.");
+    if (error.code === "23505") {
+      if (allowExisting) return { id: null };
+      throw new Error("This submission is already in the catalogue.");
+    }
     throw error;
   }
 

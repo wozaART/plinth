@@ -77,15 +77,25 @@ describe("SubmissionsPanel reviewing", () => {
     expect(screen.queryByRole("heading", { name: "Salt Pan" })).toBeNull();
   });
 
-  it("approves: updates the card, saves, and confirms", () => {
+  it("approves: saves, confirms, and removes the work from the page because it is catalogued", () => {
     render(<SubmissionsPanel initialData={data} catalogueSubmissionIds={[]} />);
     decideOn("Salt Pan");
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
     expect(h.decideSubmission).toHaveBeenCalledWith("s1", "approved", "");
-    expect(screen.getByText("Work approved — drop-off pass issued.")).toBeTruthy();
+    expect(screen.getByText("Work approved and added to the catalogue.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^All\s*4$/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: /^Pending review\s*1$/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^Approved\s*2$/ })).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Salt Pan" })).toBeNull();
+    expect(cardTitles()).not.toContain("Salt Pan");
+  });
+
+  it("puts the work back and reports the error when approving fails", async () => {
+    h.decideSubmission.mockRejectedValue(new Error("Couldn't catalogue it"));
+    render(<SubmissionsPanel initialData={data} catalogueSubmissionIds={[]} />);
+    decideOn("Salt Pan");
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    expect(await screen.findByText("Couldn't catalogue it")).toBeTruthy();
+    expect(cardTitles()).toContain("Salt Pan");
+    expect(screen.getByRole("button", { name: /^Pending review\s*2$/ })).toBeTruthy();
   });
 
   it("declines with a note and marks it awaiting acknowledgement", () => {
@@ -127,10 +137,9 @@ describe("SubmissionsPanel accepting into the catalogue", () => {
     expect((screen.getByRole("button", { name: "In the catalogue" }) as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it("shows works already in the catalogue as such", () => {
+  it("hides approved works that are already in the catalogue from the list", () => {
     render(<SubmissionsPanel initialData={approved} catalogueSubmissionIds={["s3"]} />);
-    open("Veld");
-    expect(screen.getByRole("button", { name: "In the catalogue" })).toBeTruthy();
+    expect(cardTitles()).toEqual([]);
   });
 
   it("reports failure and allows a retry", async () => {

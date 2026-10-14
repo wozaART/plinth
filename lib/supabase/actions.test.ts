@@ -44,9 +44,26 @@ describe("simple mutations", () => {
       payload: { status: "declined", note: "too large", ack: false },
       filters: [["id", "s1"]],
     });
+    h.fake.on("submissions", "select", { data: { title: "Salt Pan", price: 100, artist_id: "a1", status: "approved" }, error: null });
+    h.fake.on("catalogue_works", "insert", { data: { id: "w1" }, error: null });
     await actions.decideSubmission("s1", "approved", "");
-    expect(h.fake.last("submissions", "update")?.payload).toMatchObject({ ack: null });
+    expect(h.fake.queries.filter((q) => q.table === "submissions" && q.op === "update").at(-1)?.payload).toMatchObject({ ack: null });
     expect(h.revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("decideSubmission catalogues an approved work, and tolerates it already being there", async () => {
+    h.fake.on("submissions", "select", { data: { title: "Salt Pan", price: 100, artist_id: "a1", status: "approved" }, error: null });
+    h.fake.on("catalogue_works", "insert", { data: { id: "w1" }, error: null });
+    await actions.decideSubmission("s1", "approved", "");
+    expect(h.fake.last("catalogue_works", "insert")?.payload).toMatchObject({ submission_id: "s1", artist_id: "a1", title: "Salt Pan", status: "available" });
+
+    h.fake.on("catalogue_works", "insert", { data: null, error: { code: "23505" } });
+    await expect(actions.decideSubmission("s1", "approved", "")).resolves.toBeUndefined();
+  });
+
+  it("decideSubmission does not touch the catalogue for declines", async () => {
+    await actions.decideSubmission("s1", "declined", "too large");
+    expect(h.fake.queries.some((q) => q.table === "catalogue_works")).toBe(false);
   });
 
   it("throws the database error and does not revalidate", async () => {

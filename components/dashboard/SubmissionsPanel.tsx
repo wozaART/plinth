@@ -16,22 +16,32 @@ export default function SubmissionsPanel({ initialData, catalogueSubmissionIds }
   const [acceptedIds, setAcceptedIds] = useState(new Set(catalogueSubmissionIds));
   const [accepting, setAccepting] = useState(false);
 
-  const filtered = filter === "all" ? submissions : submissions.filter(s => s.status === filter);
+  // Approved works move straight into the catalogue, so once they're there
+  // they leave this page.
+  const listed = submissions.filter(s => !(s.status === "approved" && acceptedIds.has(s.id)));
+  const filtered = filter === "all" ? listed : listed.filter(s => s.status === filter);
 
-  const counts: Record<string, number> = { all: submissions.length };
-  for (const s of submissions) counts[s.status] = (counts[s.status] ?? 0) + 1;
+  const counts: Record<string, number> = { all: listed.length };
+  for (const s of listed) counts[s.status] = (counts[s.status] ?? 0) + 1;
 
   function decide(id: string, status: SubmissionStatus, note: string) {
     if (status !== "approved" && !note.trim()) return;
+    const previous = submissions.find(s => s.id === id);
     setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status, note, ack: status === "declined" ? false : undefined } : s));
+    if (status === "approved") setAcceptedIds(prev => new Set(prev).add(id));
     setActive(null);
     setToast(
-      status === "approved" ? "Work approved — drop-off pass issued." :
+      status === "approved" ? "Work approved and added to the catalogue." :
       status === "declined" ? "Work declined — artist will be notified." :
       "Changes requested — artist notified."
     );
     setTimeout(() => setToast(null), 3800);
-    void decideSubmission(id, status, note);
+    decideSubmission(id, status, note).catch(err => {
+      if (previous) setSubmissions(prev => prev.map(s => s.id === id ? previous : s));
+      if (status === "approved") setAcceptedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+      setToast(err instanceof Error ? err.message : "Couldn't save that decision — try again.");
+      setTimeout(() => setToast(null), 3800);
+    });
   }
 
   async function acceptIntoCatalogue(id: string) {
