@@ -64,6 +64,13 @@ describe("simple mutations", () => {
     expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ status: "closed" });
   });
 
+  it("unarchiving an exhibition also restores its archived submissions", async () => {
+    await actions.unarchiveExhibition("e1");
+    const restore = h.fake.last("submissions", "update");
+    expect(restore?.payload).toEqual({ archived_at: null });
+    expect(restore?.filters).toContainEqual(["exhibition_id", "e1"]);
+  });
+
   it("archives an exhibition through the atomic RPC with the chosen catalogue submissions", async () => {
     await actions.archiveExhibitionWithCatalogue("e1", ["s1", "s2"]);
     expect(h.fake.rpcCalls).toEqual([

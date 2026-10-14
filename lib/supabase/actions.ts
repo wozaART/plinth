@@ -318,6 +318,9 @@ export async function unarchiveExhibition(id: string, restoreStatus: ExhibitionS
   const supabase = await supabaseServer();
   const { error } = await supabase.from("exhibitions").update({ status: restoreStatus }).eq("id", id);
   if (error) throw error;
+  // Bring back the submissions that were archived along with it.
+  const { error: subError } = await supabase.from("submissions").update({ archived_at: null }).eq("exhibition_id", id);
+  if (subError) throw subError;
   revalidatePath("/dashboard");
 }
 
