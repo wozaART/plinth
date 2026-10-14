@@ -179,20 +179,25 @@ function SignInForm() {
 
   // An invite token in the URL has to survive whichever sign-in path the
   // visitor takes (password on either tab, or Google), not just the invite
-  // form's own sign-up.
-  const pendingInviteParams = inviteToken
-    ? `&invite=${inviteToken}`
-    : exhibitionInviteToken
-      ? `&exhibition_invite=${exhibitionInviteToken}`
+  // form's own sign-up. Only tokens that can still be redeemed count: a link
+  // to an already accepted, revoked or expired invite must not block sign-in.
+  const redeemableInviteToken =
+    inviteStatus === "ready" || inviteStatus === "ready_signed_in" ? inviteToken : null;
+  const redeemableExhibitionToken =
+    exInviteStatus === "ready" || exInviteStatus === "ready_signed_in" ? exhibitionInviteToken : null;
+  const pendingInviteParams = redeemableInviteToken
+    ? `&invite=${redeemableInviteToken}`
+    : redeemableExhibitionToken
+      ? `&exhibition_invite=${redeemableExhibitionToken}`
       : "";
 
   const redeemPendingInvites = async (): Promise<string | null> => {
-    if (inviteToken) {
-      const { error } = await supabase.rpc("accept_artist_invite", { p_token: inviteToken });
+    if (redeemableInviteToken) {
+      const { error } = await supabase.rpc("accept_artist_invite", { p_token: redeemableInviteToken });
       if (error) return error.message;
     }
-    if (exhibitionInviteToken) {
-      const { error } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInviteToken });
+    if (redeemableExhibitionToken) {
+      const { error } = await supabase.rpc("accept_exhibition_invite", { p_token: redeemableExhibitionToken });
       if (error) return error.message;
     }
     return null;
