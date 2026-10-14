@@ -324,3 +324,56 @@ insert into public.messages (id, gallery_id, artist_id, submission_id, sender, s
   ('00000000-0000-4000-9000-000000000701', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000105', '00000000-0000-4000-9000-000000000305', 'gallery', 'Re: Ash Glaze Triptych — base rework', 'Hi Amahle, just checking in on the centre piece''s base — let us know when it''s ready and we''ll confirm your slot in Maboneng Nights.', now() - interval '1 day'),
   ('00000000-0000-4000-9000-000000000702', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000102', '00000000-0000-4000-9000-000000000302', 'gallery', 'Taxi Rank, Midnight — approved & drop-off pass', 'Your work has been selected for Maboneng Nights. Please find attached your drop-off pass with reference PL-S07. Delivery to Studio 4, Arts on Main, Maboneng, Johannesburg.', now() - interval '6 days')
 on conflict (id) do nothing;
+
+-- ── Sales and payouts ───────────────────────────────────────────────────
+-- Both tenants get sales covering every payout status (due, paid,
+-- acknowledged, queried), including a due payout whose buyer has already
+-- paid and whose payout date has passed (overdue). Sales are inserted
+-- directly rather than through record_sale() because there is no
+-- authenticated owner at seed time; the sales_create_payout trigger still
+-- creates each payout row, which is then moved to its target status. The
+-- 40% commission matches both galleries' rate above. Money is in cents.
+
+insert into public.catalogue_works (id, gallery_id, submission_id, artist_id, title, price, status) values
+  ('00000000-0000-4000-8000-000000000410', '00000000-0000-4000-8000-000000000002', null, '00000000-0000-4000-8000-000000000101', 'Dusk Reading', 12000, 'sold'),
+  ('00000000-0000-4000-8000-000000000411', '00000000-0000-4000-8000-000000000002', null, '00000000-0000-4000-8000-000000000105', 'Salt Flat Study', 7500, 'sold'),
+  ('00000000-0000-4000-8000-000000000412', '00000000-0000-4000-8000-000000000002', null, '00000000-0000-4000-8000-000000000104', 'Weir at Dawn', 5400, 'sold'),
+  ('00000000-0000-4000-9000-000000000410', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000102', 'Harbour Light', 6000, 'sold'),
+  ('00000000-0000-4000-9000-000000000411', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000105', 'Terracotta Study', 3800, 'sold'),
+  ('00000000-0000-4000-9000-000000000412', '00000000-0000-4000-9000-000000000002', null, '00000000-0000-4000-9000-000000000101', 'Night Market', 15000, 'sold')
+on conflict (id) do nothing;
+
+insert into public.sales (
+  id, gallery_id, catalogue_work_id, artist_id,
+  sale_price_cents, discount_cents, commission_rate, commission_amount_cents, artist_amount_cents,
+  buyer_name, buyer_email, buyer_phone, sold_at, buyer_paid_at, payout_due_at
+) values
+  -- JVH Art Gallery
+  ('00000000-0000-4000-8000-000000000801', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000403', '00000000-0000-4000-8000-000000000103', 950000, 0, 0.400, 380000, 570000, 'Karabo Dlamini', 'karabo.d@buyers.demo.wozaart.test', '082 555 0101', current_date - 5, null, current_date + 25),
+  ('00000000-0000-4000-8000-000000000802', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000407', '00000000-0000-4000-8000-000000000102', 1850000, 100000, 0.400, 700000, 1050000, 'Elize van Wyk', 'elize.vw@buyers.demo.wozaart.test', '083 555 0102', current_date - 30, current_date - 28, current_date - 14),
+  ('00000000-0000-4000-8000-000000000803', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000410', '00000000-0000-4000-8000-000000000101', 1200000, 0, 0.400, 480000, 720000, 'Sipho Mokoena', 'sipho.m@buyers.demo.wozaart.test', '071 555 0103', current_date - 60, current_date - 58, current_date - 44),
+  ('00000000-0000-4000-8000-000000000804', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000411', '00000000-0000-4000-8000-000000000105', 750000, 50000, 0.400, 280000, 420000, 'Anneke Botha', 'anneke.b@buyers.demo.wozaart.test', '084 555 0104', current_date - 45, current_date - 43, current_date - 29),
+  ('00000000-0000-4000-8000-000000000805', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000412', '00000000-0000-4000-8000-000000000104', 540000, 0, 0.400, 216000, 324000, 'Thandi Nkosi', 'thandi.n@buyers.demo.wozaart.test', '072 555 0105', current_date - 40, current_date - 38, current_date - 10),
+  -- The Sable Gallery
+  ('00000000-0000-4000-9000-000000000811', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000403', '00000000-0000-4000-9000-000000000103', 860000, 0, 0.400, 344000, 516000, 'Lerato Molefe', 'lerato.m@buyers.demo.wozaart.test', '082 555 0111', current_date - 3, null, current_date + 27),
+  ('00000000-0000-4000-9000-000000000812', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000410', '00000000-0000-4000-9000-000000000102', 600000, 0, 0.400, 240000, 360000, 'Johan Pretorius', 'johan.p@buyers.demo.wozaart.test', '083 555 0112', current_date - 25, current_date - 24, current_date - 10),
+  ('00000000-0000-4000-9000-000000000813', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000411', '00000000-0000-4000-9000-000000000105', 380000, 0, 0.400, 152000, 228000, 'Nomsa Zulu', 'nomsa.z@buyers.demo.wozaart.test', '071 555 0113', current_date - 55, current_date - 53, current_date - 39),
+  ('00000000-0000-4000-9000-000000000814', '00000000-0000-4000-9000-000000000002', '00000000-0000-4000-9000-000000000412', '00000000-0000-4000-9000-000000000101', 1500000, 150000, 0.400, 540000, 810000, 'Reuben Naidoo', 'reuben.n@buyers.demo.wozaart.test', '084 555 0114', current_date - 35, current_date - 33, current_date - 19)
+on conflict (id) do nothing;
+
+-- Payouts start as `due` (via the trigger). 801, 805, 811 stay due, 805
+-- being overdue with the buyer already paid.
+update public.payouts p
+set status = v.status,
+    paid_at = v.paid_at,
+    payment_reference = v.payment_reference,
+    acknowledged_at = v.acknowledged_at
+from (values
+  ('00000000-0000-4000-8000-000000000802'::uuid, 'paid',         current_date - 13, 'EFT-JVH-0802', null::timestamptz),
+  ('00000000-0000-4000-8000-000000000803'::uuid, 'acknowledged', current_date - 43, 'EFT-JVH-0803', now() - interval '42 days'),
+  ('00000000-0000-4000-8000-000000000804'::uuid, 'queried',      current_date - 28, 'EFT-JVH-0804', null::timestamptz),
+  ('00000000-0000-4000-9000-000000000812'::uuid, 'paid',         current_date - 9,  'EFT-SBL-0812', null::timestamptz),
+  ('00000000-0000-4000-9000-000000000813'::uuid, 'acknowledged', current_date - 38, 'EFT-SBL-0813', now() - interval '37 days'),
+  ('00000000-0000-4000-9000-000000000814'::uuid, 'queried',      current_date - 18, 'EFT-SBL-0814', null::timestamptz)
+) as v(sale_id, status, paid_at, payment_reference, acknowledged_at)
+where p.sale_id = v.sale_id and p.status = 'due';
