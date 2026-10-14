@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cache } from "react";
 import { headers } from "next/headers";
 import type { Database } from "./database.types";
 
@@ -18,7 +19,18 @@ const DEFAULT_GALLERY_SLUG = process.env.DEFAULT_GALLERY_SLUG ?? "default";
  * default tenant), a signed-in gallery owner gets their own gallery instead
  * of the default tenant's.
  */
-export async function getCurrentGallery(supabase: SupabaseClient<Database>): Promise<GalleryRow> {
+export function getCurrentGallery(supabase: SupabaseClient<Database>): Promise<GalleryRow> {
+  // The layout, generateMetadata, generateViewport and the page all resolve
+  // the gallery in the same request, each with its own Supabase client, so
+  // React.cache can't key on the client. A per-request holder dedupes them
+  // instead (and shares the in-flight promise while they render in parallel).
+  const holder = requestHolder();
+  return (holder.gallery ??= loadCurrentGallery(supabase));
+}
+
+const requestHolder = cache(() => ({}) as { gallery?: Promise<GalleryRow> });
+
+async function loadCurrentGallery(supabase: SupabaseClient<Database>): Promise<GalleryRow> {
   const requestHeaders = await headers();
   const slug = requestHeaders.get("x-gallery-slug") ?? DEFAULT_GALLERY_SLUG;
 
