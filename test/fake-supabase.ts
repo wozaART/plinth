@@ -9,6 +9,9 @@ export interface RecordedQuery {
   op: "select" | "insert" | "update" | "upsert" | "delete";
   payload?: unknown;
   filters: [string, unknown][];
+  orderBy: [string, unknown][];
+  limit?: number;
+  selected?: string;
 }
 
 export function createFakeSupabase() {
@@ -18,14 +21,16 @@ export function createFakeSupabase() {
   const rpcResults = new Map<string, Result>();
   const invocations: { fn: string; body: unknown }[] = [];
   const uploads: { bucket: string; path: string; file: unknown }[] = [];
+  const signedUrls: { bucket: string; path: string; ttl: number }[] = [];
   const state = {
+    signedUrlResult: { data: { signedUrl: "https://signed.test/x" }, error: null } as { data: { signedUrl: string } | null; error: unknown },
     user: null as null | { id: string; user_metadata?: Record<string, unknown> },
     invokeResult: { data: {}, error: null } as Result,
     uploadError: null as unknown,
   };
 
   function builder(table: string) {
-    const q: RecordedQuery = { table, op: "select", filters: [] };
+    const q: RecordedQuery = { table, op: "select", filters: [], orderBy: [] };
     queries.push(q);
     const resolve = (): Result => results.get(`${table}:${q.op}`) ?? { data: null, error: null };
     const b: Record<string, unknown> = {};
@@ -42,9 +47,28 @@ export function createFakeSupabase() {
     };
     // select() after insert/update just asks for the row back; it must not
     // reset the operation.
-    b.select = () => b;
+    b.select = (cols?: string) => {
+      if (q.op === "select") q.selected = cols;
+      return b;
+    };
     b.eq = (col: string, val: unknown) => {
       q.filters.push([col, val]);
+      return b;
+    };
+    b.neq = (col: string, val: unknown) => {
+      q.filters.push([`${col}!=`, val]);
+      return b;
+    };
+    b.or = (expr: string) => {
+      q.filters.push(["or", expr]);
+      return b;
+    };
+    b.order = (col: string, opts?: unknown) => {
+      q.orderBy.push([col, opts]);
+      return b;
+    };
+    b.limit = (n: number) => {
+      q.limit = n;
       return b;
     };
     b.single = () => Promise.resolve(resolve());
@@ -72,6 +96,10 @@ export function createFakeSupabase() {
           uploads.push({ bucket, path, file });
           return Promise.resolve({ error: state.uploadError });
         },
+        createSignedUrl: (path: string, ttl: number) => {
+          signedUrls.push({ bucket, path, ttl });
+          return Promise.resolve(state.signedUrlResult);
+        },
         getPublicUrl: (path: string) => ({ data: { publicUrl: `https://cdn.test/${bucket}/${path}` } }),
       }),
     },
@@ -83,6 +111,7 @@ export function createFakeSupabase() {
     rpcCalls,
     invocations,
     uploads,
+    signedUrls,
     state,
     /** Queue the result for `table`'s next-and-subsequent `op` queries. */
     on(table: string, op: RecordedQuery["op"], result: Result) {
