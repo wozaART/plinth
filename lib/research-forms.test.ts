@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RESEARCH_FORMS, getResearchForm, researchQuestions } from "./research-forms";
+import { RESEARCH_FORMS, getResearchForm, researchQuestions, researchSections } from "./research-forms";
 import { validateAnswers } from "./form-validation";
 
 describe("research form definitions", () => {
@@ -67,5 +67,20 @@ describe("validateAnswers with a research form", () => {
       ["respondent_email"],
     );
     expect(Object.keys(bad.errors).sort()).toEqual(["pain", "respondent_email"]);
+  });
+});
+
+describe("researchSections", () => {
+  it("groups every question exactly once, in order, under about / idea / design", () => {
+    for (const form of RESEARCH_FORMS) {
+      const sections = researchSections(form);
+      expect(sections.map((s) => s.id)).toEqual(["about", "idea", "design"]);
+      expect(sections.flatMap((s) => s.questions).map((q) => q.id)).toEqual(researchQuestions(form).map((q) => q.id));
+    }
+  });
+
+  it("puts the form's intro on the idea section", () => {
+    const form = getResearchForm("lay-by")!;
+    expect(researchSections(form).find((s) => s.id === "idea")?.intro).toBe(form.intro);
   });
 });

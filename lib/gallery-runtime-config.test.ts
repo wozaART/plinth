@@ -71,6 +71,13 @@ describe("buildGalleryRuntimeConfig", () => {
   });
 });
 
+describe("navigation tabs", () => {
+  it("defaults to no tabs when the row has none", () => {
+    const cfg = buildGalleryRuntimeConfig(gallery({ gallery_tabs: null, studio_tabs: null } as unknown as Partial<GalleryRow>));
+    expect(cfg.nav).toEqual({ galleryTabs: [], studioTabs: [] });
+  });
+});
+
 describe("renderCommissionNote", () => {
   it("substitutes the rate", () => {
     expect(renderCommissionNote("Gallery keeps {rate}%", 35)).toBe("Gallery keeps 35%");
