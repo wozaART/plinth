@@ -98,7 +98,7 @@ export function ArtistForgot({ email, sent, loading, onEmail, onSubmit, onBack, 
         <Eyebrow>Check your inbox</Eyebrow>
         <AuthHeading className="!text-[clamp(26px,3.2vw,33px)]">Reset link sent.</AuthHeading>
         <p className="text-[14px] text-text-muted leading-relaxed mt-3 mb-7">
-          If an account exists for that email, you'll find a link to choose a new password. It expires in 30 minutes.
+          If an account exists for that email, you&apos;ll find a link to choose a new password. It expires in 30 minutes.
         </p>
         <PrimaryButton className="!mt-0" onClick={onBack}>
           Back to sign in
@@ -115,7 +115,7 @@ export function ArtistForgot({ email, sent, loading, onEmail, onSubmit, onBack, 
       <Eyebrow>Reset password</Eyebrow>
       <AuthHeading>Forgot your password?</AuthHeading>
       <p className="text-[14px] text-text-muted leading-relaxed mt-[11px] mb-[26px]">
-        Enter your email and we'll send you a link to reset it.
+        Enter your email and we&apos;ll send you a link to reset it.
       </p>
       <FieldLabel>Email</FieldLabel>
       <AuthInput
