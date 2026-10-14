@@ -1,0 +1,85 @@
+import type { CatalogueWork, Contact, Exhibition, Payout, Submission } from "@/lib/types";
+
+export const catalogueWork = (over: Partial<CatalogueWork> = {}): CatalogueWork => ({
+  id: "w1",
+  title: "Harbour at Dusk",
+  artistId: "a1",
+  artist: "Ana Artist",
+  price: "R 20 000",
+  priceRaw: 20000,
+  agreedPrice: "R 18 000",
+  agreedPriceRaw: 18000,
+  commissionRatePct: 35,
+  status: "available",
+  consignedDate: "1 Mar",
+  consignedDateRaw: "2026-03-01",
+  submissionId: null,
+  ...over,
+});
+
+export const payout = (over: Partial<Payout> = {}): Payout => ({
+  id: "p1",
+  saleId: "s1",
+  artistId: "a1",
+  artist: "Ana Artist",
+  workTitle: "Harbour at Dusk",
+  amount: "R 9 000",
+  amountCents: 900000,
+  status: "due",
+  dueDate: "1 Jan",
+  dueDateRaw: "2099-01-01",
+  paidDate: "—",
+  paidDateRaw: null,
+  paymentReference: null,
+  hasProofOfPayment: false,
+  acknowledgedDate: "—",
+  acknowledgedDateRaw: null,
+  ...over,
+});
+
+export const submission = (over: Partial<Submission> = {}): Submission => ({
+  id: "sub1",
+  title: "Salt Pan",
+  artist: "Ana Artist",
+  year: 2025,
+  medium: "Oil on canvas",
+  dim: "90 × 120 cm",
+  price: "R 24 000",
+  forEx: "Open Call",
+  date: "Today",
+  status: "pending",
+  note: "",
+  statement: "A study of light.",
+  ...over,
+});
+
+export const exhibition = (over: Partial<Exhibition> = {}): Exhibition => ({
+  id: "e1",
+  title: "Highveld Light",
+  type: "group",
+  status: "open",
+  blurb: "A group show",
+  theme: "",
+  mediumRequirements: "",
+  sizeRequirements: "",
+  rules: "",
+  slots: 10,
+  filled: 4,
+  applicants: 7,
+  submissionDeadline: null,
+  openingDate: null,
+  closingDate: null,
+  deliveryDate: null,
+  dates: "Dates to be confirmed",
+  ...over,
+});
+
+export const contact = (over: Partial<Contact> = {}): Contact => ({
+  id: "c1",
+  name: "Ana Artist",
+  email: "ana@example.com",
+  role: "Artist",
+  focus: "",
+  last: "—",
+  ...over,
+});

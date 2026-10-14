@@ -8,6 +8,7 @@ export default defineConfig({
     // Pure-logic tests run in node; component tests opt in to jsdom with a
     // `// @vitest-environment jsdom` docblock.
     environment: "node",
+    setupFiles: ["./test/setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
     exclude: ["node_modules/**", ".next/**", "supabase/functions/**"],
     coverage: {
