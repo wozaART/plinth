@@ -16,7 +16,7 @@ interface ArchiveExhibitionDialogProps {
 export default function ArchiveExhibitionDialog({ ex, submissions, inCatalogueIds, saving, onCancel, onConfirm }: ArchiveExhibitionDialogProps) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
 
-  const canCatalogue = (s: Submission) => s.status === "approved" && !inCatalogueIds.has(s.id);
+  const canCatalogue = (s: Submission) => !inCatalogueIds.has(s.id);
   const archivedCount = submissions.filter((s) => !picked.has(s.id) && !inCatalogueIds.has(s.id)).length;
 
   function toggle(id: string) {
@@ -52,11 +52,11 @@ export default function ArchiveExhibitionDialog({ ex, submissions, inCatalogueId
             const meta = STATUS_META[s.status];
             const inCatalogue = inCatalogueIds.has(s.id);
             const selectable = canCatalogue(s);
-            const hint = inCatalogue ? "Already in the catalogue" : selectable ? null : "Only approved works can join the catalogue";
+            const hint = inCatalogue ? "Already in the catalogue" : null;
             return (
               <label
                 key={s.id}
-                style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 10, padding: "10px 13px", cursor: selectable ? "pointer" : "default", opacity: selectable || inCatalogue ? 1 : 0.7 }}
+                style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 10, padding: "10px 13px", cursor: selectable ? "pointer" : "default", opacity: 1 }}
               >
                 <input
                   type="checkbox"

@@ -124,11 +124,11 @@ describe("ExhibitionsPanel detail drawer", () => {
     expect(listed()).toEqual(["Highveld Light", "Quiet Rooms"]);
   });
 
-  it("lists only this exhibition's submissions; only approved, uncatalogued ones are selectable", () => {
+  it("lists only this exhibition's submissions; any not already catalogued is selectable", () => {
     archiveSetup();
     expect(screen.queryByText("Other Show")).toBeNull();
     expect(box("Approved One").disabled).toBe(false);
-    expect(box("Still Pending").disabled).toBe(true);
+    expect(box("Still Pending").disabled).toBe(false);
     expect(box("Already Catalogued").disabled).toBe(true);
     expect(box("Already Catalogued").checked).toBe(true);
     expect(screen.getByText("0 to catalogue · 3 to archive")).toBeTruthy();
