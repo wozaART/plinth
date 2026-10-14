@@ -11,6 +11,7 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "coverage/**",
+    ".claude/**",
     "build/**",
     "next-env.d.ts",
     // Deno runtime, not part of the Next.js/Node project.

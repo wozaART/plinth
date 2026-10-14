@@ -10,12 +10,14 @@ export default defineConfig({
     environment: "node",
     setupFiles: ["./test/setup.ts"],
     include: ["**/*.test.{ts,tsx}"],
-    exclude: ["node_modules/**", ".next/**", "supabase/functions/**"],
+    exclude: ["node_modules/**", ".next/**", ".claude/**"],
     coverage: {
       provider: "v8",
       reporter: ["text-summary", "json-summary", "lcov"],
-      include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
+      include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "supabase/functions/**/*.ts"],
       exclude: ["lib/supabase/database.types.ts", "**/*.test.*"],
+      // Floor set a little under the current baseline; ratchet up as coverage grows.
+      thresholds: { lines: 60, statements: 60, functions: 55, branches: 55 },
     },
   },
 });

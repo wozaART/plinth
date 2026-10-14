@@ -20,6 +20,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
       - run: npm run test:coverage
       - name: Coverage summary
         if: always()
@@ -37,3 +39,15 @@ jobs:
           name: coverage
           path: coverage/
           if-no-files-found: ignore
+
+  # pgTAP tests (supabase/tests/database) against a throwaway local Supabase stack.
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,mailpit
+      - run: supabase test db --local

@@ -16,6 +16,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <button onClick={reset} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#17150F", color: "#FBFAF8", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 500, border: "none", cursor: "pointer" }}>
           Try again
         </button>
+        {/* A full page load on purpose: the error boundary may be holding broken client state. */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #E0DBCF", color: "#17150F", padding: "12px 20px", borderRadius: 10, fontSize: 14, fontWeight: 500 }}>
           Back to home
         </a>
