@@ -13,6 +13,7 @@ export default defineConfig({
     exclude: ["node_modules/**", ".next/**", "supabase/functions/**"],
     coverage: {
       provider: "v8",
+      reporter: ["text-summary", "json-summary", "lcov"],
       include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
       exclude: ["lib/supabase/database.types.ts", "**/*.test.*"],
     },
