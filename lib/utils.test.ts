@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ARTWORK_GRADIENTS, AVATAR_COLORS } from "./constants";
-import { artworkBg, avatarBg, initials, relativeTime, shortDate } from "./utils";
+import { artworkBg, artworkFill, avatarBg, initials, relativeTime, shortDate } from "./utils";
 
 describe("artworkBg / avatarBg", () => {
   it("cycles through the palette", () => {
@@ -12,6 +12,25 @@ describe("artworkBg / avatarBg", () => {
   it("builds an avatar gradient from the indexed colour", () => {
     expect(avatarBg(1)).toContain(AVATAR_COLORS[1]);
     expect(avatarBg(AVATAR_COLORS.length + 1)).toBe(avatarBg(1));
+  });
+});
+
+describe("artworkFill", () => {
+  it("covers the box with the uploaded photo when there is one", () => {
+    expect(artworkFill("https://cdn.test/a.jpg", 3)).toMatchObject({
+      backgroundImage: 'url("https://cdn.test/a.jpg")',
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    });
+  });
+
+  it("quotes URLs safely so they can't break out of url()", () => {
+    const { backgroundImage } = artworkFill('https://x.test/a").jpg', 0);
+    expect(backgroundImage).toBe('url("https://x.test/a\\").jpg")');
+  });
+
+  it("falls back to the indexed placeholder gradient", () => {
+    expect(artworkFill(undefined, 2)).toEqual({ background: ARTWORK_GRADIENTS[2] });
   });
 });
 
