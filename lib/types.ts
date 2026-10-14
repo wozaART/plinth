@@ -12,6 +12,7 @@ export interface Submission {
   dim: string;
   price: string;
   forEx: string;
+  exhibitionId?: string;
   date: string;
   status: SubmissionStatus;
   note: string;

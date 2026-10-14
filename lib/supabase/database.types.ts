@@ -871,6 +871,7 @@ export type Database = {
       submissions: {
         Row: {
           ack: boolean | null
+          archived_at: string | null
           artist_id: string
           created_at: string
           dim: string | null
@@ -889,6 +890,7 @@ export type Database = {
         }
         Insert: {
           ack?: boolean | null
+          archived_at?: string | null
           artist_id: string
           created_at?: string
           dim?: string | null
@@ -907,6 +909,7 @@ export type Database = {
         }
         Update: {
           ack?: boolean | null
+          archived_at?: string | null
           artist_id?: string
           created_at?: string
           dim?: string | null
@@ -1036,6 +1039,10 @@ export type Database = {
       }
     }
     Functions: {
+      archive_exhibition: {
+        Args: { p_catalogue_submission_ids?: string[]; p_exhibition_id: string }
+        Returns: undefined
+      }
       accept_artist_invite: {
         Args: { p_token: string }
         Returns: {

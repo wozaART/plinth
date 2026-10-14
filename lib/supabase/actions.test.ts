@@ -64,6 +64,20 @@ describe("simple mutations", () => {
     expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ status: "closed" });
   });
 
+  it("archives an exhibition through the atomic RPC with the chosen catalogue submissions", async () => {
+    await actions.archiveExhibitionWithCatalogue("e1", ["s1", "s2"]);
+    expect(h.fake.rpcCalls).toEqual([
+      { fn: "archive_exhibition", args: { p_exhibition_id: "e1", p_catalogue_submission_ids: ["s1", "s2"] } },
+    ]);
+    expect(h.revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("surfaces an archive RPC failure without revalidating", async () => {
+    h.fake.onRpc("archive_exhibition", { error: dbError });
+    await expect(actions.archiveExhibitionWithCatalogue("e1", [])).rejects.toBe(dbError);
+    expect(h.revalidatePath).not.toHaveBeenCalled();
+  });
+
   it("calls the artist-facing RPCs and revalidates /studio", async () => {
     await actions.ackDeclinedSubmission("s1");
     await actions.acknowledgePayout("p1");

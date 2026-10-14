@@ -139,7 +139,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         </div>
 
         {tab === "submissions" && <SubmissionsPanel initialData={submissions} catalogueSubmissionIds={catalogue.map(w => w.submissionId).filter((id): id is string => id !== null)} />}
-        {tab === "exhibitions" && <ExhibitionsPanel data={exhibitions} invites={exhibitionInvites} contacts={contacts} />}
+        {tab === "exhibitions" && <ExhibitionsPanel data={exhibitions} invites={exhibitionInvites} contacts={contacts} submissions={submissions} catalogueSubmissionIds={catalogue.map(w => w.submissionId).filter((id): id is string => id !== null)} />}
         {tab === "catalogue" && <CataloguePanel data={catalogue} artists={catalogueArtists} />}
         {tab === "contacts" && <ContactsPanel data={contacts} />}
         {tab === "frameshop" && <FrameshopPanel data={frameJobs} />}

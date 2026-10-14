@@ -301,6 +301,19 @@ export async function archiveExhibition(id: string) {
   revalidatePath("/dashboard");
 }
 
+// Archiving is gated on resolving every submission: the picked (approved)
+// ones go into the catalogue, which keeps no link to the exhibition, and the
+// rest are archived with it. The database function does it all atomically.
+export async function archiveExhibitionWithCatalogue(id: string, catalogueSubmissionIds: string[]) {
+  const supabase = await supabaseServer();
+  const { error } = await supabase.rpc("archive_exhibition", {
+    p_exhibition_id: id,
+    p_catalogue_submission_ids: catalogueSubmissionIds,
+  });
+  if (error) throw error;
+  revalidatePath("/dashboard");
+}
+
 export async function unarchiveExhibition(id: string, restoreStatus: ExhibitionStatus = "planning") {
   const supabase = await supabaseServer();
   const { error } = await supabase.from("exhibitions").update({ status: restoreStatus }).eq("id", id);
