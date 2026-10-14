@@ -117,7 +117,7 @@ reset role;
 select tests.act_as('00000000-0000-4000-8000-000000000011');
 
 select is((select count(*)::int from public.sales where artist_id = '00000000-0000-4000-8000-000000000012'), 0, 'artist 1 cannot read artist 2 sales');
-select is((select count(*)::int from public.sales), 1, 'artist 1 sees only their own sale');
+select is((select count(*)::int from public.artist_sales), 1, 'artist 1 sees only their own sale through the artist view');
 select is((select count(*)::int from public.payouts where artist_id = '00000000-0000-4000-8000-000000000012'), 0, 'artist 1 cannot read artist 2 payouts');
 select is((select count(*)::int from public.payouts), 1, 'artist 1 sees only their own payout');
 select is((select count(*)::int from public.artist_bank_details where id = '00000000-0000-4000-8000-000000000012'), 0, 'artist 1 cannot read artist 2 bank details');
@@ -137,13 +137,7 @@ select throws_ok($$select public.acknowledge_payout((select id from public.payou
 -- Buyer identity: the artist-facing view has no buyer columns...
 select is((select count(*)::int from information_schema.columns where table_schema = 'public' and table_name = 'artist_sales' and column_name in ('buyer_name', 'buyer_email', 'buyer_phone')), 0, 'artist_sales exposes no buyer columns');
 -- ...and the base table must not hand them over either.
--- KNOWN GAP: sales_select_artist grants artists row access to the base table,
--- and column grants are per role (owners and artists are both `authenticated`),
--- so an artist can read the buyer details on their own sales. Closing it means
--- moving getArtistPayouts off the embedded `sales(...)` join first. Drop the
--- todo() once fixed.
-select todo('artists can still read buyer columns on their own sales (see comment)', 1);
-select throws_ok($$select buyer_name, buyer_email, buyer_phone from public.sales$$, '42501', null, 'artists cannot select buyer columns from sales');
+select is((select count(*)::int from public.sales), 0, 'artists cannot read any rows, buyer columns included, from the sales table');
 select lives_ok($$select id, sale_price_cents, artist_amount_cents from public.artist_sales$$, 'artists can select their sales through the artist view');
 
 reset role;
@@ -161,7 +155,7 @@ select is((select count(*)::int from public.artist_profiles), 0, 'anon sees no a
 select is((select count(*)::int from public.artist_bank_details), 0, 'anon sees no bank details');
 select is((select count(*)::int from public.payouts), 0, 'anon sees no payouts');
 select is((select count(*)::int from public.audit_log), 0, 'anon sees no audit_log');
-select is((select count(*)::int from public.artist_sales), 0, 'anon sees no rows from the artist view');
+select throws_ok($$select count(*) from public.artist_sales$$, '42501', null, 'anon cannot query the artist view');
 select throws_ok(format($$insert into public.contacts (gallery_id, name, email, role) values (%L, 'x', 'x@test.local', 'Artist')$$, tests.gallery_of('00000000-0000-4000-8000-0000000000a1')), '42501', null, 'anon cannot insert contacts');
 select throws_ok(format($$select public.record_sale(%L, 1000)$$, '00000000-0000-4000-8000-0000000003b1'), null, null, 'anon cannot record a sale');
 

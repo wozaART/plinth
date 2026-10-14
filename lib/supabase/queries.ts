@@ -462,7 +462,7 @@ export async function getArtistSales(supabase: Client, artistId: string, gallery
 export async function getArtistPayouts(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<ArtistPayout[]> {
   const { data, error } = await supabase
     .from("payouts")
-    .select("*, sales(payout_due_at, catalogue_works(title))")
+    .select("*, artist_sales(payout_due_at, catalogue_works(title))")
     .eq("artist_id", artistId)
     .eq("gallery_id", galleryId)
     .order("created_at", { ascending: false });
@@ -471,10 +471,10 @@ export async function getArtistPayouts(supabase: Client, artistId: string, galle
   return (data ?? []).map((p) => ({
     id: p.id,
     saleId: p.sale_id,
-    workTitle: p.sales?.catalogue_works?.title ?? "Untitled work",
+    workTitle: p.artist_sales?.catalogue_works?.title ?? "Untitled work",
     amount: formatCurrency(p.amount_cents / 100, currencyCode),
     status: p.status as ArtistPayout["status"],
-    dueDate: p.sales?.payout_due_at ? shortDate(p.sales.payout_due_at) : "—",
+    dueDate: p.artist_sales?.payout_due_at ? shortDate(p.artist_sales.payout_due_at) : "—",
     paidDate: p.paid_at ? shortDate(p.paid_at) : "—",
     paymentReference: p.payment_reference,
     hasProofOfPayment: p.proof_of_payment_path != null,

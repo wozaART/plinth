@@ -24,12 +24,3 @@ touched.
 Each file creates its own fixtures (two galleries, two artists) and a `tests`
 helper schema inside its transaction: `tests.act_as(uuid)` switches to a
 signed-in user (`null` for anon), `tests.gallery_of(owner)` finds a gallery.
-
-## Known gap
-
-`rls_isolation.test.sql` marks one assertion `todo`: artists can still read
-`buyer_name/email/phone` on their own sales straight from `public.sales`
-(`sales_select_artist` grants row access, and column grants can't tell owners
-and artists apart because both are `authenticated`). The `artist_sales` view
-itself is clean. Fixing it means moving `getArtistPayouts`, which embeds
-`sales(...)`, onto a view first; remove the `todo()` when that lands.
