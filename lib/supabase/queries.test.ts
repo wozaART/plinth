@@ -403,7 +403,8 @@ describe("payouts", () => {
   });
 
   it("artist view is scoped to the artist and omits other artists' fields", async () => {
-    fake.on("payouts", "select", { data: [payout], error: null });
+    const { sales, ...rest } = payout;
+    fake.on("payouts", "select", { data: [{ ...rest, artist_sales: sales }], error: null });
     const [p] = await q.getArtistPayouts(db, "a1", "g1", ZAR);
     const query = fake.last("payouts");
     expect(filter(query, "artist_id")).toBe("a1");
@@ -411,6 +412,9 @@ describe("payouts", () => {
     expect(p).toMatchObject({ amount: formatCurrency(900, ZAR), paymentReference: "REF1", hasProofOfPayment: true });
     expect(p).not.toHaveProperty("artist");
     expect(p).not.toHaveProperty("artistId");
+    expect(p).toMatchObject({ workTitle: "Piece", dueDate: shortDate("2026-04-01T10:00:00Z") });
+    expect(query?.selected).toContain("artist_sales(");
+    expect(query?.selected).not.toMatch(/\bsales\(/);
   });
 });
 
