@@ -373,7 +373,7 @@ export default function ReviewPage() {
               See Woza Art as <em style={{ fontStyle: "italic", color: "#6B4A3A" }}>your</em> gallery — then tell us what to change.
             </h1>
             <p style={{ fontSize: "clamp(15px,1.7vw,18px)", color: "#57534A", lineHeight: 1.6, maxWidth: 600, margin: "24px 0 0" }}>
-              You've had a look at the working sample. Now make it yours: add your name, colours and type, see both portals adopt your brand, then walk through the features and tell us what's valuable and what's missing. It takes about ten minutes.
+              You&apos;ve had a look at the working sample. Now make it yours: add your name, colours and type, see both portals adopt your brand, then walk through the features and tell us what&apos;s valuable and what&apos;s missing. It takes about ten minutes.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 16, margin: "40px 0 36px", maxWidth: 760 }}>
               {[
@@ -563,7 +563,7 @@ export default function ReviewPage() {
               {galleryName}, dressed in your brand
             </h2>
             <p style={{ fontSize: 15, color: "#6B655B", lineHeight: 1.6, margin: "12px 0 0", maxWidth: 600 }}>
-              Here's how both portals look now. Open either as a full, working demo — your branding travels with you.
+              Here&apos;s how both portals look now. Open either as a full, working demo — your branding travels with you.
             </p>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 20, marginTop: 34 }}>
@@ -574,7 +574,7 @@ export default function ReviewPage() {
             <div style={{ background: "#F4F1EA", border: "1px solid #ECE8DE", borderRadius: 13, padding: "16px 18px", marginTop: 22, display: "flex", gap: 11, alignItems: "flex-start", maxWidth: 760 }}>
               <span style={{ fontSize: 15 }}>✦</span>
               <div style={{ fontSize: 13, color: "#6B655B", lineHeight: 1.55 }}>
-                Open a portal, click around, then come back to this tab. When you've seen enough, move on to the walkthrough and tell us what works.
+                Open a portal, click around, then come back to this tab. When you&apos;ve seen enough, move on to the walkthrough and tell us what works.
               </div>
             </div>
 
@@ -591,7 +591,7 @@ export default function ReviewPage() {
           <div className="anim-fade" style={{ maxWidth: 760 }}>
             <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: "clamp(26px,3.6vw,38px)", fontWeight: 550, letterSpacing: "-.02em", margin: 0 }}>The walkthrough</h2>
             <p style={{ fontSize: 15, color: "#6B655B", lineHeight: 1.6, margin: "12px 0 0" }}>
-              For each feature, tell us how useful it is for your gallery — and add a note if you'd change anything. There are no wrong answers; this shapes what we build next.
+              For each feature, tell us how useful it is for your gallery — and add a note if you&apos;d change anything. There are no wrong answers; this shapes what we build next.
             </p>
 
             {/* Who */}
@@ -681,12 +681,12 @@ export default function ReviewPage() {
               </div>
 
               <div style={{ marginTop: 22 }}>
-                <label style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", display: "block", marginBottom: 9 }}>What's missing, or what would you change?</label>
+                <label style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", display: "block", marginBottom: 9 }}>What&apos;s missing, or what would you change?</label>
                 <textarea value={missing} onChange={e => setMissing(e.target.value)} placeholder="The one thing that would make this a yes for you…" style={{ width: "100%", minHeight: 74, resize: "vertical", border: "1px solid #3D382F", background: "#211E18", color: "#F3EFE7", borderRadius: 10, padding: "12px 13px", fontFamily: "inherit", fontSize: 14, lineHeight: 1.55, boxSizing: "border-box" }} />
               </div>
 
               <div style={{ marginTop: 18 }}>
-                <label style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", display: "block", marginBottom: 9 }}>What's the biggest headache this could take off your plate?</label>
+                <label style={{ fontSize: 13.5, fontWeight: 550, color: "#F3EFE7", display: "block", marginBottom: 9 }}>What&apos;s the biggest headache this could take off your plate?</label>
                 <textarea value={pain} onChange={e => setPain(e.target.value)} placeholder="Where does your gallery lose the most time or goodwill today?" style={{ width: "100%", minHeight: 74, resize: "vertical", border: "1px solid #3D382F", background: "#211E18", color: "#F3EFE7", borderRadius: 10, padding: "12px 13px", fontFamily: "inherit", fontSize: 14, lineHeight: 1.55, boxSizing: "border-box" }} />
               </div>
 

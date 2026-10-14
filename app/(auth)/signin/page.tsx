@@ -634,7 +634,7 @@ function GalleryPanel() {
         className="font-serif font-medium italic text-text-secondary leading-[1.18] tracking-[-0.01em] mt-6 max-w-[440px]"
         style={{ fontSize: "clamp(24px,2.6vw,32px)" }}
       >
-        Mind the art.<br />We'll mind the rest.
+        Mind the art.<br />We&apos;ll mind the rest.
       </h2>
       <p className="text-[14px] text-text-muted leading-relaxed mt-3 max-w-[420px]">
         Submissions, exhibitions, catalogue and collectors — the quiet operating system for your gallery.
@@ -668,7 +668,7 @@ function ArtistPanel() {
         Your work, kept in good hands.
       </h2>
       <p className="text-[14px] text-on-dark-soft leading-relaxed mt-3 max-w-[420px]">
-        Submit to open calls, follow every decision, and never arrive at the door with work that wasn't expected.
+        Submit to open calls, follow every decision, and never arrive at the door with work that wasn&apos;t expected.
       </p>
     </div>
   );
