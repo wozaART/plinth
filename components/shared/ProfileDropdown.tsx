@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 export interface ProfileOption {
@@ -16,6 +16,7 @@ const KIND_LABEL = { gallery: "Gallery", artist: "Artist" } as const;
 export default function ProfileDropdown({ current, options, tone }: { current: "gallery" | "artist"; options: ProfileOption[]; tone: "light" | "dark" }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
   const active = options.find(o => o.kind === current) ?? options[0];
 
@@ -40,6 +41,8 @@ export default function ProfileDropdown({ current, options, tone }: { current: "
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-busy={pending}
+        disabled={pending}
         onClick={() => setOpen(o => !o)}
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, width: "100%", padding: "11px 18px", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", color: text }}
       >
@@ -48,7 +51,11 @@ export default function ProfileDropdown({ current, options, tone }: { current: "
           <span style={{ display: "block", fontSize: 14, fontWeight: 600, marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{active.name}</span>
           <span style={{ display: "block", fontSize: 11.5, color: soft, marginTop: 1 }}>{active.detail}</span>
         </span>
+        {pending ? (
+          <span role="status" aria-label="Switching profile" style={{ flexShrink: 0, width: 16, height: 16, margin: "0 2px", borderRadius: "50%", border: `2px solid ${border}`, borderTopColor: text, animation: "plSpin .7s linear infinite" }} />
+        ) : (
         <svg aria-hidden width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: soft, transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}><path d="M5 7.5l5 5 5-5" /></svg>
+        )}
       </button>
       {open && (
         <div role="listbox" style={{ position: "absolute", top: "100%", left: 10, right: 10, zIndex: 20, marginTop: 4, background: dark ? "var(--pl-surface-dark)" : "var(--pl-surface)", border: `1px solid ${border}`, borderRadius: 10, boxShadow: "0 12px 30px rgba(0,0,0,.18)", padding: 4 }}>
@@ -60,7 +67,7 @@ export default function ProfileDropdown({ current, options, tone }: { current: "
                 type="button"
                 role="option"
                 aria-selected={selected}
-                onClick={() => { setOpen(false); if (!selected) router.push(o.href); }}
+                onClick={() => { setOpen(false); if (!selected) startTransition(() => router.push(o.href)); }}
                 style={{ display: "block", width: "100%", padding: "9px 12px", borderRadius: 7, border: "none", cursor: "pointer", textAlign: "left", background: selected ? (dark ? "rgba(255,255,255,.08)" : "var(--pl-sidebar)") : "transparent", color: text }}
               >
                 <span style={{ display: "block", fontSize: 10, letterSpacing: ".1em", textTransform: "uppercase", color: eyebrow }}>{KIND_LABEL[o.kind]}{selected ? " · current" : ""}</span>

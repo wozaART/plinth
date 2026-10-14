@@ -7,21 +7,14 @@ import StudioShell from "@/components/studio/StudioShell";
 
 export default async function StudioPage() {
   const supabase = createClient(await cookies());
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [{ data: { user } }, gallery] = await Promise.all([supabase.auth.getUser(), getCurrentGallery(supabase)]);
   if (!user) redirect("/signin");
 
   // Gate on the artist profile, not user_metadata.role: a gallery owner can
   // also be an artist under the same account.
-  const { data: artistRow } = await supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle();
-  if (!artistRow) redirect("/signin");
-
-  const { data: ownedGallery } = await supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle();
-
-  const gallery = await getCurrentGallery(supabase);
-
-  const [works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
+  const [{ data: artistRow }, { data: ownedGallery }, works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
+    supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle(),
+    supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle(),
     getArtistWorks(supabase, user.id, gallery.id),
     getArtistCatalogue(supabase, user.id, gallery.id, gallery.currency_code),
     getArtistPayouts(supabase, user.id, gallery.id, gallery.currency_code),
@@ -31,6 +24,7 @@ export default async function StudioPage() {
     getArtistBankDetails(supabase, user.id),
     getExhibitionInvitesForArtist(supabase, user.id, user.email ?? ""),
   ]);
+  if (!artistRow) redirect("/signin");
 
   const [firstName, ...rest] = (profile?.full_name ?? "Artist").split(" ");
 
