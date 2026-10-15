@@ -176,6 +176,22 @@ describe("createSubmission", () => {
     });
   });
 
+  it("rejects a submission to an exhibition whose deadline has passed", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: "2020-01-01" } });
+    await expect(actions.createSubmission(form({ exhibitionId: "e1" }))).rejects.toThrow("deadline for this exhibition has passed");
+    expect(h.fake.last("submissions", "insert")).toBeUndefined();
+  });
+
+  it("accepts a submission while the deadline is still ahead or unset", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: "2999-01-01" } });
+    await actions.createSubmission(form({ exhibitionId: "e1" }));
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null } });
+    await actions.createSubmission(form({ exhibitionId: "e1" }));
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ exhibition_id: "e1" });
+  });
+
   it("rejects an image path outside the artist's own submission folder", async () => {
     signIn("artist");
     await expect(actions.createSubmission(form({ id: "sub-9", imagePath: "someone-else/sub-9/x.png" }))).rejects.toThrow("Invalid image upload.");

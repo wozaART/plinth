@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { getPayoutProofUrl } from "@/lib/supabase/queries";
 import type { SubmissionStatus, ExhibitionType, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
+import { deadlinePassed } from "@/lib/utils";
 
 async function supabaseServer() {
   return createClient(await cookies());
@@ -102,6 +103,18 @@ export async function createSubmission(formData: FormData) {
   const submissionId = String(formData.get("id") || "") || crypto.randomUUID();
   const imagePath = String(formData.get("imagePath") || "");
   const imageUrl = imagePath ? submissionImageUrl(supabase, user.id, submissionId, imagePath) : null;
+
+  if (exhibitionId) {
+    const { data: exhibition, error: exError } = await supabase
+      .from("exhibitions")
+      .select("submission_deadline")
+      .eq("id", exhibitionId)
+      .single();
+    if (exError) throw exError;
+    if (deadlinePassed(exhibition.submission_deadline)) {
+      throw new Error("The submission deadline for this exhibition has passed.");
+    }
+  }
 
   const { error } = await supabase.from("submissions").insert({
     id: submissionId,

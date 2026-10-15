@@ -640,7 +640,7 @@ describe("getOpenCalls", () => {
     id: "e1",
     title: "Spring",
     type: "open_call",
-    submission_deadline: "2026-05-01",
+    submission_deadline: "2999-05-01",
     blurb: null,
     theme: null,
     medium_requirements: null,
@@ -660,8 +660,17 @@ describe("getOpenCalls", () => {
     const calls = await q.getOpenCalls(db, "g1", "Woza");
     expect(filter(fake.last("exhibitions"), "status!=")).toBe("archived");
     expect(calls.map((c) => c.accepting)).toEqual([true, true, false]);
-    expect(calls[0]).toMatchObject({ gallery: "Woza", deadline: shortDate("2026-05-01"), focus: "" });
+    expect(calls[0]).toMatchObject({ gallery: "Woza", deadline: shortDate("2999-05-01"), focus: "" });
     expect(calls[1].deadline).toBe("Closed");
+  });
+
+  it("stops accepting once the submission deadline has passed", async () => {
+    fake.on("exhibitions", "select", {
+      data: [{ ...base, status: "open", submission_deadline: "2020-01-01" }],
+      error: null,
+    });
+    const calls = await q.getOpenCalls(db, "g1", "Woza");
+    expect(calls[0].accepting).toBe(false);
   });
 });
 
