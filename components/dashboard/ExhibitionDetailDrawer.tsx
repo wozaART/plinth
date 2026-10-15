@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
+import { EX_ACCESS_META, EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import type { ExhibitionInput } from "@/lib/supabase/actions";
 import ExhibitionFormFields, { type ExhibitionFormState } from "./ExhibitionFormFields";
@@ -10,6 +10,7 @@ function toForm(ex: Exhibition): ExhibitionFormState {
   return {
     title: ex.title,
     type: ex.type,
+    access: ex.access,
     blurb: ex.blurb,
     theme: ex.theme,
     mediumRequirements: ex.mediumRequirements,
@@ -74,6 +75,7 @@ export default function ExhibitionDetailDrawer({
     onUpdate(ex.id, {
       title: form.title.trim(),
       type: form.type,
+      access: form.access,
       blurb: form.blurb.trim(),
       theme: form.theme.trim(),
       mediumRequirements: form.mediumRequirements.trim(),
@@ -119,6 +121,7 @@ export default function ExhibitionDetailDrawer({
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg }}>{meta.label}</span>
             <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>{EX_TYPE_META[ex.type]}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>{EX_ACCESS_META[ex.access]}</span>
           </div>
           <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--pl-border)", background: "none", fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--pl-text-soft)" }}>×</button>
         </div>

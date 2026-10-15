@@ -12,23 +12,26 @@ interface CreateExhibitionDrawerProps {
 export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhibitionDrawerProps) {
   const [form, setForm] = useState<ExhibitionFormState>(EMPTY_EXHIBITION_FORM);
 
-  const ready = form.title.trim().length > 0;
+  const ready =
+    form.title.trim().length > 0 &&
+    Boolean(form.submissionDeadline && form.deliveryDate && form.openingDate && form.closingDate);
 
   function submit() {
     if (!ready) return;
     onCreate({
       title: form.title.trim(),
       type: form.type,
+      access: form.access,
       blurb: form.blurb.trim(),
       theme: form.theme.trim(),
       mediumRequirements: form.mediumRequirements.trim(),
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
       slots: Number(form.slots) || 0,
-      submissionDeadline: form.submissionDeadline || null,
-      openingDate: form.openingDate || null,
-      closingDate: form.closingDate || null,
-      deliveryDate: form.deliveryDate || null,
+      submissionDeadline: form.submissionDeadline,
+      openingDate: form.openingDate,
+      closingDate: form.closingDate,
+      deliveryDate: form.deliveryDate,
     });
   }
 
@@ -45,7 +48,7 @@ export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhi
         </div>
 
         <div style={{ padding: "24px 24px 32px" }}>
-          <ExhibitionFormFields form={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+          <ExhibitionFormFields requireDates form={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
 
           <div style={{ display: "flex", gap: 13, alignItems: "center", marginTop: 24 }}>
             <button

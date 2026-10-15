@@ -57,6 +57,7 @@ export const exhibition = (over: Partial<Exhibition> = {}): Exhibition => ({
   id: "e1",
   title: "Highveld Light",
   type: "group",
+  access: "open",
   status: "open",
   blurb: "A group show",
   theme: "",

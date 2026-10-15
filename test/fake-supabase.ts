@@ -76,6 +76,7 @@ export function createFakeSupabase() {
       return b;
     };
     b.single = () => Promise.resolve(resolve());
+    b.maybeSingle = () => Promise.resolve(resolve());
     b.then = (onFulfilled: (r: Result) => unknown, onRejected?: (e: unknown) => unknown) =>
       Promise.resolve(resolve()).then(onFulfilled, onRejected);
     return b;

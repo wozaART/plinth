@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition, type CSSProperties, type C
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { artworkBg, artworkFill, avatarBg, initials } from "@/lib/utils";
-import { EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
+import { EX_ACCESS_META, EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STATUS_META } from "@/lib/constants";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { formatCurrency } from "@/lib/currency";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
@@ -636,6 +636,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <h3 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 18, fontWeight: 600, margin: 0 }}>{oc.title}</h3>
                         <span style={{ fontSize: 10.5, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>{EX_TYPE_META[oc.type]}</span>
+                        {oc.access === "closed" && <span style={{ fontSize: 10.5, fontWeight: 600, padding: "3px 9px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>{EX_ACCESS_META[oc.access]}</span>}
                       </div>
                       <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", marginTop: 3 }}>{oc.gallery}</div>
                       <div style={{ fontSize: 13.5, color: "var(--pl-text-secondary)", marginTop: 6 }}>{oc.focus}</div>

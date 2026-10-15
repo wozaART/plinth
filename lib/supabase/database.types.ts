@@ -425,6 +425,7 @@ export type Database = {
       }
       exhibitions: {
         Row: {
+          access: string
           blurb: string | null
           closing_date: string | null
           created_at: string
@@ -443,6 +444,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          access?: string
           blurb?: string | null
           closing_date?: string | null
           created_at?: string
@@ -461,6 +463,7 @@ export type Database = {
           type?: string
         }
         Update: {
+          access?: string
           blurb?: string | null
           closing_date?: string | null
           created_at?: string

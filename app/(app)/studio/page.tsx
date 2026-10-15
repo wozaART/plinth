@@ -18,7 +18,7 @@ export default async function StudioPage() {
     getArtistWorks(supabase, user.id, gallery.id),
     getArtistCatalogue(supabase, user.id, gallery.id, gallery.currency_code),
     getArtistPayouts(supabase, user.id, gallery.id, gallery.currency_code),
-    getOpenCalls(supabase, gallery.id, gallery.name),
+    getOpenCalls(supabase, gallery.id, gallery.name, user.id),
     getMessages(supabase, user.id, gallery.id, gallery.name),
     getArtistProfile(supabase, user.id),
     getArtistBankDetails(supabase, user.id),

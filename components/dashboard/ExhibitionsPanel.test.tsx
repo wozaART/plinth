@@ -61,6 +61,10 @@ describe("ExhibitionsPanel creating", () => {
   function create() {
     fireEvent.click(screen.getByRole("button", { name: "+ New exhibition" }));
     type(/Title/, "Fresh Show");
+    type(/Online submission deadline/, "2026-01-30");
+    type(/Delivery date/, "2026-03-02");
+    type(/Opening date/, "2026-03-12");
+    type(/Closing date/, "2026-04-18");
     fireEvent.click(screen.getByRole("button", { name: "Create exhibition" }));
   }
 

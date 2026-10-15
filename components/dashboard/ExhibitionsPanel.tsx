@@ -56,6 +56,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
         id: tempId,
         title: input.title,
         type: input.type,
+        access: input.access,
         status: "planning",
         blurb: input.blurb,
         theme: input.theme,

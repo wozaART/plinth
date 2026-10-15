@@ -36,6 +36,11 @@ export const EX_STATUS_META: Record<string, { label: string; bg: string; fg: str
   archived: { label: "Archived",     bg: "var(--pl-neutral-chip-bg)", fg: "var(--pl-neutral-chip-fg)" },
 };
 
+export const EX_ACCESS_META: Record<string, string> = {
+  open: "Open call",
+  closed: "Invite only",
+};
+
 export const EX_TYPE_META: Record<string, string> = {
   group: "Group",
   solo: "Solo",
