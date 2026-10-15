@@ -4,6 +4,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import CreateExhibitionDrawer from "./CreateExhibitionDrawer";
 
 const type = (label: RegExp, v: string) => fireEvent.change(screen.getByLabelText(label), { target: { value: v } });
+const fillDates = () => {
+  type(/Online submission deadline/, "2026-01-30");
+  type(/Delivery date/, "2026-03-02");
+  type(/Opening date/, "2026-03-12");
+  type(/Closing date/, "2026-04-18");
+};
 
 function setup() {
   const onCreate = vi.fn();
@@ -14,18 +20,34 @@ function setup() {
 }
 
 describe("CreateExhibitionDrawer", () => {
+  it("needs all four dates", () => {
+    const { create, onCreate } = setup();
+    type(/Title/, "Highveld Light");
+    expect(create().disabled).toBe(true);
+    type(/Online submission deadline/, "2026-01-30");
+    type(/Delivery date/, "2026-03-02");
+    type(/Opening date/, "2026-03-12");
+    expect(create().disabled).toBe(true);
+    fireEvent.click(create());
+    expect(onCreate).not.toHaveBeenCalled();
+    type(/Closing date/, "2026-04-18");
+    expect(create().disabled).toBe(false);
+  });
+
   it("needs a title", () => {
     const { create, onCreate } = setup();
     expect(create().disabled).toBe(true);
     type(/Title/, "   ");
+    fillDates();
     expect(create().disabled).toBe(true);
     fireEvent.click(create());
     expect(onCreate).not.toHaveBeenCalled();
   });
 
-  it("creates a group show with 8 slots by default and nulls for blank dates", () => {
+  it("creates a group show with 8 slots by default", () => {
     const { create, onCreate } = setup();
     type(/Title/, " Highveld Light ");
+    fillDates();
     fireEvent.click(create());
     expect(onCreate).toHaveBeenCalledWith({
       title: "Highveld Light",
@@ -37,10 +59,10 @@ describe("CreateExhibitionDrawer", () => {
       sizeRequirements: "",
       rules: "",
       slots: 8,
-      submissionDeadline: null,
-      openingDate: null,
-      closingDate: null,
-      deliveryDate: null,
+      submissionDeadline: "2026-01-30",
+      openingDate: "2026-03-12",
+      closingDate: "2026-04-18",
+      deliveryDate: "2026-03-02",
     });
   });
 
@@ -80,6 +102,7 @@ describe("CreateExhibitionDrawer", () => {
   it("treats a non-numeric slot count as 0", () => {
     const { create, onCreate } = setup();
     type(/Title/, "X");
+    fillDates();
     type(/Slots/, "");
     fireEvent.click(create());
     expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ slots: 0 }));

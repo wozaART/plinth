@@ -41,10 +41,15 @@ export const EMPTY_EXHIBITION_FORM: ExhibitionFormState = {
 export default function ExhibitionFormFields({
   form,
   onChange,
+  requireDates = false,
 }: {
   form: ExhibitionFormState;
   onChange: (patch: Partial<ExhibitionFormState>) => void;
+  requireDates?: boolean;
 }) {
+  const required = requireDates ? (
+    <span style={{ color: "var(--pl-declined-fg)", textTransform: "none", letterSpacing: 0 }}> required</span>
+  ) : null;
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div>
@@ -135,20 +140,20 @@ export default function ExhibitionFormFields({
 
       <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Online submission deadline</span>
-          <input type="date" value={form.submissionDeadline} onChange={(e) => onChange({ submissionDeadline: e.target.value })} style={inputStyle} />
+          <span style={labelStyle}>Online submission deadline{required}</span>
+          <input type="date" required={requireDates} value={form.submissionDeadline} onChange={(e) => onChange({ submissionDeadline: e.target.value })} style={inputStyle} />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Delivery date</span>
-          <input type="date" value={form.deliveryDate} onChange={(e) => onChange({ deliveryDate: e.target.value })} style={inputStyle} />
+          <span style={labelStyle}>Delivery date{required}</span>
+          <input type="date" required={requireDates} value={form.deliveryDate} onChange={(e) => onChange({ deliveryDate: e.target.value })} style={inputStyle} />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Opening date</span>
-          <input type="date" value={form.openingDate} onChange={(e) => onChange({ openingDate: e.target.value })} style={inputStyle} />
+          <span style={labelStyle}>Opening date{required}</span>
+          <input type="date" required={requireDates} value={form.openingDate} onChange={(e) => onChange({ openingDate: e.target.value })} style={inputStyle} />
         </label>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Closing date</span>
-          <input type="date" value={form.closingDate} onChange={(e) => onChange({ closingDate: e.target.value })} style={inputStyle} />
+          <span style={labelStyle}>Closing date{required}</span>
+          <input type="date" required={requireDates} value={form.closingDate} onChange={(e) => onChange({ closingDate: e.target.value })} style={inputStyle} />
         </label>
       </div>
     </div>
