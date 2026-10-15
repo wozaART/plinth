@@ -7,6 +7,7 @@ const h = vi.hoisted(() => ({
   headerValues: {} as Record<string, string>,
   gallery: {
     id: "gal-1",
+    owner_id: "user-1",
     name: "Woza Art",
     commission_rate: 0.4,
     theme_colors: { accent: "#B5623C" },
@@ -340,10 +341,16 @@ describe("exhibitions", () => {
     closingDate: null, deliveryDate: null,
   };
 
-  it("createExhibition is restricted to gallery users", async () => {
-    signIn("artist");
+  it("createExhibition is restricted to the gallery's owner", async () => {
+    signIn("artist", "someone-else");
     await expect(actions.createExhibition(base)).rejects.toThrow("Not signed in.");
     expect(h.fake.last("exhibitions")).toBeUndefined();
+  });
+
+  it("createExhibition allows the owner of a dual-role account whose metadata role is artist", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "insert", { data: { id: "e1" } });
+    expect(await actions.createExhibition(base)).toEqual({ id: "e1" });
   });
 
   it("createExhibition maps fields to columns and nulls blank text", async () => {
