@@ -48,7 +48,7 @@ export default function ExhibitionFormFields({
   requireDates?: boolean;
 }) {
   const required = requireDates ? (
-    <span style={{ color: "var(--pl-declined-fg)", textTransform: "none", letterSpacing: 0 }}> required</span>
+    <span style={{ display: "block", color: "var(--pl-declined-fg)", textTransform: "none", letterSpacing: 0, marginTop: 2 }}>required</span>
   ) : null;
   return (
     <div style={{ display: "grid", gap: 18 }}>
