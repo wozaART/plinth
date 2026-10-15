@@ -30,6 +30,7 @@ describe("CreateExhibitionDrawer", () => {
     expect(onCreate).toHaveBeenCalledWith({
       title: "Highveld Light",
       type: "group",
+      access: "open",
       blurb: "",
       theme: "",
       mediumRequirements: "",
@@ -46,6 +47,7 @@ describe("CreateExhibitionDrawer", () => {
   it("sends every field, trimmed", () => {
     const { create, onCreate } = setup();
     fireEvent.click(screen.getByRole("button", { name: "solo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Invite only" }));
     type(/Title/, "Quiet Rooms");
     type(/Blurb/, " A solo show ");
     type(/Theme/, " Interiors ");
@@ -61,6 +63,7 @@ describe("CreateExhibitionDrawer", () => {
     expect(onCreate).toHaveBeenCalledWith({
       title: "Quiet Rooms",
       type: "solo",
+      access: "closed",
       blurb: "A solo show",
       theme: "Interiors",
       mediumRequirements: "Oil",

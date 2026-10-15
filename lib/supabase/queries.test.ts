@@ -37,7 +37,7 @@ describe("error propagation", () => {
     ["catalogue_works", "getArtistCatalogue", () => q.getArtistCatalogue(db, "a1", "g1", ZAR)],
     ["artist_sales", "getArtistSales", () => q.getArtistSales(db, "a1", "g1", ZAR)],
     ["payouts", "getArtistPayouts", () => q.getArtistPayouts(db, "a1", "g1", ZAR)],
-    ["exhibitions", "getOpenCalls", () => q.getOpenCalls(db, "g1", "Woza")],
+    ["exhibitions", "getOpenCalls", () => q.getOpenCalls(db, "g1", "Woza", "a1")],
     ["messages", "getMessages", () => q.getMessages(db, "a1", "g1", "Woza")],
   ];
 
@@ -640,6 +640,7 @@ describe("getOpenCalls", () => {
     id: "e1",
     title: "Spring",
     type: "open_call",
+    access: "open",
     submission_deadline: "2999-05-01",
     blurb: null,
     theme: null,
@@ -657,7 +658,7 @@ describe("getOpenCalls", () => {
       ],
       error: null,
     });
-    const calls = await q.getOpenCalls(db, "g1", "Woza");
+    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
     expect(filter(fake.last("exhibitions"), "status!=")).toBe("archived");
     expect(calls.map((c) => c.accepting)).toEqual([true, true, false]);
     expect(calls[0]).toMatchObject({ gallery: "Woza", deadline: shortDate("2999-05-01"), focus: "" });
@@ -669,8 +670,26 @@ describe("getOpenCalls", () => {
       data: [{ ...base, status: "open", submission_deadline: "2020-01-01" }],
       error: null,
     });
-    const calls = await q.getOpenCalls(db, "g1", "Woza");
+    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
     expect(calls[0].accepting).toBe(false);
+  });
+
+  it("lists a closed exhibition only for artists with an accepted invite", async () => {
+    fake.on("exhibitions", "select", {
+      data: [
+        { ...base, status: "open" },
+        { ...base, id: "e2", status: "open", access: "closed" },
+        { ...base, id: "e3", status: "open", access: "closed" },
+      ],
+      error: null,
+    });
+    fake.on("exhibition_invites", "select", { data: [{ exhibition_id: "e3" }], error: null });
+    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    expect(calls.map((c) => c.id)).toEqual(["e1", "e3"]);
+    expect(calls[1].access).toBe("closed");
+    const invites = fake.last("exhibition_invites");
+    expect(filter(invites, "artist_id")).toBe("a1");
+    expect(filter(invites, "status")).toBe("accepted");
   });
 });
 

@@ -19,6 +19,7 @@ export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhi
     onCreate({
       title: form.title.trim(),
       type: form.type,
+      access: form.access,
       blurb: form.blurb.trim(),
       theme: form.theme.trim(),
       mediumRequirements: form.mediumRequirements.trim(),

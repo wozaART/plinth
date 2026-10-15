@@ -23,12 +23,15 @@ export interface Submission {
 }
 
 export type ExhibitionType = "group" | "solo";
+// "open" takes submissions from any artist; "closed" is invitation only.
+export type ExhibitionAccess = "open" | "closed";
 export type ExhibitionStatus = "open" | "planning" | "hanging" | "closed" | "archived";
 
 export interface Exhibition {
   id: string;
   title: string;
   type: ExhibitionType;
+  access: ExhibitionAccess;
   status: ExhibitionStatus;
   blurb: string;
   theme: string;
@@ -209,6 +212,7 @@ export interface OpenCall {
   title: string;
   gallery: string;
   type: ExhibitionType;
+  access: ExhibitionAccess;
   deadline: string;
   focus: string;
   theme: string;

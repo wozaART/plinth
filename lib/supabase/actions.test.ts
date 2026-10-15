@@ -192,6 +192,22 @@ describe("createSubmission", () => {
     expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ exhibition_id: "e1" });
   });
 
+  it("rejects a submission to an invite-only exhibition without an accepted invite", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "closed" } });
+    h.fake.on("exhibition_invites", "select", { data: null });
+    await expect(actions.createSubmission(form({ exhibitionId: "e1" }))).rejects.toThrow("by invitation only");
+    expect(h.fake.last("submissions", "insert")).toBeUndefined();
+  });
+
+  it("accepts a submission to an invite-only exhibition once the invite is accepted", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "closed" } });
+    h.fake.on("exhibition_invites", "select", { data: { id: "i1" } });
+    await actions.createSubmission(form({ exhibitionId: "e1" }));
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ exhibition_id: "e1" });
+  });
+
   it("rejects an image path outside the artist's own submission folder", async () => {
     signIn("artist");
     await expect(actions.createSubmission(form({ id: "sub-9", imagePath: "someone-else/sub-9/x.png" }))).rejects.toThrow("Invalid image upload.");
@@ -319,7 +335,7 @@ describe("contacts and invites", () => {
 
 describe("exhibitions", () => {
   const base = {
-    title: "Spring", type: "group" as const, blurb: "", theme: "", mediumRequirements: "",
+    title: "Spring", type: "group" as const, access: "open" as const, blurb: "", theme: "", mediumRequirements: "",
     sizeRequirements: "", rules: "", slots: 10, submissionDeadline: null, openingDate: null,
     closingDate: null, deliveryDate: null,
   };

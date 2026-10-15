@@ -122,6 +122,7 @@ export async function getExhibitionsWithCounts(
       id: e.id,
       title: e.title,
       type: e.type as Exhibition["type"],
+      access: e.access as Exhibition["access"],
       status: e.status as Exhibition["status"],
       blurb: e.blurb ?? "",
       theme: e.theme ?? "",
@@ -483,20 +484,29 @@ export async function getArtistPayouts(supabase: Client, artistId: string, galle
   }));
 }
 
-export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string): Promise<OpenCall[]> {
-  const { data, error } = await supabase
-    .from("exhibitions")
-    .select("*")
-    .eq("gallery_id", galleryId)
-    .neq("status", "archived")
-    .order("created_at", { ascending: true });
+// Closed (invite-only) exhibitions appear only for artists who have accepted
+// an invitation to them.
+export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string, artistId: string): Promise<OpenCall[]> {
+  const [{ data, error }, { data: invites, error: inviteError }] = await Promise.all([
+    supabase
+      .from("exhibitions")
+      .select("*")
+      .eq("gallery_id", galleryId)
+      .neq("status", "archived")
+      .order("created_at", { ascending: true }),
+    supabase.from("exhibition_invites").select("exhibition_id").eq("artist_id", artistId).eq("status", "accepted"),
+  ]);
   if (error) throw error;
+  if (inviteError) throw inviteError;
 
-  return (data ?? []).map((e) => ({
+  const invitedTo = new Set((invites ?? []).map((i) => i.exhibition_id));
+
+  return (data ?? []).filter((e) => e.access !== "closed" || invitedTo.has(e.id)).map((e) => ({
     id: e.id,
     title: e.title,
     gallery: galleryName,
     type: e.type as OpenCall["type"],
+    access: e.access as OpenCall["access"],
     deadline: e.submission_deadline ? shortDate(e.submission_deadline) : "Closed",
     focus: e.blurb ?? "",
     theme: e.theme ?? "",

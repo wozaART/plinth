@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { getPayoutProofUrl } from "@/lib/supabase/queries";
-import type { SubmissionStatus, ExhibitionType, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
+import type { SubmissionStatus, ExhibitionType, ExhibitionAccess, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 import { deadlinePassed } from "@/lib/utils";
 
 async function supabaseServer() {
@@ -107,10 +107,21 @@ export async function createSubmission(formData: FormData) {
   if (exhibitionId) {
     const { data: exhibition, error: exError } = await supabase
       .from("exhibitions")
-      .select("submission_deadline")
+      .select("submission_deadline, access")
       .eq("id", exhibitionId)
       .single();
     if (exError) throw exError;
+    if (exhibition.access === "closed") {
+      const { data: invite, error: inviteError } = await supabase
+        .from("exhibition_invites")
+        .select("id")
+        .eq("exhibition_id", exhibitionId)
+        .eq("artist_id", user.id)
+        .eq("status", "accepted")
+        .maybeSingle();
+      if (inviteError) throw inviteError;
+      if (!invite) throw new Error("This exhibition is by invitation only.");
+    }
     if (deadlinePassed(exhibition.submission_deadline)) {
       throw new Error("The submission deadline for this exhibition has passed.");
     }
@@ -252,6 +263,7 @@ export async function inviteArtist(email: string, fullName: string) {
 export interface ExhibitionInput {
   title: string;
   type: ExhibitionType;
+  access: ExhibitionAccess;
   status?: ExhibitionStatus;
   blurb: string;
   theme: string;
@@ -269,6 +281,7 @@ function toExhibitionRow(input: Partial<ExhibitionInput>) {
   return {
     ...(input.title !== undefined && { title: input.title }),
     ...(input.type !== undefined && { type: input.type }),
+    ...(input.access !== undefined && { access: input.access }),
     ...(input.status !== undefined && { status: input.status }),
     ...(input.blurb !== undefined && { blurb: input.blurb || null }),
     ...(input.theme !== undefined && { theme: input.theme || null }),
