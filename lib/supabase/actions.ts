@@ -302,9 +302,12 @@ export async function createExhibition(input: ExhibitionInput) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || user.user_metadata?.role !== "gallery") throw new Error("Not signed in.");
+  if (!user) throw new Error("Not signed in.");
 
+  // Gate on owning the gallery, not user_metadata.role: that only records an
+  // account's first role, so a gallery owner who is also an artist reads as "artist".
   const gallery = await getCurrentGallery(supabase);
+  if (gallery.owner_id !== user.id) throw new Error("Not signed in.");
 
   const { data, error } = await supabase
     .from("exhibitions")
