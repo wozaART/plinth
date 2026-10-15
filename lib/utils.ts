@@ -47,3 +47,9 @@ export function relativeTime(iso: string): string {
 export function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-ZA", { day: "numeric", month: "short" });
 }
+
+// Submissions are open through the end of the deadline day (dates are UTC,
+// matching the database's current_date).
+export function deadlinePassed(deadline: string | null, now: Date = new Date()): boolean {
+  return deadline != null && deadline < now.toISOString().slice(0, 10);
+}

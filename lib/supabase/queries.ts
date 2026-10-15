@@ -20,7 +20,7 @@ import type {
   AuditChange,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
-import { relativeTime, shortDate } from "@/lib/utils";
+import { deadlinePassed, relativeTime, shortDate } from "@/lib/utils";
 
 type Client = SupabaseClient<Database>;
 
@@ -503,7 +503,7 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
     mediumRequirements: e.medium_requirements ?? "",
     sizeRequirements: e.size_requirements ?? "",
     rules: e.rules ?? "",
-    accepting: e.status === "open" || e.status === "planning",
+    accepting: (e.status === "open" || e.status === "planning") && !deadlinePassed(e.submission_deadline),
   }));
 }
 
