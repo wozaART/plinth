@@ -64,6 +64,7 @@ describe("submitConsignmentTerms", () => {
     const insert = h.fake.last("consignment_terms_responses", "insert");
     const payload = insert?.payload as Record<string, unknown> & { answers: Record<string, string> };
     expect(payload).toMatchObject(contact);
+    expect(payload.id).toEqual(expect.any(String));
     expect(payload.answers).not.toHaveProperty("gallery_name");
     expect(payload.answers).not.toHaveProperty("contact_email");
     expect(Object.keys(payload.answers).length).toBeGreaterThan(0);
@@ -71,7 +72,7 @@ describe("submitConsignmentTerms", () => {
     expect(h.fake.invocations).toEqual([
       {
         fn: "notify-consignment-terms-response",
-        body: expect.objectContaining({ responseId: "r1", galleryName: "Gallery A", contactEmail: "pat@a.co" }),
+        body: expect.objectContaining({ responseId: payload.id, galleryName: "Gallery A", contactEmail: "pat@a.co" }),
       },
     ]);
   });
