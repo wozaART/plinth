@@ -22,19 +22,21 @@ export async function submitConsignmentTerms(formData: FormData): Promise<TermsR
   const { gallery_name, contact_name, contact_role, contact_email, ...answers } = values;
 
   const supabase = createClient(await cookies());
-  const { data: inserted, error } = await supabase
+  // The id is made here, not returned by the insert: anon has no select
+  // grant, so `.select()` on the insert would be rejected by RLS.
+  const responseId = crypto.randomUUID();
+  const { error } = await supabase
     .from("consignment_terms_responses")
     .insert({
+      id: responseId,
       gallery_name,
       contact_name,
       contact_role: contact_role || null,
       contact_email,
       answers,
-    })
-    .select("id")
-    .single();
+    });
 
-  if (error || !inserted) {
+  if (error) {
     console.error("submitConsignmentTerms failed", error);
     return { ok: false, message: "We couldn't save your answers. Please try again.", errors: {} };
   }
@@ -44,7 +46,7 @@ export async function submitConsignmentTerms(formData: FormData): Promise<TermsR
   supabase.functions
     .invoke("notify-consignment-terms-response", {
       body: {
-        responseId: inserted.id,
+        responseId,
         galleryName: gallery_name,
         contactName: contact_name,
         contactEmail: contact_email,
