@@ -110,6 +110,9 @@ describe("getSubmissions", () => {
           note: null,
           ack: true,
           rules_ack: true,
+          terms_agreed_at: "2020-01-02T00:00:00Z",
+          terms_agreed_text: "Commission is 40%.",
+          terms_agreed_pdf_path: null,
           statement: "hi",
           image_url: "https://img/1.jpg",
         },
@@ -142,6 +145,8 @@ describe("getSubmissions", () => {
       year: 2024,
       price: formatCurrency(1500, ZAR),
       ack: true,
+      termsAgreedAt: "2020-01-02T00:00:00Z",
+      termsAgreedText: "Commission is 40%.",
       imageUrl: "https://img/1.jpg",
     });
     expect(bare).toMatchObject({
@@ -154,6 +159,9 @@ describe("getSubmissions", () => {
       statement: "",
       ack: undefined,
       rulesAck: undefined,
+      termsAgreedAt: undefined,
+      termsAgreedText: undefined,
+      termsAgreedPdfPath: undefined,
       imageUrl: undefined,
     });
   });
@@ -663,6 +671,23 @@ describe("getOpenCalls", () => {
     expect(calls.map((c) => c.accepting)).toEqual([true, true, false]);
     expect(calls[0]).toMatchObject({ gallery: "Woza", deadline: shortDate("2999-05-01"), focus: "" });
     expect(calls[1].deadline).toBe("Closed");
+  });
+
+  it("carries the consignment terms, typed or as a PDF path", async () => {
+    fake.on("exhibitions", "select", {
+      data: [
+        { ...base, status: "open", consignment_terms_text: "Commission is 40%.", consignment_terms_pdf_path: null },
+        { ...base, id: "e2", status: "open", consignment_terms_text: null, consignment_terms_pdf_path: "g1/e2/1.pdf" },
+        { ...base, id: "e3", status: "open" },
+      ],
+      error: null,
+    });
+    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    expect(calls.map((c) => [c.consignmentTermsText, c.consignmentTermsPdfPath])).toEqual([
+      ["Commission is 40%.", null],
+      ["", "g1/e2/1.pdf"],
+      ["", null],
+    ]);
   });
 
   it("stops accepting once the submission deadline has passed", async () => {

@@ -428,6 +428,8 @@ export type Database = {
           access: string
           blurb: string | null
           closing_date: string | null
+          consignment_terms_pdf_path: string | null
+          consignment_terms_text: string | null
           created_at: string
           delivery_date: string | null
           gallery_id: string
@@ -447,6 +449,8 @@ export type Database = {
           access?: string
           blurb?: string | null
           closing_date?: string | null
+          consignment_terms_pdf_path?: string | null
+          consignment_terms_text?: string | null
           created_at?: string
           delivery_date?: string | null
           gallery_id: string
@@ -466,6 +470,8 @@ export type Database = {
           access?: string
           blurb?: string | null
           closing_date?: string | null
+          consignment_terms_pdf_path?: string | null
+          consignment_terms_text?: string | null
           created_at?: string
           delivery_date?: string | null
           gallery_id?: string
@@ -888,6 +894,10 @@ export type Database = {
           rules_ack: boolean | null
           statement: string | null
           status: string
+          terms_ack: boolean | null
+          terms_agreed_at: string | null
+          terms_agreed_pdf_path: string | null
+          terms_agreed_text: string | null
           title: string
           year: number | null
         }
@@ -907,6 +917,10 @@ export type Database = {
           rules_ack?: boolean | null
           statement?: string | null
           status?: string
+          terms_ack?: boolean | null
+          terms_agreed_at?: string | null
+          terms_agreed_pdf_path?: string | null
+          terms_agreed_text?: string | null
           title: string
           year?: number | null
         }
@@ -926,6 +940,10 @@ export type Database = {
           rules_ack?: boolean | null
           statement?: string | null
           status?: string
+          terms_ack?: boolean | null
+          terms_agreed_at?: string | null
+          terms_agreed_pdf_path?: string | null
+          terms_agreed_text?: string | null
           title?: string
           year?: number | null
         }

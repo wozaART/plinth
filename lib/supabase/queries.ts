@@ -86,6 +86,9 @@ export async function getSubmissions(supabase: Client, galleryId: string, curren
     note: s.note,
     ack: s.ack ?? undefined,
     rulesAck: s.rules_ack ?? undefined,
+    termsAgreedAt: s.terms_agreed_at ?? undefined,
+    termsAgreedText: s.terms_agreed_text ?? undefined,
+    termsAgreedPdfPath: s.terms_agreed_pdf_path ?? undefined,
     statement: s.statement ?? "",
     imageUrl: s.image_url ?? undefined,
   }));
@@ -129,6 +132,8 @@ export async function getExhibitionsWithCounts(
       mediumRequirements: e.medium_requirements ?? "",
       sizeRequirements: e.size_requirements ?? "",
       rules: e.rules ?? "",
+      consignmentTermsText: e.consignment_terms_text ?? "",
+      consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
       slots: e.slots,
       filled: c?.filled ?? 0,
       applicants: c?.applicants ?? 0,
@@ -513,6 +518,8 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
     mediumRequirements: e.medium_requirements ?? "",
     sizeRequirements: e.size_requirements ?? "",
     rules: e.rules ?? "",
+    consignmentTermsText: e.consignment_terms_text ?? "",
+    consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
     accepting: (e.status === "open" || e.status === "planning") && !deadlinePassed(e.submission_deadline),
   }));
 }

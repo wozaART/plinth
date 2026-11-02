@@ -58,6 +58,8 @@ describe("CreateExhibitionDrawer", () => {
       mediumRequirements: "",
       sizeRequirements: "",
       rules: "",
+      consignmentTermsText: "",
+      consignmentTermsPdfPath: null,
       slots: 8,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
@@ -91,12 +93,49 @@ describe("CreateExhibitionDrawer", () => {
       mediumRequirements: "Oil",
       sizeRequirements: "Max 150cm",
       rules: "Two works max",
+      consignmentTermsText: "",
+      consignmentTermsPdfPath: null,
       slots: 3,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
       closingDate: "2026-04-18",
       deliveryDate: "2026-03-02",
     });
+  });
+
+  it("sends typed consignment terms, trimmed", () => {
+    const { create, onCreate } = setup();
+    type(/Title/, "X");
+    fillDates();
+    fireEvent.click(screen.getByRole("button", { name: "Type or paste" }));
+    fireEvent.change(screen.getByLabelText("Consignment terms", { selector: "textarea" }), { target: { value: " Commission is 40%. " } });
+    fireEvent.click(create());
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ consignmentTermsText: "Commission is 40%." }));
+    expect(onCreate.mock.calls[0][0]).not.toHaveProperty("consignmentTermsPdfFile");
+  });
+
+  it("hands up a chosen terms PDF for upload", () => {
+    const { create, onCreate } = setup();
+    type(/Title/, "X");
+    fillDates();
+    fireEvent.click(screen.getByRole("button", { name: "Upload PDF" }));
+    const file = new File(["%PDF-1.4"], "terms.pdf", { type: "application/pdf" });
+    fireEvent.change(screen.getByLabelText("Consignment terms PDF"), { target: { files: [file] } });
+    fireEvent.click(create());
+    expect(onCreate.mock.calls[0][0].consignmentTermsPdfFile).toBe(file);
+    expect(onCreate.mock.calls[0][0]).not.toHaveProperty("consignmentTermsText");
+  });
+
+  it("rejects a non-PDF terms file", () => {
+    const { create, onCreate } = setup();
+    type(/Title/, "X");
+    fillDates();
+    fireEvent.click(screen.getByRole("button", { name: "Upload PDF" }));
+    const file = new File(["x"], "terms.docx", { type: "application/msword" });
+    fireEvent.change(screen.getByLabelText("Consignment terms PDF"), { target: { files: [file] } });
+    expect(screen.getByText("Please choose a PDF file.")).toBeTruthy();
+    fireEvent.click(create());
+    expect(onCreate.mock.calls[0][0]).not.toHaveProperty("consignmentTermsPdfFile");
   });
 
   it("treats a non-numeric slot count as 0", () => {

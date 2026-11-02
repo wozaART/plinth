@@ -3,8 +3,8 @@
 import { useState, type CSSProperties } from "react";
 import { EX_ACCESS_META, EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
-import type { ExhibitionInput } from "@/lib/supabase/actions";
-import ExhibitionFormFields, { type ExhibitionFormState } from "./ExhibitionFormFields";
+import ConsignmentTermsView from "@/components/ConsignmentTermsView";
+import ExhibitionFormFields, { termsInput, termsModeOf, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
 
 function toForm(ex: Exhibition): ExhibitionFormState {
   return {
@@ -16,6 +16,10 @@ function toForm(ex: Exhibition): ExhibitionFormState {
     mediumRequirements: ex.mediumRequirements,
     sizeRequirements: ex.sizeRequirements,
     rules: ex.rules,
+    termsMode: termsModeOf(ex.consignmentTermsText, ex.consignmentTermsPdfPath),
+    termsText: ex.consignmentTermsText,
+    termsPdfFile: null,
+    termsPdfPath: ex.consignmentTermsPdfPath,
     slots: String(ex.slots),
     submissionDeadline: ex.submissionDeadline ?? "",
     openingDate: ex.openingDate ?? "",
@@ -46,7 +50,7 @@ interface ExhibitionDetailDrawerProps {
   artistContacts: Contact[];
   onClose: () => void;
   onViewAcceptedWorks: () => void;
-  onUpdate: (id: string, input: Partial<ExhibitionInput>) => void;
+  onUpdate: (id: string, input: Partial<ExhibitionFormInput>) => void;
   onArchive: (id: string) => void;
   onUnarchive: (id: string) => void;
   onDelete: (id: string) => void;
@@ -81,6 +85,7 @@ export default function ExhibitionDetailDrawer({
       mediumRequirements: form.mediumRequirements.trim(),
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
+      ...termsInput(form),
       slots: Number(form.slots) || 0,
       submissionDeadline: form.submissionDeadline || null,
       openingDate: form.openingDate || null,
@@ -155,6 +160,13 @@ export default function ExhibitionDetailDrawer({
                 <div style={{ marginTop: 20 }}>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)", marginBottom: 6 }}>Rules for entering</div>
                   <p style={{ fontSize: 13.5, color: "var(--pl-text-secondary)", lineHeight: 1.65, margin: 0 }}>{ex.rules}</p>
+                </div>
+              )}
+
+              {(ex.consignmentTermsText || ex.consignmentTermsPdfPath) && (
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)", marginBottom: 6 }}>Consignment terms</div>
+                  <ConsignmentTermsView text={ex.consignmentTermsText} pdfPath={ex.consignmentTermsPdfPath} />
                 </div>
               )}
 

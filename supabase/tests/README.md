@@ -19,6 +19,7 @@ touched.
 | `rls_isolation.test.sql` | gallery A vs gallery B, artist 1 vs artist 2, buyer details, anonymous access |
 | `record_sale.test.sql` | commission split maths (rounding, 0%/100%, rate precedence, discounts), already-sold and cross-gallery rejection, payout creation |
 | `payouts_and_bank_details.test.sql` | `mark_payout_paid` / `acknowledge_payout` / `query_payout` ownership and state rules, bank-detail disclosure |
+| `consignment_terms.test.sql` | per-exhibition terms: agreement required on submit, terms snapshotted onto the submission, `exhibition-terms` bucket access |
 | `audit_log.test.sql` | insert/update/delete triggers on contacts, exhibitions, catalogue works; actor, old/new record, per-gallery visibility |
 
 Each file creates its own fixtures (two galleries, two artists) and a `tests`

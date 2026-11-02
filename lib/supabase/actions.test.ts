@@ -193,6 +193,22 @@ describe("createSubmission", () => {
     expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ exhibition_id: "e1" });
   });
 
+  it("rejects a submission to an exhibition with consignment terms unless they were agreed to", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "open", consignment_terms_text: "Commission is 40%.", consignment_terms_pdf_path: null } });
+    await expect(actions.createSubmission(form({ exhibitionId: "e1" }))).rejects.toThrow("agree to the consignment terms");
+    expect(h.fake.last("submissions", "insert")).toBeUndefined();
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "open", consignment_terms_text: null, consignment_terms_pdf_path: "gal-1/e1/1.pdf" } });
+    await expect(actions.createSubmission(form({ exhibitionId: "e1", termsAck: "false" }))).rejects.toThrow("agree to the consignment terms");
+  });
+
+  it("records the agreement when the terms were agreed to", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "open", consignment_terms_text: "Commission is 40%.", consignment_terms_pdf_path: null } });
+    await actions.createSubmission(form({ exhibitionId: "e1", termsAck: "true" }));
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ exhibition_id: "e1", terms_ack: true });
+  });
+
   it("rejects a submission to an invite-only exhibition without an accepted invite", async () => {
     signIn("artist");
     h.fake.on("exhibitions", "select", { data: { submission_deadline: null, access: "closed" } });
@@ -371,6 +387,38 @@ describe("exhibitions", () => {
   it("updateExhibition only sends the fields provided", async () => {
     await actions.updateExhibition("e1", { title: "New", slots: 3 });
     expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ title: "New", slots: 3 });
+  });
+
+  it("typed consignment terms clear any PDF, and vice versa", async () => {
+    await actions.updateExhibition("e1", { consignmentTermsText: "  Commission is 40%.  " });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ consignment_terms_text: "Commission is 40%.", consignment_terms_pdf_path: null });
+    await actions.updateExhibition("e1", { consignmentTermsPdfPath: "gal-1/e1/1.pdf" });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ consignment_terms_text: null, consignment_terms_pdf_path: "gal-1/e1/1.pdf" });
+  });
+
+  it("clears the terms when text is emptied or the path is nulled", async () => {
+    await actions.updateExhibition("e1", { consignmentTermsText: "  " });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ consignment_terms_text: null, consignment_terms_pdf_path: null });
+    await actions.updateExhibition("e1", { consignmentTermsPdfPath: null });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ consignment_terms_text: null, consignment_terms_pdf_path: null });
+  });
+
+  it("rejects a terms PDF path outside the exhibition's own folder", async () => {
+    await expect(actions.updateExhibition("e1", { consignmentTermsPdfPath: "gal-2/e1/1.pdf" })).rejects.toThrow("Invalid consignment terms upload.");
+    await expect(actions.updateExhibition("e1", { consignmentTermsPdfPath: "gal-1/e2/1.pdf" })).rejects.toThrow("Invalid consignment terms upload.");
+    await expect(actions.updateExhibition("e1", { consignmentTermsPdfPath: "gal-1/e1/../x.pdf" })).rejects.toThrow("Invalid consignment terms upload.");
+    await expect(actions.updateExhibition("e1", { consignmentTermsPdfPath: "gal-1/e1/1.png" })).rejects.toThrow("Invalid consignment terms upload.");
+  });
+
+  it("createExhibition refuses a terms PDF before the exhibition exists", async () => {
+    signIn("gallery");
+    await expect(actions.createExhibition({ ...base, consignmentTermsPdfPath: "gal-1/e1/1.pdf" })).rejects.toThrow("after the exhibition is created");
+  });
+
+  it("prepareConsignmentTermsUpload gives a fresh path in the gallery's folder", async () => {
+    h.fake.on("exhibitions", "select", { data: { id: "e1" } });
+    const { path } = await actions.prepareConsignmentTermsUpload("e1");
+    expect(path).toMatch(/^gal-1\/e1\/\d+\.pdf$/);
   });
 
   it("deleteExhibition refuses when submissions exist", async () => {

@@ -124,6 +124,11 @@ insert into public.exhibitions (id, gallery_id, title, type, status, blurb, them
   ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000002', 'Summer Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, 30, null, null, '2025-12-05', null)
 on conflict (id) do nothing;
 
+-- Consignment terms on an exhibition with no seeded submissions (the terms
+-- trigger would reject seeded submissions that haven't agreed to them).
+update public.exhibitions set consignment_terms_text = E'Commission: 40% of the sale price, 60% to the artist.\nPayout: within 30 days of the buyer''s payment clearing.\nUnsold work must be collected within 14 days of the exhibition closing.'
+where id = '00000000-0000-4000-8000-000000000202';
+
 -- ── Submissions ─────────────────────────────────────────────────────────
 -- s1-s7 are the gallery-side open-call submissions; the last four are
 -- Tariq's own works, reconciled with the studio page's messages/banner.

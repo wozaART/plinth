@@ -280,3 +280,20 @@ details summary::-webkit-details-marker { display: none; }
   .dash-toast { white-space: normal !important; width: max-content; max-width: calc(100vw - 32px); text-align: center; bottom: 16px !important; }
 }
 
+
+/* Native file inputs: make "Choose file" read as a button like the rest of the app. */
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  color: var(--pl-text-secondary);
+  background: var(--pl-surface);
+  border: 1px solid var(--pl-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover {
+  background: var(--pl-sidebar);
+}
