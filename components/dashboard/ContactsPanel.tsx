@@ -72,33 +72,34 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       <div className="dash-strip" style={{ display: "flex", gap: 8, padding: "16px 24px 12px", borderBottom: "1px solid var(--pl-border)", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div className="dash-filters" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {(["All", "Artist", "Collector"] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 20, border: "1px solid", borderColor: filter === f ? "var(--pl-solid)" : "var(--pl-border-strong)", background: filter === f ? "var(--pl-solid)" : "var(--pl-surface)", color: filter === f ? "var(--pl-on-solid)" : "var(--pl-text-muted)", cursor: "pointer" }}>
               {f}
             </button>
           ))}
         </div>
-        <button onClick={() => setAddOpen(true)} style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add contact</button>
+        <button className="dash-primary" onClick={() => setAddOpen(true)} style={{ fontSize: 13, padding: "8px 14px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>+ Add contact</button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl dash-pad">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.map((c, i) => (
-            <div key={c.id} style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
+            <div key={c.id} className="dash-contact" style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: avatarBg(i), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{initials(c.name)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="dash-contact-info" style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 14.5, fontWeight: 600 }}>{c.name}</span>
                   <span style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 14, background: c.role === "Artist" ? "var(--pl-sidebar)" : "var(--pl-changes-bg)", color: c.role === "Artist" ? "var(--pl-text-muted)" : "var(--pl-changes-fg)", fontWeight: 600 }}>{c.role}</span>
                 </div>
                 <div style={{ fontSize: 12, color: "var(--pl-text-soft)", marginTop: 2 }}>{c.email}</div>
                 <div style={{ fontSize: 11.5, color: "var(--pl-text-eyebrow)", marginTop: 2 }}>{c.focus}</div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div className="dash-contact-last" style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontSize: 11, color: "var(--pl-text-faint)" }}>Last contact</div>
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-muted)", marginTop: 1 }}>{c.last}</div>
               </div>
+              <div className="dash-contact-actions" style={{ display: "contents" }}>
               {c.role === "Artist" && (
                 <button
                   onClick={() => handleInvite(c)}
@@ -145,6 +146,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
                   ? "Retry remove"
                   : "Remove"}
               </button>
+              </div>
             </div>
           ))}
         </div>
@@ -159,7 +161,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
       )}
 
       {toast && (
-        <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
+        <div className="anim-toast dash-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
           {toast}
         </div>
       )}
