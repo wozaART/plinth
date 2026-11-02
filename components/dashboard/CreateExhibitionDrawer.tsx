@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import ExhibitionFormFields, { EMPTY_EXHIBITION_FORM, type ExhibitionFormState } from "./ExhibitionFormFields";
-import type { ExhibitionInput } from "@/lib/supabase/actions";
+import ExhibitionFormFields, { EMPTY_EXHIBITION_FORM, termsInput, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
 
 interface CreateExhibitionDrawerProps {
   onClose: () => void;
-  onCreate: (input: ExhibitionInput) => void;
+  onCreate: (input: ExhibitionFormInput) => void;
 }
 
 export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhibitionDrawerProps) {
@@ -27,6 +26,7 @@ export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhi
       mediumRequirements: form.mediumRequirements.trim(),
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
+      ...termsInput(form),
       slots: Number(form.slots) || 0,
       submissionDeadline: form.submissionDeadline,
       openingDate: form.openingDate,

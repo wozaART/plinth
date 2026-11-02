@@ -96,6 +96,7 @@ export async function createSubmission(formData: FormData) {
   const fields = parseSubmissionFields(formData);
   const exhibitionId = String(formData.get("exhibitionId") || "") || null;
   const rulesAck = formData.get("rulesAck") === "true";
+  const termsAck = formData.get("termsAck") === "true";
 
   // Generated client-side so the image can be uploaded to its final path
   // before the row exists; the artist update policy doesn't allow a
@@ -107,7 +108,7 @@ export async function createSubmission(formData: FormData) {
   if (exhibitionId) {
     const { data: exhibition, error: exError } = await supabase
       .from("exhibitions")
-      .select("submission_deadline, access")
+      .select("submission_deadline, access, consignment_terms_text, consignment_terms_pdf_path")
       .eq("id", exhibitionId)
       .single();
     if (exError) throw exError;
@@ -125,6 +126,10 @@ export async function createSubmission(formData: FormData) {
     if (deadlinePassed(exhibition.submission_deadline)) {
       throw new Error("The submission deadline for this exhibition has passed.");
     }
+    // The database enforces this too and snapshots the terms agreed to.
+    if ((exhibition.consignment_terms_text || exhibition.consignment_terms_pdf_path) && !termsAck) {
+      throw new Error("You need to agree to the consignment terms for this exhibition.");
+    }
   }
 
   const { error } = await supabase.from("submissions").insert({
@@ -135,6 +140,7 @@ export async function createSubmission(formData: FormData) {
     ...fields,
     image_url: imageUrl,
     rules_ack: rulesAck,
+    terms_ack: termsAck,
   });
   if (error) throw error;
 
@@ -270,11 +276,36 @@ export interface ExhibitionInput {
   mediumRequirements: string;
   sizeRequirements: string;
   rules: string;
+  // Typed terms or an uploaded PDF, never both: setting one clears the other.
+  consignmentTermsText?: string;
+  consignmentTermsPdfPath?: string | null;
   slots: number;
   submissionDeadline: string | null;
   openingDate: string | null;
   closingDate: string | null;
   deliveryDate: string | null;
+}
+
+function termsRow(input: Partial<ExhibitionInput>) {
+  const text = input.consignmentTermsText?.trim();
+  if (text) return { consignment_terms_text: text, consignment_terms_pdf_path: null };
+  if (input.consignmentTermsPdfPath) {
+    return { consignment_terms_text: null, consignment_terms_pdf_path: input.consignmentTermsPdfPath };
+  }
+  // Explicitly cleared (empty text or null path) with nothing to replace it.
+  if (input.consignmentTermsText !== undefined || input.consignmentTermsPdfPath === null) {
+    return { consignment_terms_text: null, consignment_terms_pdf_path: null };
+  }
+  return {};
+}
+
+// The PDF goes straight from the browser to Storage (server actions cap
+// request bodies at 1 MB); the action receives only the path, which must sit
+// in this exhibition's own `{gallery}/{exhibition}/` folder.
+function assertTermsPdfPath(path: string, galleryId: string, exhibitionId: string) {
+  if (!path.startsWith(`${galleryId}/${exhibitionId}/`) || path.includes("..") || !path.endsWith(".pdf")) {
+    throw new Error("Invalid consignment terms upload.");
+  }
 }
 
 function toExhibitionRow(input: Partial<ExhibitionInput>) {
@@ -288,6 +319,7 @@ function toExhibitionRow(input: Partial<ExhibitionInput>) {
     ...(input.mediumRequirements !== undefined && { medium_requirements: input.mediumRequirements || null }),
     ...(input.sizeRequirements !== undefined && { size_requirements: input.sizeRequirements || null }),
     ...(input.rules !== undefined && { rules: input.rules || null }),
+    ...termsRow(input),
     ...(input.slots !== undefined && { slots: input.slots }),
     ...(input.submissionDeadline !== undefined && { submission_deadline: input.submissionDeadline }),
     ...(input.openingDate !== undefined && { opening_date: input.openingDate }),
@@ -308,6 +340,8 @@ export async function createExhibition(input: ExhibitionInput) {
   // account's first role, so a gallery owner who is also an artist reads as "artist".
   const gallery = await getCurrentGallery(supabase);
   if (gallery.owner_id !== user.id) throw new Error("Not signed in.");
+  // The PDF path embeds the exhibition id, so it's attached by a follow-up update.
+  if (input.consignmentTermsPdfPath) throw new Error("Add the PDF after the exhibition is created.");
 
   const { data, error } = await supabase
     .from("exhibitions")
@@ -322,6 +356,10 @@ export async function createExhibition(input: ExhibitionInput) {
 
 export async function updateExhibition(id: string, input: Partial<ExhibitionInput>) {
   const supabase = await supabaseServer();
+  if (input.consignmentTermsPdfPath) {
+    const gallery = await getCurrentGallery(supabase);
+    assertTermsPdfPath(input.consignmentTermsPdfPath, gallery.id, id);
+  }
   const { error } = await supabase.from("exhibitions").update(toExhibitionRow(input)).eq("id", id);
   if (error) throw error;
   revalidatePath("/dashboard");
@@ -650,6 +688,25 @@ export async function queryPayout(id: string) {
 export async function getPayoutProofSignedUrl(id: string) {
   const supabase = await supabaseServer();
   return getPayoutProofUrl(supabase, id);
+}
+
+// Hands the browser the path to upload a terms PDF to. A fresh name per
+// upload keeps superseded PDFs around for the agreements that point at them.
+export async function prepareConsignmentTermsUpload(exhibitionId: string) {
+  const supabase = await supabaseServer();
+  const gallery = await getCurrentGallery(supabase);
+  const { data, error } = await supabase.from("exhibitions").select("id").eq("id", exhibitionId).eq("gallery_id", gallery.id).single();
+  if (error) throw error;
+  return { path: `${gallery.id}/${data.id}/${Date.now()}.pdf` };
+}
+
+// Storage policies decide who may sign: the gallery owner, anyone for an
+// exhibition's current terms PDF, and an artist for the PDF they agreed to.
+export async function getConsignmentTermsSignedUrl(path: string) {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.storage.from("exhibition-terms").createSignedUrl(path, 60);
+  if (error) return null;
+  return data.signedUrl;
 }
 
 export interface ArtistProfileInput {

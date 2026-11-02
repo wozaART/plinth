@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ImageLightbox from "@/components/shared/ImageLightbox";
+import ConsignmentTermsView from "@/components/ConsignmentTermsView";
 import { STATUS_META } from "@/lib/constants";
 import { artworkFill, avatarBg, initials } from "@/lib/utils";
 import type { Submission, SubmissionStatus } from "@/lib/types";
@@ -72,6 +73,15 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
             <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)", marginBottom: 6 }}>Artist statement</div>
             <p style={{ fontSize: 13.5, color: "var(--pl-text-secondary)", lineHeight: 1.65, margin: 0 }}>{sub.statement}</p>
           </div>
+
+          {sub.termsAgreedAt && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)", marginBottom: 6 }}>
+                Agreed to consignment terms on {new Date(sub.termsAgreedAt).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })}
+              </div>
+              <ConsignmentTermsView text={sub.termsAgreedText} pdfPath={sub.termsAgreedPdfPath} maxHeight={160} />
+            </div>
+          )}
 
           {sub.note && (
             <div style={{ marginTop: 18, background: "var(--pl-sidebar)", borderRadius: 10, padding: "13px 15px" }}>

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { galleryConfig } from "@/test/gallery-config";
 import { GalleryConfigProvider } from "@/lib/gallery-context";
-import type { ArtistPayout, MyWork } from "@/lib/types";
+import type { ArtistPayout, MyWork, OpenCall } from "@/lib/types";
 
 const h = vi.hoisted(() => ({
   push: vi.fn(),
@@ -22,6 +22,7 @@ vi.mock("@/lib/supabase/actions", () => ({
   updateSubmission: vi.fn(),
   respondToExhibitionInvite: vi.fn(),
   getPayoutProofSignedUrl: vi.fn(),
+  getConsignmentTermsSignedUrl: vi.fn(),
   updateArtistProfile: vi.fn(),
 }));
 vi.mock("@/components/shared/ProfileDropdown", () => ({ default: () => <div>profile-dropdown</div> }));
@@ -161,5 +162,54 @@ describe("StudioShell attention banners", () => {
   it("ignores payouts that are still due", () => {
     setup({ payouts: [payout({ status: "due" })] });
     expect(screen.queryByText(/A payout of/)).toBeNull();
+  });
+});
+
+describe("StudioShell consignment terms", () => {
+  const call = (over: Partial<OpenCall> = {}): OpenCall => ({
+    id: "oc1", title: "Highveld Light", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
+    theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
+    accepting: true, ...over,
+  });
+
+  // Walks the submit drawer to its last step.
+  function reachStatementStep() {
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    fireEvent.change(screen.getByPlaceholderText("Work title"), { target: { value: "Dusk" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Oil on canvas"), { target: { value: "Oil" } });
+    fireEvent.change(screen.getByPlaceholderText("2024"), { target: { value: "2025" } });
+    const file = new File(["x"], "w.png", { type: "image/png" });
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    fireEvent.change(screen.getByPlaceholderText("e.g. 80"), { target: { value: "80" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. 60"), { target: { value: "60" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. 4"), { target: { value: "4" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. R 18 000"), { target: { value: "R 5000" } });
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+  }
+
+  it("blocks submitting until the artist agrees to typed terms", () => {
+    setup({ openCalls: [call({ consignmentTermsText: "Commission is 40%." })] });
+    reachStatementStep();
+    expect(screen.getByText("Commission is 40%.")).toBeTruthy();
+    const submit = screen.getByRole("button", { name: "Submit for review" }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText(/agree to the consignment terms/));
+    expect(submit.disabled).toBe(false);
+  });
+
+  it("offers a PDF button instead of text when the terms are a PDF", () => {
+    setup({ openCalls: [call({ consignmentTermsPdfPath: "g/e/1.pdf" })] });
+    reachStatementStep();
+    expect(screen.getAllByRole("button", { name: /Open consignment terms/ }).length).toBeGreaterThan(0);
+    expect((screen.getByRole("button", { name: "Submit for review" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("asks for no agreement when the exhibition has no terms", () => {
+    setup({ openCalls: [call()] });
+    reachStatementStep();
+    expect(screen.queryByLabelText(/agree to the consignment terms/)).toBeNull();
+    expect((screen.getByRole("button", { name: "Submit for review" }) as HTMLButtonElement).disabled).toBe(false);
   });
 });

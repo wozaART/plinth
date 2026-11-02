@@ -18,6 +18,10 @@ export interface Submission {
   note: string;
   ack?: boolean;
   rulesAck?: boolean;
+  // The consignment terms the artist agreed to, as they stood at the time.
+  termsAgreedAt?: string;
+  termsAgreedText?: string;
+  termsAgreedPdfPath?: string;
   statement: string;
   imageUrl?: string;
 }
@@ -38,6 +42,8 @@ export interface Exhibition {
   mediumRequirements: string;
   sizeRequirements: string;
   rules: string;
+  consignmentTermsText: string;
+  consignmentTermsPdfPath: string | null;
   slots: number;
   filled: number;
   applicants: number;
@@ -219,6 +225,8 @@ export interface OpenCall {
   mediumRequirements: string;
   sizeRequirements: string;
   rules: string;
+  consignmentTermsText: string;
+  consignmentTermsPdfPath: string | null;
   accepting: boolean;
 }
 
@@ -229,3 +237,6 @@ export interface StudioMessage {
   preview: string;
   body: string;
 }
+
+export const hasConsignmentTerms = (e: { consignmentTermsText: string; consignmentTermsPdfPath: string | null }) =>
+  Boolean(e.consignmentTermsText || e.consignmentTermsPdfPath);

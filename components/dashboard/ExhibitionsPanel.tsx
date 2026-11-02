@@ -10,8 +10,10 @@ import {
   deleteExhibition,
   inviteArtistToExhibition,
   revokeExhibitionInvite,
-  type ExhibitionInput,
+  prepareConsignmentTermsUpload,
 } from "@/lib/supabase/actions";
+import { createClient } from "@/utils/supabase/client";
+import type { ExhibitionFormInput } from "./ExhibitionFormFields";
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import CreateExhibitionDrawer from "./CreateExhibitionDrawer";
 import ArchiveExhibitionDialog from "./ArchiveExhibitionDialog";
@@ -24,6 +26,15 @@ interface ExhibitionsPanelProps {
   contacts: Contact[];
   submissions?: Submission[];
   catalogueSubmissionIds?: string[];
+}
+
+// The PDF goes browser-direct to Storage (server actions cap bodies at 1 MB);
+// the exhibition only learns its path once the upload has succeeded.
+async function uploadTermsPdf(exhibitionId: string, file: File) {
+  const { path } = await prepareConsignmentTermsUpload(exhibitionId);
+  const { error } = await createClient().storage.from("exhibition-terms").upload(path, file, { contentType: "application/pdf" });
+  if (error) throw error;
+  return path;
 }
 
 export default function ExhibitionsPanel({ data, invites: initialInvites, contacts, submissions = [], catalogueSubmissionIds = [] }: ExhibitionsPanelProps) {
@@ -48,7 +59,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
     setTimeout(() => setToast(null), 3500);
   }
 
-  function handleCreate(input: ExhibitionInput) {
+  function handleCreate({ consignmentTermsPdfFile, ...input }: ExhibitionFormInput) {
     const tempId = crypto.randomUUID();
     setExhibitions((prev) => [
       ...prev,
@@ -63,6 +74,8 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
         mediumRequirements: input.mediumRequirements,
         sizeRequirements: input.sizeRequirements,
         rules: input.rules,
+        consignmentTermsText: input.consignmentTermsText ?? "",
+        consignmentTermsPdfPath: null,
         slots: input.slots,
         filled: 0,
         applicants: 0,
@@ -78,6 +91,15 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
       try {
         const { id } = await createExhibition(input);
         setExhibitions((prev) => prev.map((ex) => (ex.id === tempId ? { ...ex, id } : ex)));
+        if (consignmentTermsPdfFile) {
+          try {
+            const path = await uploadTermsPdf(id, consignmentTermsPdfFile);
+            await updateExhibition(id, { consignmentTermsPdfPath: path });
+            setExhibitions((prev) => prev.map((ex) => (ex.id === id ? { ...ex, consignmentTermsPdfPath: path } : ex)));
+          } catch {
+            flash("Exhibition created, but the consignment terms PDF didn't upload. Add it by editing the exhibition.");
+          }
+        }
       } catch (err) {
         setExhibitions((prev) => prev.filter((ex) => ex.id !== tempId));
         flash(err instanceof Error ? err.message : "Couldn't create exhibition — try again");
@@ -85,11 +107,29 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
     });
   }
 
-  function handleUpdate(id: string, input: Partial<ExhibitionInput>) {
-    setExhibitions((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...(input as Partial<Exhibition>) } : ex)));
+  function handleUpdate(id: string, { consignmentTermsPdfFile, ...input }: Partial<ExhibitionFormInput>) {
+    // Optimistic copy of the terms; a pending PDF upload shows once it lands.
+    const { consignmentTermsText, consignmentTermsPdfPath, ...rest } = input;
+    setExhibitions((prev) =>
+      prev.map((ex) =>
+        ex.id === id
+          ? {
+              ...ex,
+              ...(rest as Partial<Exhibition>),
+              ...(consignmentTermsText !== undefined && { consignmentTermsText, consignmentTermsPdfPath: null }),
+              ...(consignmentTermsPdfPath !== undefined && { consignmentTermsPdfPath, consignmentTermsText: "" }),
+            }
+          : ex,
+      ),
+    );
     startTransition(async () => {
       try {
         await updateExhibition(id, input);
+        if (consignmentTermsPdfFile) {
+          const path = await uploadTermsPdf(id, consignmentTermsPdfFile);
+          await updateExhibition(id, { consignmentTermsPdfPath: path });
+          setExhibitions((prev) => prev.map((ex) => (ex.id === id ? { ...ex, consignmentTermsPdfPath: path, consignmentTermsText: "" } : ex)));
+        }
       } catch (err) {
         flash(err instanceof Error ? err.message : "Couldn't save changes — try again");
       }

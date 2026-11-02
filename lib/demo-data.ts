@@ -21,12 +21,12 @@ export const demoSubmissions: Submission[] = [
 export const demoExhibitions: Exhibition[] = [
   {
     id: "e1", title: "Open Call 2026", type: "group", access: "open", status: "open", blurb: "A group show on land and memory.", theme: "Land & memory",
-    mediumRequirements: "Painting, drawing, print", sizeRequirements: "Up to 150 cm on the longest side", rules: "Max two works per artist.",
+    mediumRequirements: "Painting, drawing, print", sizeRequirements: "Up to 150 cm on the longest side", rules: "Max two works per artist.", consignmentTermsText: "", consignmentTermsPdfPath: null,
     slots: 24, filled: 9, applicants: 17, submissionDeadline: "2026-01-30", openingDate: "2026-03-12", closingDate: "2026-04-18", deliveryDate: "2026-03-02", dates: "12 Mar – 18 Apr 2026",
   },
   {
     id: "e2", title: "Quiet Rooms", type: "solo", access: "closed", status: "planning", blurb: "Solo exhibition by Pieter Naudé.", theme: "Interiors",
-    mediumRequirements: "Oil on canvas", sizeRequirements: "Mixed", rules: "",
+    mediumRequirements: "Oil on canvas", sizeRequirements: "Mixed", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
     slots: 1, filled: 1, applicants: 0, submissionDeadline: null, openingDate: "2026-06-05", closingDate: "2026-07-04", deliveryDate: "2026-05-25", dates: "5 Jun – 4 Jul 2026",
   },
 ];
@@ -82,7 +82,7 @@ export const demoOpenCalls: OpenCall[] = [
   {
     id: "oc1", title: "Open Call 2026", gallery: "Your Gallery", type: "group", access: "open", deadline: "30 Jan 2026", focus: "Painting, drawing, print",
     theme: "Land & memory", mediumRequirements: "Painting, drawing, print", sizeRequirements: "Up to 150 cm on the longest side",
-    rules: "Max two works per artist.", accepting: true,
+    rules: "Max two works per artist.", consignmentTermsText: "", consignmentTermsPdfPath: null, accepting: true,
   },
 ];
 

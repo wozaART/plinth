@@ -12,7 +12,8 @@ import ImageLightbox from "@/components/shared/ImageLightbox";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import { ackDeclinedSubmission, createSubmission, updateSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
-import { isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout } from "@/lib/types";
+import ConsignmentTermsView from "@/components/ConsignmentTermsView";
+import { hasConsignmentTerms, isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // matches the submission-images bucket limit
@@ -122,18 +123,23 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
   const [image, setImage] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [rulesAck, setRulesAck] = useState(false);
+  // Remembers which exhibition the terms were agreed for, so switching the
+  // exhibition drops the agreement instead of carrying it over.
+  const [termsAckFor, setTermsAckFor] = useState<string | null>(null);
   const imagePreview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
   useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
   const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
   const needsRulesAck = !editing && Boolean(selectedCall?.rules);
+  const needsTermsAck = !editing && Boolean(selectedCall && hasConsignmentTerms(selectedCall));
+  const termsAck = termsAckFor !== null && termsAckFor === form.exhibitionId;
   const hasImage = Boolean(image || editing?.imageUrl);
   const priceNum = Number(form.price.replace(/[^0-9.]/g, ""));
   const salePrice = priceNum > 0 ? formatCurrency(priceNum * (1 + commissionRatePct / 100), "ZAR") : null;
   const stepValid =
     step === 1 ? Boolean(form.title.trim() && form.medium.trim() && form.year.trim() && hasImage) :
     step === 2 ? Boolean(Number(form.height) > 0 && Number(form.width) > 0 && Number(form.depth) > 0 && priceNum > 0) :
-    !needsRulesAck || rulesAck;
+    (!needsRulesAck || rulesAck) && (!needsTermsAck || termsAck);
   const canAdvance = stepValid;
 
   function next() {
@@ -151,6 +157,7 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
     formData.set("exhibitionId", form.exhibitionId);
     formData.set("statement", form.statement);
     formData.set("rulesAck", String(rulesAck));
+    formData.set("termsAck", String(termsAck));
     onSubmit(formData, image);
   }
   const stepLabels = ["Work details", "Dimensions & price", "Statement"];
@@ -258,6 +265,16 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
                   <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}>
                     <input type="checkbox" checked={rulesAck} onChange={e => setRulesAck(e.target.checked)} style={{ marginTop: 2 }} />
                     <span style={{ fontSize: 12.5, color: "var(--pl-text-secondary)", lineHeight: 1.5 }}>I have read and understand the rules for this exhibition.</span>
+                  </label>
+                </div>
+              )}
+              {needsTermsAck && selectedCall && (
+                <div style={{ background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--pl-text-secondary)", marginBottom: 8 }}>Consignment terms for {selectedCall.title}</div>
+                  <ConsignmentTermsView text={selectedCall.consignmentTermsText} pdfPath={selectedCall.consignmentTermsPdfPath} maxHeight={180} />
+                  <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", marginTop: 12 }}>
+                    <input type="checkbox" checked={termsAck} onChange={e => setTermsAckFor(e.target.checked ? form.exhibitionId : null)} style={{ marginTop: 2 }} />
+                    <span style={{ fontSize: 12.5, color: "var(--pl-text-secondary)", lineHeight: 1.5 }}>I have read and agree to the consignment terms for this exhibition.</span>
                   </label>
                 </div>
               )}
@@ -650,12 +667,18 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 6 }}>Deadline: {oc.deadline}</div>
                     </div>
                   </div>
-                  {(oc.theme || oc.mediumRequirements || oc.sizeRequirements || oc.rules) && (
+                  {(oc.theme || oc.mediumRequirements || oc.sizeRequirements || oc.rules || hasConsignmentTerms(oc)) && (
                     <div style={{ marginTop: 14, background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.6 }}>
                       {oc.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {oc.theme}</div>}
                       {oc.mediumRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {oc.mediumRequirements}</div>}
                       {oc.sizeRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {oc.sizeRequirements}</div>}
                       {oc.rules && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Rules:</strong> {oc.rules}</div>}
+                      {hasConsignmentTerms(oc) && (
+                        <div style={{ marginTop: 8 }}>
+                          <strong style={{ color: "var(--pl-text-secondary)" }}>Consignment terms</strong> (you&apos;ll agree to these when you submit)
+                          <div style={{ marginTop: 6 }}><ConsignmentTermsView text={oc.consignmentTermsText} pdfPath={oc.consignmentTermsPdfPath} maxHeight={140} /></div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {oc.accepting && (
