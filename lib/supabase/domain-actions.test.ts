@@ -4,7 +4,8 @@ import { createFakeSupabase, type FakeSupabase } from "@/test/fake-supabase";
 const h = vi.hoisted(() => ({
   fake: null as unknown as FakeSupabase,
   revalidatePath: vi.fn(),
-  gallery: { id: "gal-1", custom_domain: null as string | null },
+  gallery: { id: "gal-1", custom_domain: null as string | null, resend_domain_id: null as string | null },
+  deleteMailDomain: vi.fn(),
   addDomainToProject: vi.fn(),
   removeDomainFromProject: vi.fn(),
   getDomainStatus: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock("next/headers", () => ({ cookies: async () => ({}) }));
 vi.mock("next/cache", () => ({ revalidatePath: h.revalidatePath }));
 vi.mock("@/utils/supabase/server", () => ({ createClient: () => h.fake.client }));
 vi.mock("@/lib/supabase/gallery", () => ({ getCurrentGallery: async () => h.gallery }));
+vi.mock("@/lib/resend/domains", () => ({ deleteMailDomain: h.deleteMailDomain }));
 vi.mock("@/lib/vercel/domains", () => ({
   addDomainToProject: h.addDomainToProject,
   removeDomainFromProject: h.removeDomainFromProject,
@@ -37,7 +39,8 @@ beforeEach(() => {
   h.addDomainToProject.mockReset();
   h.removeDomainFromProject.mockReset();
   h.getDomainStatus.mockReset();
-  h.gallery = { id: "gal-1", custom_domain: null };
+  h.deleteMailDomain.mockReset();
+  h.gallery = { id: "gal-1", custom_domain: null, resend_domain_id: null };
 });
 
 describe("connectCustomDomain", () => {
@@ -112,8 +115,21 @@ describe("disconnectCustomDomain", () => {
     h.gallery.custom_domain = "art.example.com";
     await disconnectCustomDomain();
     expect(h.removeDomainFromProject).toHaveBeenCalledWith("art.example.com");
-    expect(h.fake.last("galleries", "update")?.payload).toEqual({ custom_domain: null, domain_status: "none" });
+    expect(h.fake.last("galleries", "update")?.payload).toEqual({
+      custom_domain: null,
+      domain_status: "none",
+      resend_domain_id: null,
+      mail_domain_status: "none",
+    });
+    expect(h.deleteMailDomain).not.toHaveBeenCalled();
     expect(h.revalidatePath).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("also removes the Resend domain when email was set up", async () => {
+    h.gallery.custom_domain = "art.example.com";
+    h.gallery.resend_domain_id = "dom-1";
+    await disconnectCustomDomain();
+    expect(h.deleteMailDomain).toHaveBeenCalledWith("dom-1");
   });
 
   it("keeps the gallery's domain when Vercel removal fails", async () => {

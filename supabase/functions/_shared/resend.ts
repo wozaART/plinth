@@ -17,16 +17,25 @@ export interface GallerySender {
   name: string;
   mail_local_part?: string | null;
   reply_to_email?: string | null;
+  custom_domain?: string | null;
+  mail_domain_status?: string | null;
 }
 
-// Builds the From/Reply-To for a gallery. Falls back to the platform sender
-// (undefined) unless the gallery has a local part and MAIL_DOMAIN is set.
-export function resolveSender(gallery: GallerySender, mailDomain = Deno.env.get("MAIL_DOMAIN")): Sender | undefined {
-  if (!gallery.mail_local_part || !mailDomain) return undefined;
+// Builds the From/Reply-To for a gallery. Once Resend has verified the
+// gallery's own domain (and it has picked a local part) mail goes out from
+// there; otherwise it comes from support@ on the platform domain, still under
+// the gallery's name and with its reply-to.
+export function resolveSender(
+  gallery: GallerySender,
+  platformDomain = Deno.env.get("MAIL_DOMAIN") || "woza.art",
+): Sender {
+  const ownDomain = gallery.mail_domain_status === "verified" ? gallery.custom_domain : null;
+  const address =
+    ownDomain && gallery.mail_local_part ? `${gallery.mail_local_part}@${ownDomain}` : `support@${platformDomain}`;
   // Strip anything that could break out of the quoted display name.
   const displayName = gallery.name.replace(/["\\<>\r\n,]/g, "").trim() || "Gallery";
   return {
-    from: `"${displayName}" <${gallery.mail_local_part}@${mailDomain}>`,
+    from: `"${displayName}" <${address}>`,
     replyTo: gallery.reply_to_email || undefined,
   };
 }

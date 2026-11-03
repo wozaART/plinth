@@ -22,21 +22,38 @@ describe("escapeHtml", () => {
 });
 
 describe("resolveSender", () => {
-  it("builds a quoted From on the mail domain with the reply-to", () => {
-    expect(
-      resolveSender({ name: "Gallery X", mail_local_part: "galleryx", reply_to_email: "hi@x.com" }, "mail.woza.art"),
-    ).toEqual({ from: `"Gallery X" <galleryx@mail.woza.art>`, replyTo: "hi@x.com" });
+  const own = { name: "Gallery X", mail_local_part: "hello", custom_domain: "gallery.example.com", reply_to_email: "hi@x.com" };
+
+  it("sends from the gallery's own domain once it is verified", () => {
+    expect(resolveSender({ ...own, mail_domain_status: "verified" }, "woza.art")).toEqual({
+      from: `"Gallery X" <hello@gallery.example.com>`,
+      replyTo: "hi@x.com",
+    });
   });
 
-  it("falls back to the platform sender without a local part or domain", () => {
+  it("uses support@ on the platform domain until the domain is verified", () => {
+    expect(resolveSender({ ...own, mail_domain_status: "pending" }, "woza.art")).toEqual({
+      from: `"Gallery X" <support@woza.art>`,
+      replyTo: "hi@x.com",
+    });
+  });
+
+  it("uses support@ when there is no custom domain or local part", () => {
+    expect(resolveSender({ name: "G" }, "woza.art").from).toBe(`"G" <support@woza.art>`);
+    expect(resolveSender({ ...own, mail_local_part: null, mail_domain_status: "verified" }, "woza.art").from).toBe(
+      `"Gallery X" <support@woza.art>`,
+    );
+  });
+
+  it("defaults the platform domain to MAIL_DOMAIN, then woza.art", () => {
+    stubDeno({ MAIL_DOMAIN: "mail.example.org" });
+    expect(resolveSender({ name: "G" }).from).toBe(`"G" <support@mail.example.org>`);
     stubDeno({});
-    expect(resolveSender({ name: "G", mail_local_part: null }, "mail.woza.art")).toBeUndefined();
-    expect(resolveSender({ name: "G", mail_local_part: "g" }, undefined)).toBeUndefined();
+    expect(resolveSender({ name: "G" }).from).toBe(`"G" <support@woza.art>`);
   });
 
   it("strips characters that could break the display name", () => {
-    const sender = resolveSender({ name: `Bad", <evil@x.com>`, mail_local_part: "g" }, "mail.woza.art");
-    expect(sender?.from).toBe(`"Bad evil@x.com" <g@mail.woza.art>`);
+    expect(resolveSender({ name: `Bad", <evil@x.com>` }, "woza.art").from).toBe(`"Bad evil@x.com" <support@woza.art>`);
   });
 });
 

@@ -102,7 +102,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: gallery } = await supabase
       .from("galleries")
-      .select("name, mail_local_part, reply_to_email")
+      .select("name, mail_local_part, reply_to_email, custom_domain, mail_domain_status")
       .eq("id", galleryId)
       .maybeSingle();
 

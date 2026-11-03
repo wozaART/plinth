@@ -4,14 +4,23 @@ import { createFakeSupabase, type FakeSupabase } from "@/test/fake-supabase";
 const h = vi.hoisted(() => ({
   fake: null as unknown as FakeSupabase,
   revalidatePath: vi.fn(),
+  gallery: {} as Record<string, unknown>,
+  createMailDomain: vi.fn(),
+  refreshMailDomain: vi.fn(),
+  deleteMailDomain: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ cookies: async () => ({}) }));
 vi.mock("next/cache", () => ({ revalidatePath: h.revalidatePath }));
 vi.mock("@/utils/supabase/server", () => ({ createClient: () => h.fake.client }));
-vi.mock("@/lib/supabase/gallery", () => ({ getCurrentGallery: async () => ({ id: "gal-1" }) }));
+vi.mock("@/lib/supabase/gallery", () => ({ getCurrentGallery: async () => h.gallery }));
+vi.mock("@/lib/resend/domains", () => ({
+  createMailDomain: h.createMailDomain,
+  refreshMailDomain: h.refreshMailDomain,
+  deleteMailDomain: h.deleteMailDomain,
+}));
 
-import { updateGalleryMail } from "./mail-actions";
+import { refreshMailDomainStatus, removeMailDomain, setUpMailDomain, updateGalleryMail } from "./mail-actions";
 
 function form(localPart: string, replyTo = "") {
   const fd = new FormData();
@@ -23,6 +32,10 @@ function form(localPart: string, replyTo = "") {
 beforeEach(() => {
   h.fake = createFakeSupabase();
   h.revalidatePath.mockClear();
+  h.createMailDomain.mockReset();
+  h.refreshMailDomain.mockReset();
+  h.deleteMailDomain.mockReset();
+  h.gallery = { id: "gal-1", custom_domain: "gallery.example.com", resend_domain_id: null };
 });
 
 describe("updateGalleryMail", () => {
@@ -49,9 +62,42 @@ describe("updateGalleryMail", () => {
     await updateGalleryMail(form(""));
     expect(h.fake.last("galleries", "update")?.payload).toEqual({ mail_local_part: null, reply_to_email: null });
   });
+});
 
-  it("reports a taken address in plain words", async () => {
-    h.fake.on("galleries", "update", { error: { code: "23505", message: "dup" } });
-    await expect(updateGalleryMail(form("taken"))).rejects.toThrow("already taken");
+describe("mail domain", () => {
+  const records = [{ type: "TXT", name: "resend._domainkey", value: "p=abc" }];
+
+  it("registers the custom domain with Resend and stores the id", async () => {
+    h.createMailDomain.mockResolvedValue({ id: "dom-1", status: "pending", records });
+
+    expect(await setUpMailDomain()).toEqual(records);
+
+    expect(h.createMailDomain).toHaveBeenCalledWith("gallery.example.com");
+    const q = h.fake.last("galleries", "update");
+    expect(q?.payload).toEqual({ resend_domain_id: "dom-1", mail_domain_status: "pending" });
+    expect(q?.filters).toEqual([["id", "gal-1"]]);
+  });
+
+  it("needs a custom domain and refuses to register twice", async () => {
+    h.gallery = { id: "gal-1", custom_domain: null, resend_domain_id: null };
+    await expect(setUpMailDomain()).rejects.toThrow("Connect a custom domain");
+    h.gallery = { id: "gal-1", custom_domain: "g.example.com", resend_domain_id: "dom-1" };
+    await expect(setUpMailDomain()).rejects.toThrow("already set up");
+    expect(h.createMailDomain).not.toHaveBeenCalled();
+  });
+
+  it("saves the verification status Resend reports", async () => {
+    h.gallery = { id: "gal-1", custom_domain: "g.example.com", resend_domain_id: "dom-1" };
+    h.refreshMailDomain.mockResolvedValue({ id: "dom-1", status: "verified", records });
+
+    expect(await refreshMailDomainStatus()).toEqual({ status: "verified", records });
+    expect(h.fake.last("galleries", "update")?.payload).toEqual({ mail_domain_status: "verified" });
+  });
+
+  it("deletes the Resend domain and resets the gallery", async () => {
+    h.gallery = { id: "gal-1", custom_domain: "g.example.com", resend_domain_id: "dom-1" };
+    await removeMailDomain();
+    expect(h.deleteMailDomain).toHaveBeenCalledWith("dom-1");
+    expect(h.fake.last("galleries", "update")?.payload).toEqual({ resend_domain_id: null, mail_domain_status: "none" });
   });
 });
