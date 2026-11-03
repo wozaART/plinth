@@ -249,6 +249,14 @@ function SignInForm() {
         },
       });
       if (error) { setError(error.message); return; }
+      // Supabase hides "already registered" behind a user with no identities
+      // and sends no email, so don't claim one is on its way.
+      if (data.user?.identities?.length === 0) {
+        setGEmail(signupEmail);
+        setGView("signin");
+        setError("An account with this email already exists — sign in instead, or use Forgot password.");
+        return;
+      }
       if (!data.session) {
         // Email confirmation required before a session exists.
         setToast(`Check your email — we sent a confirmation link to ${signupEmail}.`);

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
+import { deleteMailDomain } from "@/lib/resend/domains";
 import { addDomainToProject, removeDomainFromProject, getDomainStatus, dnsInstructionsFor } from "@/lib/vercel/domains";
 
 async function supabaseServer() {
@@ -51,10 +52,12 @@ export async function disconnectCustomDomain() {
   if (!gallery.custom_domain) return;
 
   await removeDomainFromProject(gallery.custom_domain);
+  // The mail domain is the custom domain, so it goes with it.
+  if (gallery.resend_domain_id) await deleteMailDomain(gallery.resend_domain_id);
 
   const { error } = await supabase
     .from("galleries")
-    .update({ custom_domain: null, domain_status: "none" })
+    .update({ custom_domain: null, domain_status: "none", resend_domain_id: null, mail_domain_status: "none" })
     .eq("id", gallery.id);
   if (error) throw error;
 

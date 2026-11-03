@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { escapeHtml, sendEmail } from "./resend.ts";
+import { escapeHtml, resolveSender, sendEmail } from "./resend.ts";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -21,7 +21,56 @@ describe("escapeHtml", () => {
   });
 });
 
+describe("resolveSender", () => {
+  const own = { name: "Gallery X", mail_local_part: "hello", custom_domain: "gallery.example.com", reply_to_email: "hi@x.com" };
+
+  it("sends from the gallery's own domain once it is verified", () => {
+    expect(resolveSender({ ...own, mail_domain_status: "verified" }, "woza.art")).toEqual({
+      from: `"Gallery X" <hello@gallery.example.com>`,
+      replyTo: "hi@x.com",
+    });
+  });
+
+  it("uses support@ on the platform domain until the domain is verified", () => {
+    expect(resolveSender({ ...own, mail_domain_status: "pending" }, "woza.art")).toEqual({
+      from: `"Gallery X" <support@woza.art>`,
+      replyTo: "hi@x.com",
+    });
+  });
+
+  it("uses support@ when there is no custom domain or local part", () => {
+    expect(resolveSender({ name: "G" }, "woza.art").from).toBe(`"G" <support@woza.art>`);
+    expect(resolveSender({ ...own, mail_local_part: null, mail_domain_status: "verified" }, "woza.art").from).toBe(
+      `"Gallery X" <support@woza.art>`,
+    );
+  });
+
+  it("defaults the platform domain to MAIL_DOMAIN, then woza.art", () => {
+    stubDeno({ MAIL_DOMAIN: "mail.example.org" });
+    expect(resolveSender({ name: "G" }).from).toBe(`"G" <support@mail.example.org>`);
+    stubDeno({});
+    expect(resolveSender({ name: "G" }).from).toBe(`"G" <support@woza.art>`);
+  });
+
+  it("strips characters that could break the display name", () => {
+    expect(resolveSender({ name: `Bad", <evil@x.com>` }, "woza.art").from).toBe(`"Bad evil@x.com" <support@woza.art>`);
+  });
+});
+
 describe("sendEmail", () => {
+  it("uses the gallery sender and reply_to when given", async () => {
+    stubDeno({ RESEND_API_KEY: "key" });
+    const fetchMock = vi.fn(() => Promise.resolve(new Response("{}", { status: 200 })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await sendEmail("a@test.dev", "S", "H", { from: "G <g@mail.woza.art>", replyTo: "hi@g.com" });
+
+    const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+    const body = JSON.parse(init.body as string);
+    expect(body.from).toBe("G <g@mail.woza.art>");
+    expect(body.reply_to).toBe("hi@g.com");
+  });
+
   it("posts to Resend with the key, sender, recipient and body", async () => {
     stubDeno({ RESEND_API_KEY: "key", RESEND_FROM_EMAIL: "Gallery <hi@gallery.test>" });
     const fetchMock = vi.fn(() => Promise.resolve(new Response("{}", { status: 200 })));

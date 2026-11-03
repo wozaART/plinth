@@ -100,9 +100,14 @@ describe("removeDomainFromProject", () => {
     expect(lastCall().url).toBe("https://api.vercel.com/v9/projects/prj_abc/domains/art.example.com?teamId=team_1");
   });
 
-  it("throws on a non-2xx response", async () => {
-    fetchMock.mockResolvedValue(reply({ error: { message: "Not found" } }, 404));
-    await expect(removeDomainFromProject("art.example.com")).rejects.toThrow("Not found");
+  it("treats a domain Vercel doesn't have as already removed", async () => {
+    fetchMock.mockResolvedValue(reply({ error: { message: 'The domain "art.example.com" is not assigned to "plinth".' } }, 404));
+    await expect(removeDomainFromProject("art.example.com")).resolves.toBeUndefined();
+  });
+
+  it("throws on other non-2xx responses", async () => {
+    fetchMock.mockResolvedValue(reply({ error: { message: "Server error" } }, 500));
+    await expect(removeDomainFromProject("art.example.com")).rejects.toThrow("Server error");
   });
 });
 

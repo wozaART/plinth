@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { connectCustomDomain, refreshDomainStatus, disconnectCustomDomain } from "@/lib/supabase/domain-actions";
+import { refreshMailDomainStatus, removeMailDomain, setUpMailDomain, updateGalleryMail } from "@/lib/supabase/mail-actions";
+import type { MailDnsRecord } from "@/lib/resend/domains";
 import { updateGalleryTheme } from "@/lib/supabase/theme-actions";
 import { ACCENT_SWATCHES, BODY_FONT_CARDS, DISPLAY_FONT_CARDS, INK_OPTIONS, SIDEBAR_OPTIONS, isHexColor, onAccent } from "@/lib/theme-colors";
 import type { DnsRecordInstruction } from "@/lib/vercel/domains";
@@ -15,13 +17,91 @@ export interface GalleryThemeSettings {
   fontBody: string;
 }
 
+const MAIL_STATUS_LABEL: Record<string, string> = {
+  none: "Not set up",
+  pending: "Pending verification",
+  verified: "Verified",
+  error: "Verification failed",
+};
+
+export interface GalleryMailSettings {
+  localPart: string | null;
+  replyTo: string | null;
+  /** Platform mail domain, shown in the From preview. Unset until configured. */
+  domain: string | null;
+  /** Resend verification state of the gallery's custom domain. */
+  domainStatus: string;
+  domainRegistered: boolean;
+}
+
 interface SettingsPanelProps {
   customDomain: string | null;
   domainStatus: string;
   theme: GalleryThemeSettings;
+  mail?: GalleryMailSettings;
 }
 
-export default function SettingsPanel({ customDomain, domainStatus, theme }: SettingsPanelProps) {
+export default function SettingsPanel({ customDomain, domainStatus, theme, mail }: SettingsPanelProps) {
+  const [mailLocalPart, setMailLocalPart] = useState(mail?.localPart ?? "");
+  const [mailReplyTo, setMailReplyTo] = useState(mail?.replyTo ?? "");
+  const [mailError, setMailError] = useState<string | null>(null);
+  const [mailSaved, setMailSaved] = useState(false);
+  const [mailPending, startMailTransition] = useTransition();
+  const [mailDomainStatus, setMailDomainStatus] = useState(mail?.domainStatus ?? "none");
+  const [mailDomainRegistered, setMailDomainRegistered] = useState(mail?.domainRegistered ?? false);
+  const [mailRecords, setMailRecords] = useState<MailDnsRecord[] | null>(null);
+  const [mailDomainError, setMailDomainError] = useState<string | null>(null);
+  const [mailDomainPending, startMailDomainTransition] = useTransition();
+
+  function runMailDomain(task: () => Promise<void>, fallback: string) {
+    setMailDomainError(null);
+    startMailDomainTransition(async () => {
+      try {
+        await task();
+      } catch (err) {
+        setMailDomainError(err instanceof Error ? err.message : fallback);
+      }
+    });
+  }
+
+  const handleSetUpMailDomain = () =>
+    runMailDomain(async () => {
+      setMailRecords(await setUpMailDomain());
+      setMailDomainRegistered(true);
+      setMailDomainStatus("pending");
+    }, "Couldn't set up email for this domain.");
+
+  const handleCheckMailDomain = () =>
+    runMailDomain(async () => {
+      const result = await refreshMailDomainStatus();
+      setMailRecords(result.records);
+      setMailDomainStatus(result.status);
+    }, "Couldn't check the email domain.");
+
+  const handleRemoveMailDomain = () =>
+    runMailDomain(async () => {
+      await removeMailDomain();
+      setMailRecords(null);
+      setMailDomainRegistered(false);
+      setMailDomainStatus("none");
+    }, "Couldn't remove the email domain.");
+
+  const sendingDomain = mailDomainStatus === "verified" && customDomain ? customDomain : null;
+  const fallbackAddress = `support@${mail?.domain ?? "woza.art"}`;
+
+  function handleSaveMail(formData: FormData) {
+    setMailError(null);
+    setMailSaved(false);
+    startMailTransition(async () => {
+      try {
+        await updateGalleryMail(formData);
+        setMailSaved(true);
+      } catch (err) {
+        setMailError(err instanceof Error ? err.message : "Couldn't save the email settings.");
+      }
+    });
+  }
+
   const [domain, setDomain] = useState(customDomain ?? "");
   const [status, setStatus] = useState(domainStatus);
   const [dnsRecords, setDnsRecords] = useState<DnsRecordInstruction[] | null>(null);
@@ -189,6 +269,119 @@ export default function SettingsPanel({ customDomain, domainStatus, theme }: Set
           >
             Remove
           </button>
+        </div>
+      )}
+
+      {mail && (
+        <div style={{ marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--pl-border)" }}>
+          <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>Email</h2>
+          <p style={{ fontSize: 13, color: "var(--pl-text-muted)", margin: "0 0 16px" }}>
+            Choose the address your emails to artists come from. It applies once your own domain is set up below.
+          </p>
+
+          <form action={handleSaveMail} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <label style={{ display: "block" }}>
+              <div style={sectionLabel}>Sender address</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  name="localPart"
+                  value={mailLocalPart}
+                  onChange={e => setMailLocalPart(e.target.value.toLowerCase())}
+                  placeholder="your-gallery"
+                  autoComplete="off"
+                  maxLength={32}
+                  style={{ flex: 1, minWidth: 0, padding: "9px 12px", borderRadius: 9, border: "1px solid var(--pl-border-input)", fontSize: 13, background: "var(--pl-surface)", color: "var(--pl-text)" }}
+                />
+                <span style={{ fontSize: 13, color: "var(--pl-text-muted)" }}>@{sendingDomain ?? customDomain ?? "your-domain.com"}</span>
+              </div>
+            </label>
+
+            <label style={{ display: "block" }}>
+              <div style={sectionLabel}>Reply-to address</div>
+              <p style={subLabel}>Where artists&apos; replies go. Use an inbox you read.</p>
+              <input
+                name="replyTo"
+                type="email"
+                value={mailReplyTo}
+                onChange={e => setMailReplyTo(e.target.value)}
+                placeholder="hello@yourgallery.com"
+                style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--pl-border-input)", fontSize: 13, background: "var(--pl-surface)", color: "var(--pl-text)" }}
+              />
+            </label>
+
+            <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)" }}>
+              Artists will see emails from{" "}
+              <strong style={{ color: "var(--pl-text)" }}>
+                {sendingDomain && mailLocalPart ? `${mailLocalPart}@${sendingDomain}` : fallbackAddress}
+              </strong>
+              {!sendingDomain && " until your domain is verified."}
+            </div>
+
+            {mailError && <div role="alert" style={{ fontSize: 13, color: "var(--pl-declined-fg)" }}>{mailError}</div>}
+            {mailSaved && <div role="status" style={{ fontSize: 13, color: "var(--pl-approved-fg)" }}>Email settings saved.</div>}
+
+            <div>
+              <button
+                type="submit"
+                disabled={mailPending}
+                style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "var(--pl-accent)", color: "var(--pl-on-accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                {mailPending ? "Saving…" : "Save email settings"}
+              </button>
+            </div>
+          </form>
+
+          <div style={{ marginTop: 24 }}>
+            <div style={sectionLabel}>Send from your own domain</div>
+            {!customDomain ? (
+              <p style={subLabel}>Connect a custom domain above to send email from it.</p>
+            ) : (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, fontSize: 13 }}>
+                  <span>{customDomain}</span>
+                  <span style={{ fontSize: 11.5, padding: "2px 9px", borderRadius: 20, background: "var(--pl-neutral-chip-bg)", color: "var(--pl-neutral-chip-fg)" }}>
+                    {mailDomainRegistered ? (MAIL_STATUS_LABEL[mailDomainStatus] ?? mailDomainStatus) : "Not set up"}
+                  </span>
+                </div>
+
+                {mailRecords && mailDomainStatus !== "verified" && (
+                  <div style={{ border: "1px solid var(--pl-border)", borderRadius: 10, padding: 14, marginBottom: 12, background: "var(--pl-surface)" }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 8 }}>Add these DNS records at your registrar</div>
+                    {mailRecords.map((r, i) => (
+                      <div key={i} style={{ display: "flex", flexWrap: "wrap", gap: 10, fontSize: 12.5, fontFamily: "var(--font-geist-mono, monospace)", padding: "4px 0", wordBreak: "break-all" }}>
+                        <span style={{ color: "var(--pl-text-muted)" }}>{r.type}</span>
+                        <span>{r.name}</span>
+                        <span style={{ color: "var(--pl-text-muted)" }}>→</span>
+                        <span>{r.priority !== undefined ? `${r.priority} ${r.value}` : r.value}</span>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: 12, color: "var(--pl-text-soft)", marginTop: 8 }}>
+                      Until these are verified, email comes from {fallbackAddress}.
+                    </div>
+                  </div>
+                )}
+
+                {mailDomainError && <div role="alert" style={{ fontSize: 13, color: "var(--pl-declined-fg)", marginBottom: 12 }}>{mailDomainError}</div>}
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  {!mailDomainRegistered ? (
+                    <button type="button" onClick={handleSetUpMailDomain} disabled={mailDomainPending} style={{ padding: "8px 14px", borderRadius: 9, border: "1px solid var(--pl-border)", background: "transparent", color: "var(--pl-text)", fontSize: 12.5, cursor: "pointer" }}>
+                      {mailDomainPending ? "Setting up…" : "Set up email"}
+                    </button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={handleCheckMailDomain} disabled={mailDomainPending} style={{ padding: "8px 14px", borderRadius: 9, border: "1px solid var(--pl-border)", background: "transparent", color: "var(--pl-text)", fontSize: 12.5, cursor: "pointer" }}>
+                        {mailDomainPending ? "Checking…" : "Check status"}
+                      </button>
+                      <button type="button" onClick={handleRemoveMailDomain} disabled={mailDomainPending} style={{ padding: "8px 14px", borderRadius: 9, border: "1px solid var(--pl-border)", background: "transparent", color: "var(--pl-declined-fg)", fontSize: 12.5, cursor: "pointer" }}>
+                        Remove
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 

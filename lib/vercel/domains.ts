@@ -35,6 +35,12 @@ function withTeam(path: string, teamId?: string) {
   return path + (path.includes("?") ? "&" : "?") + `teamId=${encodeURIComponent(teamId)}`;
 }
 
+class VercelApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 async function vercelFetch(path: string, token: string, init?: RequestInit) {
   const res = await fetch(`${VERCEL_API}${path}`, {
     ...init,
@@ -43,7 +49,7 @@ async function vercelFetch(path: string, token: string, init?: RequestInit) {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const message = body?.error?.message || `Vercel API error (${res.status})`;
-    throw new Error(message);
+    throw new VercelApiError(message, res.status);
   }
   return body;
 }
@@ -65,11 +71,17 @@ export async function addDomainToProject(domain: string): Promise<void> {
   });
 }
 
+/** Detaches `domain` from the project. A domain Vercel doesn't have (already removed, or never attached) counts as removed. */
 export async function removeDomainFromProject(domain: string): Promise<void> {
   const { token, projectId, teamId } = env();
-  await vercelFetch(withTeam(`/v9/projects/${projectId}/domains/${domain}`, teamId), token, {
-    method: "DELETE",
-  });
+  try {
+    await vercelFetch(withTeam(`/v9/projects/${projectId}/domains/${domain}`, teamId), token, {
+      method: "DELETE",
+    });
+  } catch (err) {
+    if (err instanceof VercelApiError && err.status === 404) return;
+    throw err;
+  }
 }
 
 /** Current verification/DNS state for a domain already attached to the project. */

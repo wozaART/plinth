@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { resolveSender, sendEmail } from "../_shared/resend.ts";
 import { renderExhibitionInviteEmail } from "./email-template.ts";
 
 interface InvitePayload {
@@ -99,25 +100,21 @@ Deno.serve(async (req: Request) => {
       appUrl,
     });
 
-    const fromAddress = Deno.env.get("RESEND_FROM_EMAIL") || "Woza Art <onboarding@resend.dev>";
+    const { data: gallery } = await supabase
+      .from("galleries")
+      .select("name, mail_local_part, reply_to_email, custom_domain, mail_domain_status")
+      .eq("id", galleryId)
+      .maybeSingle();
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [artistEmail],
-        subject: `${galleryName} invited you to exhibit in ${exhibitionTitle}`,
-        html,
-      }),
-    });
+    const result = await sendEmail(
+      artistEmail,
+      `${galleryName} invited you to exhibit in ${exhibitionTitle}`,
+      html,
+      gallery ? resolveSender(gallery) : undefined,
+    );
 
-    if (!resendResponse.ok) {
-      const detail = await resendResponse.text();
-      return json({ error: `Resend error: ${detail}` }, 502);
+    if (!result.ok) {
+      return json({ error: result.error }, 502);
     }
 
     return json({ ok: true }, 200);

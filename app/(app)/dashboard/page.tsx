@@ -42,6 +42,13 @@ export default async function DashboardPage() {
       customDomain={gallery.custom_domain}
       domainStatus={gallery.domain_status}
       theme={themeSettingsFor(gallery)}
+      mail={{
+        localPart: gallery.mail_local_part,
+        replyTo: gallery.reply_to_email,
+        domain: process.env.NEXT_PUBLIC_MAIL_DOMAIN ?? null,
+        domainStatus: gallery.mail_domain_status,
+        domainRegistered: !!gallery.resend_domain_id,
+      }}
       isArtist={!!artistRow}
       artistName={artistRow?.full_name ?? "Artist"}
       artistCity={artistRow?.city ?? ""}

@@ -12,7 +12,7 @@ import FrameshopPanel from "@/components/dashboard/FrameshopPanel";
 import PayoutsPanel from "@/components/dashboard/PayoutsPanel";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
-import SettingsPanel, { type GalleryThemeSettings } from "@/components/dashboard/SettingsPanel";
+import SettingsPanel, { type GalleryMailSettings, type GalleryThemeSettings } from "@/components/dashboard/SettingsPanel";
 import ActivityLogPanel from "@/components/dashboard/ActivityLogPanel";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import type { Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact, FrameJob, Payout, AuditLogEntry } from "@/lib/types";
@@ -32,12 +32,13 @@ interface DashboardShellProps {
   customDomain: string | null;
   domainStatus: string;
   theme: GalleryThemeSettings;
+  mail?: GalleryMailSettings;
   isArtist?: boolean;
   artistName?: string;
   artistCity?: string;
 }
 
-export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, theme, isArtist = false, artistName = "Artist", artistCity = "" }: DashboardShellProps) {
+export default function DashboardShell({ submissions, exhibitions, exhibitionInvites, catalogue, catalogueArtists, contacts, frameJobs, payouts, auditLog, customDomain, domainStatus, theme, mail, isArtist = false, artistName = "Artist", artistCity = "" }: DashboardShellProps) {
   const [tab, setTabState] = useState<Tab>("submissions");
   const [navOpen, setNavOpen] = useState(false);
   const setTab = (t: Tab) => { setTabState(t); setNavOpen(false); };
@@ -148,7 +149,7 @@ export default function DashboardShell({ submissions, exhibitions, exhibitionInv
         {tab === "settings" && (
           <div className="scrl" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
             {isArtist && <div style={{ padding: "24px 24px 0" }}><ProfileSwitcher current="gallery" /></div>}
-            <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} theme={theme} />
+            <SettingsPanel customDomain={customDomain} domainStatus={domainStatus} theme={theme} mail={mail} />
           </div>
         )}
         {tab === "activity" && <ActivityLogPanel data={auditLog} />}
