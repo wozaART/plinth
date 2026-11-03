@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { escapeHtml, sendEmail } from "./resend.ts";
+import { escapeHtml, resolveSender, sendEmail } from "./resend.ts";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -21,7 +21,39 @@ describe("escapeHtml", () => {
   });
 });
 
+describe("resolveSender", () => {
+  it("builds a quoted From on the mail domain with the reply-to", () => {
+    expect(
+      resolveSender({ name: "Gallery X", mail_local_part: "galleryx", reply_to_email: "hi@x.com" }, "mail.woza.art"),
+    ).toEqual({ from: `"Gallery X" <galleryx@mail.woza.art>`, replyTo: "hi@x.com" });
+  });
+
+  it("falls back to the platform sender without a local part or domain", () => {
+    stubDeno({});
+    expect(resolveSender({ name: "G", mail_local_part: null }, "mail.woza.art")).toBeUndefined();
+    expect(resolveSender({ name: "G", mail_local_part: "g" }, undefined)).toBeUndefined();
+  });
+
+  it("strips characters that could break the display name", () => {
+    const sender = resolveSender({ name: `Bad", <evil@x.com>`, mail_local_part: "g" }, "mail.woza.art");
+    expect(sender?.from).toBe(`"Bad evil@x.com" <g@mail.woza.art>`);
+  });
+});
+
 describe("sendEmail", () => {
+  it("uses the gallery sender and reply_to when given", async () => {
+    stubDeno({ RESEND_API_KEY: "key" });
+    const fetchMock = vi.fn(() => Promise.resolve(new Response("{}", { status: 200 })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await sendEmail("a@test.dev", "S", "H", { from: "G <g@mail.woza.art>", replyTo: "hi@g.com" });
+
+    const init = (fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1];
+    const body = JSON.parse(init.body as string);
+    expect(body.from).toBe("G <g@mail.woza.art>");
+    expect(body.reply_to).toBe("hi@g.com");
+  });
+
   it("posts to Resend with the key, sender, recipient and body", async () => {
     stubDeno({ RESEND_API_KEY: "key", RESEND_FROM_EMAIL: "Gallery <hi@gallery.test>" });
     const fetchMock = vi.fn(() => Promise.resolve(new Response("{}", { status: 200 })));
