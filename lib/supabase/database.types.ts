@@ -573,8 +573,10 @@ export type Database = {
           logo_image_url: string | null
           logo_wordmark_primary: string | null
           logo_wordmark_secondary: string | null
+          mail_local_part: string | null
           name: string
           owner_id: string
+          reply_to_email: string | null
           short_name: string | null
           slug: string
           studio_tabs: Json
@@ -600,8 +602,10 @@ export type Database = {
           logo_image_url?: string | null
           logo_wordmark_primary?: string | null
           logo_wordmark_secondary?: string | null
+          mail_local_part?: string | null
           name: string
           owner_id: string
+          reply_to_email?: string | null
           short_name?: string | null
           slug: string
           studio_tabs?: Json
@@ -627,8 +631,10 @@ export type Database = {
           logo_image_url?: string | null
           logo_wordmark_primary?: string | null
           logo_wordmark_secondary?: string | null
+          mail_local_part?: string | null
           name?: string
           owner_id?: string
+          reply_to_email?: string | null
           short_name?: string | null
           slug?: string
           studio_tabs?: Json

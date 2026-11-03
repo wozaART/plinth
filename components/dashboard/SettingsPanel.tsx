@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { connectCustomDomain, refreshDomainStatus, disconnectCustomDomain } from "@/lib/supabase/domain-actions";
+import { updateGalleryMail } from "@/lib/supabase/mail-actions";
 import { updateGalleryTheme } from "@/lib/supabase/theme-actions";
 import { ACCENT_SWATCHES, BODY_FONT_CARDS, DISPLAY_FONT_CARDS, INK_OPTIONS, SIDEBAR_OPTIONS, isHexColor, onAccent } from "@/lib/theme-colors";
 import type { DnsRecordInstruction } from "@/lib/vercel/domains";
@@ -15,13 +16,40 @@ export interface GalleryThemeSettings {
   fontBody: string;
 }
 
+export interface GalleryMailSettings {
+  localPart: string | null;
+  replyTo: string | null;
+  /** Platform mail domain, shown in the From preview. Unset until configured. */
+  domain: string | null;
+}
+
 interface SettingsPanelProps {
   customDomain: string | null;
   domainStatus: string;
   theme: GalleryThemeSettings;
+  mail?: GalleryMailSettings;
 }
 
-export default function SettingsPanel({ customDomain, domainStatus, theme }: SettingsPanelProps) {
+export default function SettingsPanel({ customDomain, domainStatus, theme, mail }: SettingsPanelProps) {
+  const [mailLocalPart, setMailLocalPart] = useState(mail?.localPart ?? "");
+  const [mailReplyTo, setMailReplyTo] = useState(mail?.replyTo ?? "");
+  const [mailError, setMailError] = useState<string | null>(null);
+  const [mailSaved, setMailSaved] = useState(false);
+  const [mailPending, startMailTransition] = useTransition();
+
+  function handleSaveMail(formData: FormData) {
+    setMailError(null);
+    setMailSaved(false);
+    startMailTransition(async () => {
+      try {
+        await updateGalleryMail(formData);
+        setMailSaved(true);
+      } catch (err) {
+        setMailError(err instanceof Error ? err.message : "Couldn't save the email settings.");
+      }
+    });
+  }
+
   const [domain, setDomain] = useState(customDomain ?? "");
   const [status, setStatus] = useState(domainStatus);
   const [dnsRecords, setDnsRecords] = useState<DnsRecordInstruction[] | null>(null);
@@ -189,6 +217,65 @@ export default function SettingsPanel({ customDomain, domainStatus, theme }: Set
           >
             Remove
           </button>
+        </div>
+      )}
+
+      {mail && (
+        <div style={{ marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--pl-border)" }}>
+          <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>Email</h2>
+          <p style={{ fontSize: 13, color: "var(--pl-text-muted)", margin: "0 0 16px" }}>
+            Choose the address your emails to artists come from. Leave it empty to use the Woza Art address.
+          </p>
+
+          <form action={handleSaveMail} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <label style={{ display: "block" }}>
+              <div style={sectionLabel}>Sender address</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  name="localPart"
+                  value={mailLocalPart}
+                  onChange={e => setMailLocalPart(e.target.value.toLowerCase())}
+                  placeholder="your-gallery"
+                  autoComplete="off"
+                  maxLength={32}
+                  style={{ flex: 1, minWidth: 0, padding: "9px 12px", borderRadius: 9, border: "1px solid var(--pl-border-input)", fontSize: 13, background: "var(--pl-surface)", color: "var(--pl-text)" }}
+                />
+                <span style={{ fontSize: 13, color: "var(--pl-text-muted)" }}>@{mail.domain ?? "your mail domain"}</span>
+              </div>
+            </label>
+
+            <label style={{ display: "block" }}>
+              <div style={sectionLabel}>Reply-to address</div>
+              <p style={subLabel}>Where artists&apos; replies go. Use an inbox you read.</p>
+              <input
+                name="replyTo"
+                type="email"
+                value={mailReplyTo}
+                onChange={e => setMailReplyTo(e.target.value)}
+                placeholder="hello@yourgallery.com"
+                style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", borderRadius: 9, border: "1px solid var(--pl-border-input)", fontSize: 13, background: "var(--pl-surface)", color: "var(--pl-text)" }}
+              />
+            </label>
+
+            {mailLocalPart && mail.domain && (
+              <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)" }}>
+                Artists will see emails from <strong style={{ color: "var(--pl-text)" }}>{mailLocalPart}@{mail.domain}</strong>
+              </div>
+            )}
+
+            {mailError && <div role="alert" style={{ fontSize: 13, color: "var(--pl-declined-fg)" }}>{mailError}</div>}
+            {mailSaved && <div role="status" style={{ fontSize: 13, color: "var(--pl-approved-fg)" }}>Email settings saved.</div>}
+
+            <div>
+              <button
+                type="submit"
+                disabled={mailPending}
+                style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "var(--pl-accent)", color: "var(--pl-on-accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                {mailPending ? "Saving…" : "Save email settings"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
