@@ -2,26 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { ACCENT_SWATCHES, INK_OPTIONS, SIDEBAR_OPTIONS } from "@/lib/theme-colors";
 
 type Step = "intro" | "branding" | "preview" | "feedback" | "done";
-
-const ACCENT_SWATCHES = [
-  "#B5623C", "#8A3A30", "#3C566B", "#4A6138",
-  "#6E5A8A", "#A8842C", "#2A6F6B", "#1F1D1A",
-];
-
-const INK_OPTIONS = [
-  { name: "Charcoal", color: "#17150F" },
-  { name: "Navy",     color: "#14213F" },
-  { name: "Forest",   color: "#163326" },
-  { name: "Aubergine",color: "#301B2E" },
-];
-
-const SIDEBAR_OPTIONS = [
-  { name: "Warm",  color: "#F4F1EA" },
-  { name: "Stone", color: "#EFEDE6" },
-  { name: "Mist",  color: "#ECEEEC" },
-];
 
 const FONT_OPTIONS = [
   { id: "serif",  label: "Editorial", desc: "Serif headlines",  stack: "'Newsreader',serif",      sample: "'Newsreader',serif" },

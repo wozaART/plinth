@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { themeSettingsFor } from "@/lib/theme-colors";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { getSubmissions, getExhibitionsWithCounts, getExhibitionInvitesForGallery, getCatalogue, getGalleryArtists, getFrameJobs, getContacts, getPayouts, getAuditLog } from "@/lib/supabase/queries";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -40,6 +41,7 @@ export default async function DashboardPage() {
       auditLog={auditLog}
       customDomain={gallery.custom_domain}
       domainStatus={gallery.domain_status}
+      theme={themeSettingsFor(gallery)}
       isArtist={!!artistRow}
       artistName={artistRow?.full_name ?? "Artist"}
       artistCity={artistRow?.city ?? ""}

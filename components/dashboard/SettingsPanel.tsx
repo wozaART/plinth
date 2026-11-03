@@ -2,19 +2,52 @@
 
 import { useState, useTransition } from "react";
 import { connectCustomDomain, refreshDomainStatus, disconnectCustomDomain } from "@/lib/supabase/domain-actions";
+import { updateGalleryTheme } from "@/lib/supabase/theme-actions";
+import { ACCENT_SWATCHES, BODY_FONT_CARDS, DISPLAY_FONT_CARDS, INK_OPTIONS, SIDEBAR_OPTIONS, isHexColor, onAccent } from "@/lib/theme-colors";
 import type { DnsRecordInstruction } from "@/lib/vercel/domains";
+
+export interface GalleryThemeSettings {
+  mode: string;
+  accent: string;
+  ink: string;
+  sidebar: string;
+  fontDisplay: string;
+  fontBody: string;
+}
 
 interface SettingsPanelProps {
   customDomain: string | null;
   domainStatus: string;
+  theme: GalleryThemeSettings;
 }
 
-export default function SettingsPanel({ customDomain, domainStatus }: SettingsPanelProps) {
+export default function SettingsPanel({ customDomain, domainStatus, theme }: SettingsPanelProps) {
   const [domain, setDomain] = useState(customDomain ?? "");
   const [status, setStatus] = useState(domainStatus);
   const [dnsRecords, setDnsRecords] = useState<DnsRecordInstruction[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [themeAccent, setThemeAccent] = useState(theme.accent);
+  const [themeInk, setThemeInk] = useState(theme.ink);
+  const [themeSidebar, setThemeSidebar] = useState(theme.sidebar);
+  const [themeDisplay, setThemeDisplay] = useState(theme.fontDisplay);
+  const [themeBody, setThemeBody] = useState(theme.fontBody);
+  const [themeError, setThemeError] = useState<string | null>(null);
+  const [themeSaved, setThemeSaved] = useState(false);
+  const [themePending, startThemeTransition] = useTransition();
+
+  function handleSaveTheme(formData: FormData) {
+    setThemeError(null);
+    setThemeSaved(false);
+    startThemeTransition(async () => {
+      try {
+        await updateGalleryTheme(formData);
+        setThemeSaved(true);
+      } catch (err) {
+        setThemeError(err instanceof Error ? err.message : "Couldn't save the theme.");
+      }
+    });
+  }
 
   function handleConnect(formData: FormData) {
     setError(null);
@@ -60,6 +93,25 @@ export default function SettingsPanel({ customDomain, domainStatus }: SettingsPa
     verified: "Connected",
     error: "Error",
   };
+
+  const validAccent = isHexColor(themeAccent);
+  const previewAccent = validAccent ? themeAccent : theme.accent;
+  const light = theme.mode === "light";
+  const previewInk = light ? themeInk : "var(--pl-solid)";
+  const subLabel = { fontSize: 12, color: "var(--pl-text-soft)", margin: "0 0 8px" } as const;
+  const sectionLabel = { fontSize: 11.5, letterSpacing: ".1em", textTransform: "uppercase", fontWeight: 600, color: "var(--pl-text-eyebrow)", marginBottom: 10 } as const;
+  const chip = (on: boolean) => ({
+    display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 13px", borderRadius: 11, cursor: "pointer", fontSize: 13,
+    border: `1.5px solid ${on ? "var(--pl-text)" : "var(--pl-border)"}`,
+    background: on ? "var(--pl-text)" : "var(--pl-surface)",
+    color: on ? "var(--pl-bg-app)" : "var(--pl-text-secondary)",
+  }) as const;
+  const card = (on: boolean) => ({
+    flex: 1, minWidth: 130, textAlign: "left", padding: "12px 14px", borderRadius: 12, cursor: "pointer", fontFamily: "inherit",
+    border: `1.5px solid ${on ? "var(--pl-text)" : "var(--pl-border)"}`,
+    background: on ? "var(--pl-bg-shell)" : "var(--pl-surface)", color: "var(--pl-text)",
+  }) as const;
+  const swatchBox = { width: 15, height: 15, borderRadius: 4, border: "1px solid rgba(0,0,0,.15)", display: "inline-block" } as const;
 
   return (
     <div className="dash-pad" style={{ padding: 24, maxWidth: 560 }}>
@@ -139,6 +191,126 @@ export default function SettingsPanel({ customDomain, domainStatus }: SettingsPa
           </button>
         </div>
       )}
+
+      <div style={{ marginTop: 36, paddingTop: 28, borderTop: "1px solid var(--pl-border)" }}>
+        <h2 style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 16, fontWeight: 600, margin: "0 0 4px" }}>Theming</h2>
+        <p style={{ fontSize: 13, color: "var(--pl-text-muted)", margin: "0 0 16px" }}>
+          Set the accent colour and fonts used across your portal and your artists&apos; studio.
+        </p>
+
+        <form action={handleSaveTheme} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          <input type="hidden" name="accent" value={themeAccent} />
+          <input type="hidden" name="ink" value={themeInk} />
+          <input type="hidden" name="sidebar" value={themeSidebar} />
+          <input type="hidden" name="fontDisplay" value={themeDisplay} />
+          <input type="hidden" name="fontBody" value={themeBody} />
+
+          <div>
+            <div style={sectionLabel}>Accent colour</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              {ACCENT_SWATCHES.map(c => {
+                const on = themeAccent.toLowerCase() === c.toLowerCase();
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    title={c}
+                    aria-label={`Accent ${c}`}
+                    aria-pressed={on}
+                    onClick={() => setThemeAccent(c)}
+                    style={{ width: 30, height: 30, borderRadius: "50%", background: c, cursor: "pointer", border: `2px solid ${on ? "var(--pl-text)" : "transparent"}`, boxShadow: `0 0 0 2px ${on ? "var(--pl-bg-app)" : "transparent"}, 0 0 0 ${on ? "3px" : "1px"} ${on ? "var(--pl-text)" : "var(--pl-border)"}` }}
+                  />
+                );
+              })}
+              <label style={{ ...chip(false), padding: "6px 10px", position: "relative" }}>
+                <span style={{ ...swatchBox, width: 18, height: 18, background: previewAccent }} />
+                Custom
+                <input type="color" aria-label="Pick a custom accent colour" value={previewAccent} onChange={e => setThemeAccent(e.target.value.toUpperCase())} style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
+              </label>
+            </div>
+          </div>
+
+          {light && (
+            <div>
+              <div style={sectionLabel}>Ink &amp; canvas</div>
+              <p style={subLabel}>Dark tone for buttons, headers &amp; the studio sidebar.</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+                {INK_OPTIONS.map(o => (
+                  <button key={o.color} type="button" aria-pressed={themeInk === o.color} onClick={() => setThemeInk(o.color)} style={chip(themeInk === o.color)}>
+                    <span style={{ ...swatchBox, background: o.color }} />{o.name}
+                  </button>
+                ))}
+              </div>
+              <p style={subLabel}>Sidebar tint.</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                {SIDEBAR_OPTIONS.map(o => (
+                  <button key={o.color} type="button" aria-pressed={themeSidebar === o.color} onClick={() => setThemeSidebar(o.color)} style={chip(themeSidebar === o.color)}>
+                    <span style={{ ...swatchBox, background: o.color }} />{o.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <div style={sectionLabel}>Headline type</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {DISPLAY_FONT_CARDS.map(f => (
+                <button key={f.id} type="button" aria-pressed={themeDisplay === f.id} onClick={() => setThemeDisplay(f.id)} style={card(themeDisplay === f.id)}>
+                  <div style={{ fontFamily: f.stack, fontSize: 28, fontWeight: 600, lineHeight: 1 }}>Ag</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 550, marginTop: 6 }}>{f.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--pl-text-soft)" }}>{f.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={sectionLabel}>Body type</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {BODY_FONT_CARDS.map(f => (
+                <button key={f.id} type="button" aria-pressed={themeBody === f.id} onClick={() => setThemeBody(f.id)} style={card(themeBody === f.id)}>
+                  <div style={{ fontFamily: f.stack, fontSize: 28, lineHeight: 1 }}>Ag</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 550, marginTop: 6 }}>{f.label}</div>
+                  <div style={{ fontSize: 11, color: "var(--pl-text-soft)" }}>{f.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div
+            aria-label="Theme preview"
+            style={{ border: "1px solid var(--pl-border)", borderRadius: 12, overflow: "hidden", background: "var(--pl-surface)", fontFamily: BODY_FONT_CARDS.find(f => f.id === themeBody)?.stack }}
+          >
+            <div style={{ display: "flex" }}>
+              {light && <div style={{ width: 64, background: themeSidebar, borderRight: "1px solid var(--pl-border)" }} />}
+              <div style={{ padding: 16, flex: 1 }}>
+                <div style={{ fontFamily: DISPLAY_FONT_CARDS.find(f => f.id === themeDisplay)?.stack, fontSize: 18, fontWeight: 600, color: previewInk, marginBottom: 4 }}>
+                  Your gallery, your look
+                </div>
+                <div style={{ fontSize: 13, color: "var(--pl-text-muted)", marginBottom: 12 }}>
+                  This is how headings, body text and buttons will appear.
+                </div>
+                <span style={{ display: "inline-block", padding: "7px 14px", borderRadius: 9, background: previewInk, color: "var(--pl-on-solid)", fontSize: 13, fontWeight: 600, marginRight: 8 }}>Primary</span>
+                <span style={{ display: "inline-block", padding: "7px 14px", borderRadius: 9, background: previewAccent, color: onAccent(previewAccent), fontSize: 13, fontWeight: 600 }}>Accent</span>
+              </div>
+            </div>
+          </div>
+
+          {themeError && <div role="alert" style={{ fontSize: 13, color: "var(--pl-declined-fg)" }}>{themeError}</div>}
+          {themeSaved && <div role="status" style={{ fontSize: 13, color: "var(--pl-approved-fg)" }}>Theme saved. Reload to see it everywhere.</div>}
+
+          <div>
+            <button
+              type="submit"
+              disabled={themePending || !validAccent}
+              style={{ padding: "9px 16px", borderRadius: 9, border: "none", background: "var(--pl-accent)", color: "var(--pl-on-accent)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+            >
+              {themePending ? "Saving…" : "Save theme"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
