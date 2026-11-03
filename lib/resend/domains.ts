@@ -25,13 +25,19 @@ function apiKey() {
   return key;
 }
 
+class ResendApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+  }
+}
+
 async function resendFetch(path: string, init?: RequestInit) {
   const res = await fetch(`${RESEND_API}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${apiKey()}`, "Content-Type": "application/json", ...init?.headers },
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body?.message || `Resend API error (${res.status})`);
+  if (!res.ok) throw new ResendApiError(body?.message || `Resend API error (${res.status})`, res.status);
   return body;
 }
 
@@ -56,6 +62,12 @@ export async function refreshMailDomain(id: string): Promise<MailDomain> {
   return toMailDomain(await resendFetch(`/domains/${id}`));
 }
 
+/** Deletes the domain. One Resend no longer has (already removed in its dashboard) counts as deleted. */
 export async function deleteMailDomain(id: string): Promise<void> {
-  await resendFetch(`/domains/${id}`, { method: "DELETE" });
+  try {
+    await resendFetch(`/domains/${id}`, { method: "DELETE" });
+  } catch (err) {
+    if (err instanceof ResendApiError && err.status === 404) return;
+    throw err;
+  }
 }

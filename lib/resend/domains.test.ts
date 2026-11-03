@@ -56,6 +56,16 @@ describe("Resend domains", () => {
     expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].method).toBe("DELETE");
   });
 
+  it("treats a domain Resend no longer has as already deleted", async () => {
+    fetchMock.mockReturnValue(reply({ message: "Domain not found" }, 404));
+    await expect(deleteMailDomain("d1")).resolves.toBeUndefined();
+  });
+
+  it("still throws other delete failures", async () => {
+    fetchMock.mockReturnValue(reply({ message: "Internal error" }, 500));
+    await expect(deleteMailDomain("d1")).rejects.toThrow("Internal error");
+  });
+
   it("explains a missing API key", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
     await expect(createMailDomain("x.com")).rejects.toThrow("RESEND_API_KEY");
