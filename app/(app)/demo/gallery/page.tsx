@@ -20,6 +20,7 @@ export default function DemoGalleryPage() {
       auditLog={demoAuditLog}
       customDomain={null}
       domainStatus="none"
+      theme={{ mode: "light", accent: "#B5623C", ink: "#17150F", sidebar: "#F4F1EA", fontDisplay: "Newsreader", fontBody: "Geist" }}
     />
   );
 }

@@ -37,6 +37,7 @@ const config = {
 const baseProps = {
   submissions: [], exhibitions: [], exhibitionInvites: [], catalogue: [], catalogueArtists: [], contacts: [],
   frameJobs: [], payouts: [], auditLog: [], customDomain: null, domainStatus: "none",
+  theme: { mode: "light", accent: "#B5623C", ink: "#17150F", sidebar: "#F4F1EA", fontDisplay: "Newsreader", fontBody: "Geist" },
 };
 
 const setup = (props: Partial<React.ComponentProps<typeof DashboardShell>> = {}) =>
