@@ -488,6 +488,7 @@ export async function respondToExhibitionInvite(id: string, response: "accepted"
     .eq("id", id);
   if (error) throw error;
   revalidatePath("/studio");
+  revalidatePath("/dashboard");
 }
 
 // ── Catalogue ────────────────────────────────────────────────────────────
