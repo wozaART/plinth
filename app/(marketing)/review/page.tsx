@@ -21,7 +21,7 @@ const FEATURES = [
   { id: "submissions",     label: "Submission review",           desc: "Approve, decline or request changes on every artist submission — with required written feedback.",          dot: "#8A6A1E" },
   { id: "acknowledgement", label: "The acknowledgement workflow", desc: "Artists must open and confirm a decision before delivering — so no work arrives unannounced.",             dot: "#B04A3C" },
   { id: "passes",          label: "Drop-off passes",             desc: "Approved work gets a reference, delivery window and packing notes. The desk is expecting it.",              dot: "#6B8A4E" },
-  { id: "exhibitions",     label: "Exhibition planning",         desc: "Open calls, application tracking, slots and hang dates in one programme view.",                             dot: "#5A7894" },
+  { id: "exhibitions",     label: "Exhibition planning",         desc: "Open calls, application tracking, submission limits and hang dates in one programme view.",                             dot: "#5A7894" },
   { id: "catalogue",       label: "Catalogue & inventory",       desc: "Every work with a clear status — available, sold, reserved or on loan.",                                   dot: "#57534A" },
   { id: "collectors",      label: "Collector CRM",               desc: "Remember focus, history and last contact — keep relationships warm between shows.",                        dot: "#6E5A8A" },
   { id: "artist_submit",   label: "Artist submission flow",      desc: "A guided, four-step form so artists submit complete, well-presented work.",                                dot: "#8A6A1E" },

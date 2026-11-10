@@ -83,7 +83,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
         rules: input.rules,
         consignmentTermsText: input.consignmentTermsText ?? "",
         consignmentTermsPdfPath: null,
-        slots: input.slots,
+        maxWorksPerArtist: input.maxWorksPerArtist,
         filled: 0,
         applicants: 0,
         submissionDeadline: input.submissionDeadline,
@@ -236,7 +236,6 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         {visible.map((ex) => {
           const meta = EX_STATUS_META[ex.status];
-          const pct = ex.slots > 0 ? Math.round((ex.filled / ex.slots) * 100) : 0;
           return (
             <div
               key={ex.id}
@@ -253,18 +252,13 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
                   <div style={{ fontSize: 13, color: "var(--pl-text-muted)", marginTop: 4 }}>{ex.blurb}</div>
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)" }}>Slots filled</div>
-                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.1 }}>{ex.filled}<span style={{ fontSize: 13, fontWeight: 400, color: "var(--pl-text-eyebrow)" }}>/{ex.slots}</span></div>
+                  <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)" }}>Max works per artist</div>
+                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.1 }}>{ex.maxWorksPerArtist ?? "No limit"}</div>
                 </div>
               </div>
-              <div style={{ marginTop: 14 }}>
-                <div style={{ height: 5, borderRadius: 20, background: "var(--pl-border-strong)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: ex.status === "open" ? "var(--pl-approved-dot)" : ex.status === "planning" ? "var(--pl-pending-dot)" : ex.status === "hanging" ? "var(--pl-changes-dot)" : "var(--pl-text-faint)", borderRadius: 20 }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-                  <span style={{ fontSize: 11.5, color: "var(--pl-text-eyebrow)" }}>{ex.applicants} applicants</span>
-                  <span style={{ fontSize: 11.5, color: "var(--pl-text-eyebrow)" }}>{ex.slots - ex.filled} slots remaining</span>
-                </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
+                <span style={{ fontSize: 11.5, color: "var(--pl-text-eyebrow)" }}>{ex.applicants} applicants</span>
+                <span style={{ fontSize: 11.5, color: "var(--pl-text-eyebrow)" }}>{ex.filled} approved</span>
               </div>
             </div>
           );

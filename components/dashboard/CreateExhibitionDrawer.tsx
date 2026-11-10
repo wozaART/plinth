@@ -27,7 +27,7 @@ export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhi
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
       ...termsInput(form),
-      slots: Number(form.slots) || 0,
+      maxWorksPerArtist: Number(form.maxWorksPerArtist) >= 1 ? Math.floor(Number(form.maxWorksPerArtist)) : null,
       submissionDeadline: form.submissionDeadline,
       openingDate: form.openingDate,
       closingDate: form.closingDate,

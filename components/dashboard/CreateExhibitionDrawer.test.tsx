@@ -44,7 +44,7 @@ describe("CreateExhibitionDrawer", () => {
     expect(onCreate).not.toHaveBeenCalled();
   });
 
-  it("creates a group show with 8 slots by default", () => {
+  it("creates a group show with no works limit by default", () => {
     const { create, onCreate } = setup();
     type(/Title/, " Highveld Light ");
     fillDates();
@@ -60,7 +60,7 @@ describe("CreateExhibitionDrawer", () => {
       rules: "",
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
-      slots: 8,
+      maxWorksPerArtist: null,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
       closingDate: "2026-04-18",
@@ -78,7 +78,7 @@ describe("CreateExhibitionDrawer", () => {
     type(/Medium requirements/, " Oil ");
     type(/Size requirements/, " Max 150cm ");
     type(/Rules for entering/, " Two works max ");
-    type(/Slots/, "3");
+    type(/Maximum works per artist/, "3");
     type(/Online submission deadline/, "2026-01-30");
     type(/Delivery date/, "2026-03-02");
     type(/Opening date/, "2026-03-12");
@@ -95,7 +95,7 @@ describe("CreateExhibitionDrawer", () => {
       rules: "Two works max",
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
-      slots: 3,
+      maxWorksPerArtist: 3,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
       closingDate: "2026-04-18",
@@ -138,13 +138,13 @@ describe("CreateExhibitionDrawer", () => {
     expect(onCreate.mock.calls[0][0]).not.toHaveProperty("consignmentTermsPdfFile");
   });
 
-  it("treats a non-numeric slot count as 0", () => {
+  it("treats a blank works limit as no limit", () => {
     const { create, onCreate } = setup();
     type(/Title/, "X");
     fillDates();
-    type(/Slots/, "");
+    type(/Maximum works per artist/, "");
     fireEvent.click(create());
-    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ slots: 0 }));
+    expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ maxWorksPerArtist: null }));
   });
 
   it("closes from ×, Cancel and the scrim", () => {

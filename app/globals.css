@@ -313,3 +313,17 @@ select {
   background-repeat: no-repeat;
   background-position: right 14px center;
 }
+
+/* File inputs: use the app's solid button colours instead of the browser default. */
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 15px;
+  border: none;
+  border-radius: 9px;
+  background: var(--pl-solid);
+  color: var(--pl-on-solid);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+}

@@ -20,7 +20,7 @@ function toForm(ex: Exhibition): ExhibitionFormState {
     termsText: ex.consignmentTermsText,
     termsPdfFile: null,
     termsPdfPath: ex.consignmentTermsPdfPath,
-    slots: String(ex.slots),
+    maxWorksPerArtist: ex.maxWorksPerArtist != null ? String(ex.maxWorksPerArtist) : "",
     submissionDeadline: ex.submissionDeadline ?? "",
     openingDate: ex.openingDate ?? "",
     closingDate: ex.closingDate ?? "",
@@ -86,7 +86,7 @@ export default function ExhibitionDetailDrawer({
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
       ...termsInput(form),
-      slots: Number(form.slots) || 0,
+      maxWorksPerArtist: Number(form.maxWorksPerArtist) >= 1 ? Math.floor(Number(form.maxWorksPerArtist)) : null,
       submissionDeadline: form.submissionDeadline || null,
       openingDate: form.openingDate || null,
       closingDate: form.closingDate || null,
@@ -140,7 +140,8 @@ export default function ExhibitionDetailDrawer({
 
               <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
                 {[
-                  ["Slots", `${ex.filled}/${ex.slots} filled`],
+                  ["Works approved", ex.filled],
+                  ["Max works per artist", ex.maxWorksPerArtist ?? "No limit"],
                   ["Applicants", ex.applicants],
                   ["Theme", ex.theme || "—"],
                   ["Medium requirements", ex.mediumRequirements || "—"],

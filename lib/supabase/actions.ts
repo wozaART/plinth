@@ -108,7 +108,7 @@ export async function createSubmission(formData: FormData) {
   if (exhibitionId) {
     const { data: exhibition, error: exError } = await supabase
       .from("exhibitions")
-      .select("submission_deadline, access, consignment_terms_text, consignment_terms_pdf_path")
+      .select("submission_deadline, access, max_works_per_artist, consignment_terms_text, consignment_terms_pdf_path")
       .eq("id", exhibitionId)
       .single();
     if (exError) throw exError;
@@ -125,6 +125,18 @@ export async function createSubmission(formData: FormData) {
     }
     if (deadlinePassed(exhibition.submission_deadline)) {
       throw new Error("The submission deadline for this exhibition has passed.");
+    }
+    if (exhibition.max_works_per_artist != null) {
+      const { count, error: countError } = await supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("exhibition_id", exhibitionId)
+        .eq("artist_id", user.id)
+        .neq("status", "declined");
+      if (countError) throw countError;
+      if ((count ?? 0) >= exhibition.max_works_per_artist) {
+        throw new Error(`This exhibition accepts at most ${exhibition.max_works_per_artist} ${exhibition.max_works_per_artist === 1 ? "work" : "works"} per artist.`);
+      }
     }
     // The database enforces this too and snapshots the terms agreed to.
     if ((exhibition.consignment_terms_text || exhibition.consignment_terms_pdf_path) && !termsAck) {
@@ -279,7 +291,7 @@ export interface ExhibitionInput {
   // Typed terms or an uploaded PDF, never both: setting one clears the other.
   consignmentTermsText?: string;
   consignmentTermsPdfPath?: string | null;
-  slots: number;
+  maxWorksPerArtist: number | null;
   submissionDeadline: string | null;
   openingDate: string | null;
   closingDate: string | null;
@@ -320,7 +332,7 @@ function toExhibitionRow(input: Partial<ExhibitionInput>) {
     ...(input.sizeRequirements !== undefined && { size_requirements: input.sizeRequirements || null }),
     ...(input.rules !== undefined && { rules: input.rules || null }),
     ...termsRow(input),
-    ...(input.slots !== undefined && { slots: input.slots }),
+    ...(input.maxWorksPerArtist !== undefined && { max_works_per_artist: input.maxWorksPerArtist }),
     ...(input.submissionDeadline !== undefined && { submission_deadline: input.submissionDeadline }),
     ...(input.openingDate !== undefined && { opening_date: input.openingDate }),
     ...(input.closingDate !== undefined && { closing_date: input.closingDate }),
