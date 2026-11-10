@@ -143,7 +143,7 @@ export default function Home() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "11px 18px", marginBottom: 22 }}>
                 {[
                   ["Submission review", "Approve, decline, request changes"],
-                  ["Exhibition planning", "Open calls, slots, hang dates"],
+                  ["Exhibition planning", "Open calls, submission limits, hang dates"],
                   ["Catalogue & inventory", "Available, sold, on loan"],
                   ["Collector CRM", "Relationships, not spreadsheets"],
                 ].map(([title, sub]) => (

@@ -170,24 +170,24 @@ describe("StudioShell consignment terms", () => {
   const call = (over: Partial<OpenCall> = {}): OpenCall => ({
     id: "oc1", title: "Highveld Light", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
     theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
-    accepting: true, ...over,
+    maxWorksPerArtist: null, myWorkCount: 0, accepting: true, ...over,
   });
 
   // Walks the submit drawer to its last step.
   function reachStatementStep() {
     fireEvent.click(screen.getByRole("button", { name: "My work" }));
     fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
     fireEvent.change(screen.getByPlaceholderText("Work title"), { target: { value: "Dusk" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. Oil on canvas"), { target: { value: "Oil" } });
     fireEvent.change(screen.getByPlaceholderText("2024"), { target: { value: "2025" } });
     const file = new File(["x"], "w.png", { type: "image/png" });
     fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [file] } });
-    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
     fireEvent.change(screen.getByPlaceholderText("e.g. 80"), { target: { value: "80" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. 60"), { target: { value: "60" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. 4"), { target: { value: "4" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. R 18 000"), { target: { value: "R 5000" } });
-    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Review/ }));
   }
 
   it("blocks submitting until the artist agrees to typed terms", () => {
@@ -222,11 +222,50 @@ describe("StudioShell consignment terms", () => {
     expect(dialog.textContent).toContain("Max 3 works.");
     expect(dialog.textContent).toContain("Commission is 40%.");
     expect(screen.queryByPlaceholderText("Work title")).toBeNull();
+    expect(screen.queryByText(/How many works/)).toBeNull();
     const accept = screen.getByRole("button", { name: /Accept & continue/ }) as HTMLButtonElement;
     expect(accept.disabled).toBe(true);
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(accept);
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(screen.getByPlaceholderText("Work title")).toBeTruthy();
+    expect(screen.getByText(/How many works are you submitting/)).toBeTruthy();
+  });
+
+  it("caps the work count at what the artist has left for the exhibition", () => {
+    setup({ openCalls: [call({ maxWorksPerArtist: 3, myWorkCount: 2 })] });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    expect(screen.getByText(/you can add 1 more/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "More works" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("blocks submitting once the artist has reached the exhibition's limit", () => {
+    setup({ openCalls: [call({ maxWorksPerArtist: 2, myWorkCount: 2 })] });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    expect(screen.getByText(/already submitted the maximum of 2 works/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Continue/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("asks how many works first, then one form per work", () => {
+    setup({ openCalls: [call()] });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    fireEvent.click(screen.getByRole("button", { name: "More works" }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    expect(screen.getByText(/Work 1 of 2/)).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText("Work title"), { target: { value: "Dusk" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Oil on canvas"), { target: { value: "Oil" } });
+    fireEvent.change(screen.getByPlaceholderText("2024"), { target: { value: "2025" } });
+    fireEvent.change(document.querySelector('input[type="file"]')!, { target: { files: [new File(["x"], "w.png", { type: "image/png" })] } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. 80"), { target: { value: "80" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. 60"), { target: { value: "60" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. 4"), { target: { value: "4" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. R 18 000"), { target: { value: "R 5000" } });
+    fireEvent.click(screen.getByRole("button", { name: /Next work/ }));
+    expect(screen.getByText(/Work 2 of 2/)).toBeTruthy();
+    // Medium and year carry over from the previous work.
+    expect((screen.getByPlaceholderText("e.g. Oil on canvas") as HTMLInputElement).value).toBe("Oil");
+    expect((screen.getByPlaceholderText("Work title") as HTMLInputElement).value).toBe("");
   });
 });

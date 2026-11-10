@@ -176,7 +176,7 @@ describe("getExhibitionsWithCounts", () => {
     medium_requirements: null,
     size_requirements: null,
     rules: null,
-    slots: 10,
+    max_works_per_artist: 10,
     submission_deadline: null,
     opening_date: null,
     closing_date: null,
@@ -204,7 +204,7 @@ describe("getExhibitionsWithCounts", () => {
       `Submissions close ${shortDate("2026-02-01")}`,
       "Dates to be confirmed",
     ]);
-    expect(list[0]).toMatchObject({ filled: 3, applicants: 7, blurb: "", slots: 10 });
+    expect(list[0]).toMatchObject({ filled: 3, applicants: 7, blurb: "", maxWorksPerArtist: 10 });
     expect(list[1]).toMatchObject({ filled: 0, applicants: 0 });
   });
 

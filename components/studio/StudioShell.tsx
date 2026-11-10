@@ -146,62 +146,133 @@ function parseDim(dim?: string | null): [string, string, string] {
   return [nums[0] ?? "", nums[1] ?? "", nums[2] ?? ""];
 }
 
-function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState({
-    title: editing?.title ?? "",
-    medium: editing?.medium ?? "",
-    height: parseDim(editing?.dim)[0],
-    width: parseDim(editing?.dim)[1],
-    depth: parseDim(editing?.dim)[2],
-    year: editing?.year ? String(editing.year) : "",
-    price: editing?.price != null ? String(editing.price) : "",
-    exhibitionId: initialCallId ?? openCalls.find(o => o.accepting)?.id ?? "",
-    statement: editing?.statement ?? "",
+const MAX_WORKS_PER_BATCH = 20;
+
+interface WorkDraft {
+  title: string;
+  medium: string;
+  year: string;
+  height: string;
+  width: string;
+  depth: string;
+  price: string;
+  statement: string;
+  image: File | null;
+}
+
+type SubmitItem = { formData: FormData; image: File | null };
+
+const emptyDraft = (): WorkDraft => ({ title: "", medium: "", year: "", height: "", width: "", depth: "", price: "", statement: "", image: null });
+
+function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (items: SubmitItem[]) => void }) {
+  // New submissions run: how many works → one form per work → review.
+  // Editing skips straight to the single work's form.
+  const [phase, setPhase] = useState<"count" | "work" | "review">(editing ? "work" : "count");
+  const [wantedCount, setCount] = useState(1);
+  const [index, setIndex] = useState(0);
+  const [works, setWorks] = useState<WorkDraft[]>(() => {
+    if (!editing) return [emptyDraft()];
+    const [height, width, depth] = parseDim(editing.dim);
+    return [{ title: editing.title ?? "", medium: editing.medium ?? "", year: editing.year ? String(editing.year) : "", height, width, depth, price: editing.price != null ? String(editing.price) : "", statement: editing.statement ?? "", image: null }];
   });
-  const [image, setImage] = useState<File | null>(null);
+  const [exhibitionId, setExhibitionId] = useState(initialCallId ?? openCalls.find(o => o.accepting)?.id ?? "");
   const [imageError, setImageError] = useState<string | null>(null);
   const [rulesAck, setRulesAck] = useState(false);
   // Remembers which exhibition the terms were agreed for, so switching the
   // exhibition drops the agreement instead of carrying it over.
   const [termsAckFor, setTermsAckFor] = useState<string | null>(null);
+
+  const work = works[index];
+  const image = work.image;
   const imagePreview = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
   useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
-  const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
+  const selectedCall = openCalls.find(o => o.id === exhibitionId);
   // Rules and terms already accepted in the modal for this call need no second prompt.
-  const preAccepted = Boolean(acceptedCallId) && acceptedCallId === form.exhibitionId;
+  const preAccepted = Boolean(acceptedCallId) && acceptedCallId === exhibitionId;
   const needsRulesAck = !editing && Boolean(selectedCall?.rules) && !preAccepted;
   const needsTermsAck = !editing && Boolean(selectedCall && hasConsignmentTerms(selectedCall)) && !preAccepted;
-  const termsAck = preAccepted || (termsAckFor !== null && termsAckFor === form.exhibitionId);
-  const hasImage = Boolean(image || editing?.imageUrl);
-  const priceNum = Number(form.price.replace(/[^0-9.]/g, ""));
-  const salePrice = priceNum > 0 ? formatCurrency(priceNum * (1 + commissionRatePct / 100), "ZAR") : null;
-  const stepValid =
-    step === 1 ? Boolean(form.title.trim() && form.medium.trim() && form.year.trim() && hasImage) :
-    step === 2 ? Boolean(Number(form.height) > 0 && Number(form.width) > 0 && Number(form.depth) > 0 && priceNum > 0) :
-    (!needsRulesAck || rulesAck) && (!needsTermsAck || termsAck);
-  const canAdvance = stepValid;
+  const termsAck = preAccepted || (termsAckFor !== null && termsAckFor === exhibitionId);
+  // The exhibition may cap how many works one artist can submit; earlier ones count against it.
+  const remainingWorks = !editing && selectedCall?.maxWorksPerArtist != null ? Math.max(0, selectedCall.maxWorksPerArtist - selectedCall.myWorkCount) : null;
+  const maxCount = Math.min(MAX_WORKS_PER_BATCH, remainingWorks ?? MAX_WORKS_PER_BATCH);
+  const count = Math.max(1, Math.min(wantedCount, maxCount));
+
+  const priceOf = (w: WorkDraft) => Number(w.price.replace(/[^0-9.]/g, ""));
+  const workValid = (w: WorkDraft) =>
+    Boolean(w.title.trim() && w.medium.trim() && w.year.trim() && (w.image || editing?.imageUrl) && Number(w.height) > 0 && Number(w.width) > 0 && Number(w.depth) > 0 && priceOf(w) > 0);
+  const salePrice = priceOf(work) > 0 ? formatCurrency(priceOf(work) * (1 + commissionRatePct / 100), "ZAR") : null;
+
+  const lastWork = index === count - 1;
+  const canAdvance =
+    phase === "count" ? remainingWorks !== 0 :
+    phase === "work" ? workValid(work) :
+    works.every(workValid) && (!needsRulesAck || rulesAck) && (!needsTermsAck || termsAck);
+
+  // Editing is one step; otherwise: count + N works + review.
+  const totalSteps = editing ? 1 : count + 2;
+  const stepNo = phase === "count" ? 1 : phase === "work" ? index + 2 : count + 2;
+  const stepLabel = phase === "count" ? "How many works" : phase === "work" ? (editing ? "Work details" : `Work ${index + 1} of ${count}`) : "Review & submit";
+
+  function patch(p: Partial<WorkDraft>) {
+    setWorks(ws => ws.map((w, i) => (i === index ? { ...w, ...p } : w)));
+  }
+
+  function goToWork(i: number) {
+    setImageError(null);
+    setIndex(i);
+    setPhase("work");
+  }
 
   function next() {
-    if (step < 3) {
-      setStep(step + 1);
+    if (!canAdvance) return;
+    if (phase === "count") {
+      // Resize the drafts to the chosen count, keeping anything already typed.
+      setWorks(ws => Array.from({ length: count }, (_, i) => ws[i] ?? emptyDraft()));
+      goToWork(0);
       return;
     }
-    if (!canAdvance) return;
-    const formData = new FormData();
-    formData.set("title", form.title.trim());
-    formData.set("medium", form.medium);
-    formData.set("dim", `${form.height} × ${form.width} × ${form.depth} cm`);
-    formData.set("year", form.year);
-    formData.set("price", form.price);
-    formData.set("exhibitionId", form.exhibitionId);
-    formData.set("statement", form.statement);
-    formData.set("rulesAck", String(rulesAck || preAccepted));
-    formData.set("termsAck", String(termsAck));
-    onSubmit(formData, image);
+    if (phase === "work") {
+      if (editing) return submit();
+      if (lastWork) { setPhase("review"); return; }
+      // Works in a batch usually share a medium and year, so carry them forward.
+      setWorks(ws => ws.map((w, i) => (i === index + 1 && !w.medium && !w.year ? { ...w, medium: work.medium, year: work.year } : w)));
+      goToWork(index + 1);
+      return;
+    }
+    submit();
   }
-  const stepLabels = ["Work details", "Dimensions & price", "Statement"];
+
+  function back() {
+    if (phase === "review") goToWork(count - 1);
+    else if (phase === "work" && index > 0) goToWork(index - 1);
+    else setPhase("count");
+  }
+
+  function submit() {
+    onSubmit(works.map(w => {
+      const formData = new FormData();
+      formData.set("title", w.title.trim());
+      formData.set("medium", w.medium);
+      formData.set("dim", `${w.height} × ${w.width} × ${w.depth} cm`);
+      formData.set("year", w.year);
+      formData.set("price", w.price);
+      formData.set("exhibitionId", exhibitionId);
+      formData.set("statement", w.statement);
+      formData.set("rulesAck", String(rulesAck || preAccepted));
+      formData.set("termsAck", String(termsAck));
+      return { formData, image: w.image };
+    }));
+  }
+
+  const buttonLabel =
+    phase === "count" ? "Continue →" :
+    phase === "work" ? (editing ? "Save changes" : lastWork ? "Review →" : "Next work →") :
+    count === 1 ? "Submit for review" : `Submit ${count} works for review`;
+  const showBack = phase !== "count" && !(editing && phase === "work");
+  const fieldLabel: CSSProperties = { fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" };
+  const fieldInput: CSSProperties = { background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", minWidth: 0, width: "100%" };
+  const stepperBtn: CSSProperties = { width: 44, height: 44, borderRadius: "50%", border: "1px solid var(--pl-border)", background: "var(--pl-sidebar)", fontSize: 20, color: "var(--pl-text-secondary)" };
 
   return (
     <div className="anim-scrim" style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex" }}>
@@ -210,94 +281,123 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, i
         <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--pl-border)", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, background: "var(--pl-bg-app)" }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 600 }}>{editing ? "Edit submission" : "Submit work"}</div>
-            <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 2 }}>Step {step} of 3 · {stepLabels[step - 1]}</div>
+            <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 2 }}>{editing ? stepLabel : `Step ${stepNo} of ${totalSteps} · ${stepLabel}`}</div>
           </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--pl-border)", background: "none", cursor: "pointer", fontSize: 17, color: "var(--pl-text-soft)" }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--pl-border)", background: "none", cursor: "pointer", fontSize: 17, color: "var(--pl-text-soft)" }}>×</button>
         </div>
 
-        <div style={{ height: 3, background: "var(--pl-border)" }}><div style={{ width: `${(step / 3) * 100}%`, height: "100%", background: "var(--pl-accent)", borderRadius: 2 }} /></div>
+        <div style={{ height: 3, background: "var(--pl-border)" }}><div style={{ width: `${(stepNo / totalSteps) * 100}%`, height: "100%", background: "var(--pl-accent)", borderRadius: 2, transition: "width .2s" }} /></div>
 
         <div className="dash-pad" style={{ padding: 24, flex: 1 }}>
-          {step === 1 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {phase === "count" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 600 }}>How many works are you submitting?</div>
+                <div style={{ fontSize: 13, color: "var(--pl-text-soft)", marginTop: 4, lineHeight: 1.5 }}>You&apos;ll add the details for each work one at a time.</div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 22, padding: "10px 0" }}>
+                <button type="button" aria-label="Fewer works" onClick={() => setCount(() => Math.max(1, count - 1))} disabled={count <= 1} style={{ ...stepperBtn, cursor: count <= 1 ? "not-allowed" : "pointer", opacity: count <= 1 ? 0.45 : 1 }}>−</button>
+                <div aria-live="polite" style={{ minWidth: 64, textAlign: "center", fontFamily: "var(--font-newsreader, serif)", fontSize: 52, fontWeight: 500, lineHeight: 1 }}>{count}</div>
+                <button type="button" aria-label="More works" onClick={() => setCount(() => Math.min(maxCount, count + 1))} disabled={count >= maxCount} style={{ ...stepperBtn, cursor: count >= maxCount ? "not-allowed" : "pointer", opacity: count >= maxCount ? 0.45 : 1 }}>+</button>
+              </div>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Title</span>
-                <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Work title" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Medium</span>
-                <input value={form.medium} onChange={e => setForm(f => ({ ...f, medium: e.target.value }))} placeholder="e.g. Oil on canvas" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Year</span>
-                <input value={form.year} onChange={e => setForm(f => ({ ...f, year: e.target.value }))} placeholder="2024" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
-              </label>
-              {!editing && <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Submitting for</span>
-                <select value={form.exhibitionId} onChange={e => { setForm(f => ({ ...f, exhibitionId: e.target.value })); setRulesAck(false); }} style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", appearance: "none" }}>
+                <span style={fieldLabel}>Submitting for</span>
+                <select value={exhibitionId} onChange={e => { setExhibitionId(e.target.value); setRulesAck(false); }} style={{ ...fieldInput, appearance: "none" }}>
                   <option value="">Open submissions</option>
                   {openCalls.filter(o => o.accepting).map(o => (
                     <option key={o.id} value={o.id}>{o.title}</option>
                   ))}
                 </select>
-              </label>}
-              {!editing && selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
+              </label>
+              {selectedCall?.maxWorksPerArtist != null && (
+                <div style={{ fontSize: 12.5, color: remainingWorks === 0 ? "var(--pl-declined-fg)" : "var(--pl-text-soft)", lineHeight: 1.55 }}>
+                  {remainingWorks === 0
+                    ? `You've already submitted the maximum of ${selectedCall.maxWorksPerArtist} ${selectedCall.maxWorksPerArtist === 1 ? "work" : "works"} to this exhibition.`
+                    : `This exhibition accepts up to ${selectedCall.maxWorksPerArtist} ${selectedCall.maxWorksPerArtist === 1 ? "work" : "works"} per artist${selectedCall.myWorkCount > 0 ? ` — you can add ${remainingWorks} more` : ""}.`}
+                </div>
+              )}
+              {selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
                   {selectedCall.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {selectedCall.theme}</div>}
                   {selectedCall.mediumRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {selectedCall.mediumRequirements}</div>}
                   {selectedCall.sizeRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {selectedCall.sizeRequirements}</div>}
                 </div>
               )}
+            </div>
+          )}
+
+          {phase === "work" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>{editing?.imageUrl ? "Replace image" : "Image"}</span>
+                <span style={fieldLabel}>Title</span>
+                <input value={work.title} onChange={e => patch({ title: e.target.value })} placeholder="Work title" style={fieldInput} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12 }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={fieldLabel}>Medium</span>
+                  <input value={work.medium} onChange={e => patch({ medium: e.target.value })} placeholder="e.g. Oil on canvas" style={fieldInput} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <span style={fieldLabel}>Year</span>
+                  <input value={work.year} onChange={e => patch({ year: e.target.value })} placeholder="2024" style={fieldInput} />
+                </label>
+              </div>
+              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <span style={fieldLabel}>{editing?.imageUrl ? "Replace image" : "Image"}</span>
                 {(imagePreview || editing?.imageUrl) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={imagePreview ?? editing?.imageUrl} alt="" style={{ width: "100%", maxHeight: 200, objectFit: "contain", background: "var(--pl-sidebar)", borderRadius: 9 }} />
                 )}
-                <input type="file" accept="image/*" required onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_IMAGE_BYTES) { e.target.value = ""; setImageError("Image must be 10 MB or smaller."); setImage(null); return; } setImageError(null); setImage(f); }} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
+                <input key={index} type="file" accept="image/*" required onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > MAX_IMAGE_BYTES) { e.target.value = ""; setImageError("Image must be 10 MB or smaller."); patch({ image: null }); return; } setImageError(null); patch({ image: f }); }} style={{ fontSize: 13, color: "var(--pl-text-secondary)" }} />
                 {imageError && <span style={{ fontSize: 12, color: "var(--pl-declined-fg)" }}>{imageError}</span>}
               </label>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Height (cm)</span>
-                  <input inputMode="decimal" value={form.height} onChange={e => setForm(f => ({ ...f, height: e.target.value }))} placeholder="e.g. 80" style={{ minWidth: 0, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
+                  <span style={fieldLabel}>Height (cm)</span>
+                  <input inputMode="decimal" value={work.height} onChange={e => patch({ height: e.target.value })} placeholder="e.g. 80" style={fieldInput} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Width (cm)</span>
-                  <input inputMode="decimal" value={form.width} onChange={e => setForm(f => ({ ...f, width: e.target.value }))} placeholder="e.g. 60" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", minWidth: 0 }} />
+                  <span style={fieldLabel}>Width (cm)</span>
+                  <input inputMode="decimal" value={work.width} onChange={e => patch({ width: e.target.value })} placeholder="e.g. 60" style={fieldInput} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Depth (cm)</span>
-                  <input inputMode="decimal" value={form.depth} onChange={e => setForm(f => ({ ...f, depth: e.target.value }))} placeholder="e.g. 4" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", minWidth: 0 }} />
+                  <span style={fieldLabel}>Depth (cm)</span>
+                  <input inputMode="decimal" value={work.depth} onChange={e => patch({ depth: e.target.value })} placeholder="e.g. 4" style={fieldInput} />
                 </label>
               </div>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Asking price (excl. commission)</span>
-                <input value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="e.g. R 18 000" style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)" }} />
+                <span style={fieldLabel}>Asking price (excl. commission)</span>
+                <input value={work.price} onChange={e => patch({ price: e.target.value })} placeholder="e.g. R 18 000" style={fieldInput} />
               </label>
               {salePrice && (
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13.5, color: "var(--pl-text)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
-                  <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Sale price to collectors</span>
+                  <span style={fieldLabel}>Sale price to collectors</span>
                   <strong>{salePrice}</strong>
                 </div>
               )}
               <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
                 {commissionNote}
               </div>
+              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <span style={fieldLabel}>Artist statement (optional)</span>
+                <textarea value={work.statement} onChange={e => patch({ statement: e.target.value })} rows={4} placeholder="Briefly describe the work — your intent, materials, series context. 80–150 words is ideal." style={{ ...fieldInput, resize: "none" }} />
+              </label>
             </div>
           )}
 
-          {step === 3 && (
+          {phase === "review" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--pl-text-eyebrow)" }}>Artist statement (optional)</span>
-                <textarea value={form.statement} onChange={e => setForm(f => ({ ...f, statement: e.target.value }))} rows={5} placeholder="Briefly describe the work — your intent, materials, series context. 80–150 words is ideal." style={{ background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", resize: "none" }} />
-              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {works.map((w, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--pl-sidebar)", borderRadius: 9, padding: "11px 14px" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 550, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {w.title}</div>
+                      <div style={{ fontSize: 12, color: "var(--pl-text-soft)", marginTop: 2 }}>{w.medium}, {w.year} · {w.height} × {w.width} × {w.depth} cm</div>
+                    </div>
+                    <button type="button" onClick={() => goToWork(i)} style={{ fontSize: 12.5, background: "none", border: "none", color: "var(--pl-text-secondary)", textDecoration: "underline", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                  </div>
+                ))}
+              </div>
               {needsRulesAck && selectedCall && (
                 <div style={{ background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
                   <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55, marginBottom: 10 }}>
@@ -314,20 +414,20 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, i
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--pl-text-secondary)", marginBottom: 8 }}>Consignment terms for {selectedCall.title}</div>
                   <ConsignmentTermsView text={selectedCall.consignmentTermsText} pdfPath={selectedCall.consignmentTermsPdfPath} maxHeight={180} />
                   <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer", marginTop: 12 }}>
-                    <input type="checkbox" checked={termsAck} onChange={e => setTermsAckFor(e.target.checked ? form.exhibitionId : null)} style={{ marginTop: 2 }} />
+                    <input type="checkbox" checked={termsAck} onChange={e => setTermsAckFor(e.target.checked ? exhibitionId : null)} style={{ marginTop: 2 }} />
                     <span style={{ fontSize: 12.5, color: "var(--pl-text-secondary)", lineHeight: 1.5 }}>I have read and agree to the consignment terms for this exhibition.</span>
                   </label>
                 </div>
               )}
-              <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55 }}>After submitting, the gallery will review your work and respond with either an approval (including a drop-off pass) or a note explaining their decision.</div>
+              <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55 }}>After submitting, the gallery will review your {count === 1 ? "work" : "works"} and respond with either an approval (including a drop-off pass) or a note explaining their decision.</div>
             </div>
           )}
         </div>
 
         <div style={{ padding: "16px 24px", borderTop: "1px solid var(--pl-border)", display: "flex", gap: 10 }}>
-          {step > 1 && <button onClick={() => setStep(step - 1)} style={{ flex: 1, padding: "12px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Back</button>}
+          {showBack && <button onClick={back} style={{ flex: 1, padding: "12px", background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Back</button>}
           <button onClick={next} disabled={!canAdvance} style={{ flex: 2, padding: "12px", background: canAdvance ? "var(--pl-solid)" : "var(--pl-border-strong)", color: canAdvance ? "var(--pl-on-solid)" : "var(--pl-text-faint)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: canAdvance ? "pointer" : "not-allowed" }}>
-            {step < 3 ? "Continue →" : editing ? "Save changes" : "Submit for review"}
+            {buttonLabel}
           </button>
         </div>
       </div>
@@ -488,27 +588,33 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
     return path;
   }
 
-  async function handleSubmitWork(formData: FormData, image: File | null) {
+  async function handleSubmitWork(items: { formData: FormData; image: File | null }[]) {
     const editing = editingWork;
     setShowSubmit(false);
     setEditingWork(null);
+    let done = 0;
+    let lastTitle = "";
     try {
-      const submissionId = editing?.id ?? crypto.randomUUID();
-      if (image) formData.set("imagePath", await uploadSubmissionImage(submissionId, image));
-      if (editing) {
-        const result = await updateSubmission(editing.id, formData);
-        setWorks(prev => prev.map(w => w.id === editing.id ? { ...w, status: "pending", title: result.title } : w));
-        setToast(`"${result.title}" updated.`);
-        router.refresh();
-      } else {
-        formData.set("id", submissionId);
-        const result = await createSubmission(formData);
-        setToast(`"${result.title}" submitted for review.`);
-        router.refresh();
+      for (const { formData, image } of items) {
+        const submissionId = editing?.id ?? crypto.randomUUID();
+        if (image) formData.set("imagePath", await uploadSubmissionImage(submissionId, image));
+        if (editing) {
+          const result = await updateSubmission(editing.id, formData);
+          setWorks(prev => prev.map(w => w.id === editing.id ? { ...w, status: "pending", title: result.title } : w));
+          lastTitle = result.title;
+        } else {
+          formData.set("id", submissionId);
+          lastTitle = (await createSubmission(formData)).title;
+        }
+        done++;
       }
+      if (editing) setToast(`"${lastTitle}" updated.`);
+      else setToast(done === 1 ? `"${lastTitle}" submitted for review.` : `${done} works submitted for review.`);
     } catch (err) {
-      setToast(err instanceof Error && err.message ? err.message : "Something went wrong submitting your work.");
+      const msg = err instanceof Error && err.message ? err.message : "Something went wrong submitting your work.";
+      setToast(done > 0 ? `${done} of ${items.length} works submitted. ${msg}` : msg);
     }
+    router.refresh();
     setTimeout(() => setToast(null), 3500);
   }
 
@@ -846,7 +952,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
           {tab === "settings" && (
             isGalleryOwner
               ? <ProfileSwitcher current="artist" />
-              : <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 16, padding: "22px 24px", maxWidth: 720, fontSize: 13, color: "var(--pl-text-muted)" }}>No settings to manage yet. If you also run a gallery, sign in from the Gallery tab to set it up and you can switch between profiles here.</div>
+              : <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 16, padding: "22px 24px", maxWidth: 720, fontSize: 13, color: "var(--pl-text-muted)" }}>No settings to manage yet.</div>
           )}
           {tab === "profile" && <ProfilePanel initial={profile} onNotify={message => { setToast(message); setTimeout(() => setToast(null), 3000); }} />}
         </div>

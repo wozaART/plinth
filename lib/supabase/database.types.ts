@@ -438,7 +438,7 @@ export type Database = {
           opening_date: string | null
           rules: string | null
           size_requirements: string | null
-          slots: number
+          max_works_per_artist: number | null
           status: string
           submission_deadline: string | null
           theme: string | null
@@ -459,7 +459,7 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
-          slots?: number
+          max_works_per_artist?: number | null
           status?: string
           submission_deadline?: string | null
           theme?: string | null
@@ -480,7 +480,7 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
-          slots?: number
+          max_works_per_artist?: number | null
           status?: string
           submission_deadline?: string | null
           theme?: string | null

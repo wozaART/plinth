@@ -31,7 +31,7 @@ export interface ExhibitionFormState {
   termsPdfFile: File | null;
   // Path of the PDF already attached to the exhibition, if any.
   termsPdfPath: string | null;
-  slots: string;
+  maxWorksPerArtist: string;
   submissionDeadline: string;
   openingDate: string;
   closingDate: string;
@@ -69,7 +69,7 @@ export const EMPTY_EXHIBITION_FORM: ExhibitionFormState = {
   termsText: "",
   termsPdfFile: null,
   termsPdfPath: null,
-  slots: "8",
+  maxWorksPerArtist: "",
   submissionDeadline: "",
   openingDate: "",
   closingDate: "",
@@ -236,8 +236,8 @@ export default function ExhibitionFormFields({
       </div>
 
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={labelStyle}>Slots</span>
-        <input type="number" min={0} value={form.slots} onChange={(e) => onChange({ slots: e.target.value })} style={inputStyle} />
+        <span style={labelStyle}>Maximum works per artist</span>
+        <input type="number" min={1} value={form.maxWorksPerArtist} placeholder="No limit" onChange={(e) => onChange({ maxWorksPerArtist: e.target.value })} style={inputStyle} />
       </label>
 
       <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>

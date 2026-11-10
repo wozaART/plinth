@@ -17,8 +17,8 @@ vi.mock("@/lib/supabase/actions", () => h);
 import ExhibitionsPanel from "./ExhibitionsPanel";
 
 const data = [
-  exhibition({ id: "e1", title: "Highveld Light", status: "open", slots: 10, filled: 4, applicants: 7 }),
-  exhibition({ id: "e2", title: "Quiet Rooms", type: "solo", status: "planning", slots: 1, filled: 0, applicants: 0, blurb: "" }),
+  exhibition({ id: "e1", title: "Highveld Light", status: "open", maxWorksPerArtist: 3, filled: 4, applicants: 7 }),
+  exhibition({ id: "e2", title: "Quiet Rooms", type: "solo", status: "planning", maxWorksPerArtist: null, filled: 0, applicants: 0, blurb: "" }),
   exhibition({ id: "e3", title: "Old Show", status: "archived" }),
 ];
 
@@ -43,17 +43,18 @@ describe("ExhibitionsPanel list", () => {
     expect(screen.getByRole("button", { name: "Showing archived" })).toBeTruthy();
   });
 
-  it("shows status, slots filled, applicants and remaining slots", () => {
+  it("shows status, max works per artist, applicants and approved works", () => {
     setup();
     expect(screen.getByText("Open call")).toBeTruthy();
     expect(screen.getByText("Planning")).toBeTruthy();
     expect(screen.getByText("7 applicants")).toBeTruthy();
-    expect(screen.getByText("6 slots remaining")).toBeTruthy();
+    expect(screen.getByText("4 approved")).toBeTruthy();
+    expect(screen.getAllByText("Max works per artist")).toHaveLength(2);
   });
 
-  it("handles an exhibition with no slots without dividing by zero", () => {
-    render(<ExhibitionsPanel data={[exhibition({ slots: 0, filled: 0 })]} invites={[]} contacts={[]} />);
-    expect(screen.getByText("0 slots remaining")).toBeTruthy();
+  it("shows no limit when an exhibition has no works cap", () => {
+    render(<ExhibitionsPanel data={[exhibition({ maxWorksPerArtist: null, filled: 0 })]} invites={[]} contacts={[]} />);
+    expect(screen.getByText("No limit")).toBeTruthy();
   });
 });
 
@@ -73,7 +74,7 @@ describe("ExhibitionsPanel creating", () => {
     create();
     expect(screen.getByText("Fresh Show")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Create exhibition" })).toBeNull();
-    await waitFor(() => expect(h.createExhibition).toHaveBeenCalledWith(expect.objectContaining({ title: "Fresh Show", type: "group", slots: 8 })));
+    await waitFor(() => expect(h.createExhibition).toHaveBeenCalledWith(expect.objectContaining({ title: "Fresh Show", type: "group", maxWorksPerArtist: null })));
   });
 
   it("removes it again and explains when saving fails", async () => {

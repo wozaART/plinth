@@ -353,7 +353,7 @@ describe("contacts and invites", () => {
 describe("exhibitions", () => {
   const base = {
     title: "Spring", type: "group" as const, access: "open" as const, blurb: "", theme: "", mediumRequirements: "",
-    sizeRequirements: "", rules: "", slots: 10, submissionDeadline: null, openingDate: null,
+    sizeRequirements: "", rules: "", maxWorksPerArtist: 10, submissionDeadline: null, openingDate: null,
     closingDate: null, deliveryDate: null,
   };
 
@@ -379,14 +379,14 @@ describe("exhibitions", () => {
       title: "Spring",
       blurb: null,
       medium_requirements: null,
-      slots: 10,
+      max_works_per_artist: 10,
       submission_deadline: null,
     });
   });
 
   it("updateExhibition only sends the fields provided", async () => {
-    await actions.updateExhibition("e1", { title: "New", slots: 3 });
-    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ title: "New", slots: 3 });
+    await actions.updateExhibition("e1", { title: "New", maxWorksPerArtist: 3 });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ title: "New", max_works_per_artist: 3 });
   });
 
   it("typed consignment terms clear any PDF, and vice versa", async () => {

@@ -44,7 +44,7 @@ export interface Exhibition {
   rules: string;
   consignmentTermsText: string;
   consignmentTermsPdfPath: string | null;
-  slots: number;
+  maxWorksPerArtist: number | null;
   filled: number;
   applicants: number;
   submissionDeadline: string | null;
@@ -227,6 +227,9 @@ export interface OpenCall {
   rules: string;
   consignmentTermsText: string;
   consignmentTermsPdfPath: string | null;
+  maxWorksPerArtist: number | null;
+  // Works this artist has already submitted to the call (declined ones don't count).
+  myWorkCount: number;
   accepting: boolean;
 }
 

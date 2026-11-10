@@ -134,7 +134,7 @@ export async function getExhibitionsWithCounts(
       rules: e.rules ?? "",
       consignmentTermsText: e.consignment_terms_text ?? "",
       consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
-      slots: e.slots,
+      maxWorksPerArtist: e.max_works_per_artist,
       filled: c?.filled ?? 0,
       applicants: c?.applicants ?? 0,
       submissionDeadline: e.submission_deadline,
@@ -492,7 +492,7 @@ export async function getArtistPayouts(supabase: Client, artistId: string, galle
 // Closed (invite-only) exhibitions appear only for artists who have accepted
 // an invitation to them.
 export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string, artistId: string): Promise<OpenCall[]> {
-  const [{ data, error }, { data: invites, error: inviteError }] = await Promise.all([
+  const [{ data, error }, { data: invites, error: inviteError }, { data: mine, error: mineError }] = await Promise.all([
     supabase
       .from("exhibitions")
       .select("*")
@@ -500,9 +500,14 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
       .neq("status", "archived")
       .order("created_at", { ascending: true }),
     supabase.from("exhibition_invites").select("exhibition_id").eq("artist_id", artistId).eq("status", "accepted"),
+    supabase.from("submissions").select("exhibition_id").eq("artist_id", artistId).neq("status", "declined"),
   ]);
   if (error) throw error;
   if (inviteError) throw inviteError;
+  if (mineError) throw mineError;
+
+  const myCounts = new Map<string, number>();
+  for (const m of (mine ?? []).filter((x) => x.exhibition_id)) myCounts.set(m.exhibition_id as string, (myCounts.get(m.exhibition_id as string) ?? 0) + 1);
 
   const invitedTo = new Set((invites ?? []).map((i) => i.exhibition_id));
 
@@ -520,6 +525,8 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
     rules: e.rules ?? "",
     consignmentTermsText: e.consignment_terms_text ?? "",
     consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
+    maxWorksPerArtist: e.max_works_per_artist,
+    myWorkCount: myCounts.get(e.id) ?? 0,
     accepting: (e.status === "open" || e.status === "planning") && !deadlinePassed(e.submission_deadline),
   }));
 }

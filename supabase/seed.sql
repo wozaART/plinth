@@ -117,11 +117,11 @@ where owner_id = '00000000-0000-4000-8000-000000000001';
 
 -- ── Exhibitions ─────────────────────────────────────────────────────────
 
-insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, slots, submission_deadline, opening_date, closing_date, delivery_date) values
-  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000002', 'Highveld Light', 'group', 'open', 'Group show · landscape & memory of the interior', 'Landscape & memory of the interior', 'Any painting or works-on-paper medium', 'No dimension over 150cm on the longest edge', 'Work must be for sale, framed and ready to hang, and delivered by the delivery date below. No AI-generated or reproduced work.', 14, '2026-07-15', '2026-07-12', '2026-08-30', '2026-07-10'),
-  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000002', 'New Ground: Emerging Voices', 'solo', 'planning', 'Solo & duo presentations · under-35 artists', 'Emerging voices, under 35', null, null, 'Open to artists under 35. A short artist statement is required with every submission.', 8, '2026-08-01', '2026-09-06', '2026-10-18', '2026-09-03'),
-  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000002', 'Clay & Country', 'group', 'hanging', 'Ceramics & sculpture from the Karoo', 'Ceramics & sculpture from the Karoo', 'Ceramic or sculptural work only', null, null, 20, null, null, null, null),
-  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000002', 'Summer Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, 30, null, null, '2025-12-05', null)
+insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, max_works_per_artist, submission_deadline, opening_date, closing_date, delivery_date) values
+  ('00000000-0000-4000-8000-000000000201', '00000000-0000-4000-8000-000000000002', 'Highveld Light', 'group', 'open', 'Group show · landscape & memory of the interior', 'Landscape & memory of the interior', 'Any painting or works-on-paper medium', 'No dimension over 150cm on the longest edge', 'Work must be for sale, framed and ready to hang, and delivered by the delivery date below. No AI-generated or reproduced work.', 3, '2026-07-15', '2026-07-12', '2026-08-30', '2026-07-10'),
+  ('00000000-0000-4000-8000-000000000202', '00000000-0000-4000-8000-000000000002', 'New Ground: Emerging Voices', 'solo', 'planning', 'Solo & duo presentations · under-35 artists', 'Emerging voices, under 35', null, null, 'Open to artists under 35. A short artist statement is required with every submission.', 3, '2026-08-01', '2026-09-06', '2026-10-18', '2026-09-03'),
+  ('00000000-0000-4000-8000-000000000203', '00000000-0000-4000-8000-000000000002', 'Clay & Country', 'group', 'hanging', 'Ceramics & sculpture from the Karoo', 'Ceramics & sculpture from the Karoo', 'Ceramic or sculptural work only', null, null, null, null, null, null, null),
+  ('00000000-0000-4000-8000-000000000204', '00000000-0000-4000-8000-000000000002', 'Summer Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, null, null, null, '2025-12-05', null)
 on conflict (id) do nothing;
 
 -- Consignment terms on an exhibition with no seeded submissions (the terms
@@ -282,10 +282,10 @@ where owner_id = '00000000-0000-4000-9000-000000000001';
 
 -- ── Exhibitions ─────────────────────────────────────────────────────────
 
-insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, slots, submission_deadline, opening_date, closing_date, delivery_date) values
-  ('00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000002', 'Maboneng Nights', 'group', 'open', 'Group show · city life after dark', 'City life after dark', 'Any medium', 'No dimension over 120cm', 'Work must be for sale and delivered ready to hang. No AI-generated or reproduced work.', 12, '2026-07-20', '2026-08-03', '2026-09-21', '2026-07-28'),
-  ('00000000-0000-4000-9000-000000000202', '00000000-0000-4000-9000-000000000002', 'New Terrain', 'solo', 'planning', 'Solo & duo presentations · emerging printmakers', 'Emerging printmakers', 'Printmaking only', null, 'Open to printmakers with fewer than 3 prior solo shows.', 6, '2026-09-01', '2026-10-05', '2026-11-15', '2026-09-28'),
-  ('00000000-0000-4000-9000-000000000203', '00000000-0000-4000-9000-000000000002', 'Winter Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, 25, null, null, '2025-06-30', null)
+insert into public.exhibitions (id, gallery_id, title, type, status, blurb, theme, medium_requirements, size_requirements, rules, max_works_per_artist, submission_deadline, opening_date, closing_date, delivery_date) values
+  ('00000000-0000-4000-9000-000000000201', '00000000-0000-4000-9000-000000000002', 'Maboneng Nights', 'group', 'open', 'Group show · city life after dark', 'City life after dark', 'Any medium', 'No dimension over 120cm', 'Work must be for sale and delivered ready to hang. No AI-generated or reproduced work.', 3, '2026-07-20', '2026-08-03', '2026-09-21', '2026-07-28'),
+  ('00000000-0000-4000-9000-000000000202', '00000000-0000-4000-9000-000000000002', 'New Terrain', 'solo', 'planning', 'Solo & duo presentations · emerging printmakers', 'Emerging printmakers', 'Printmaking only', null, 'Open to printmakers with fewer than 3 prior solo shows.', 3, '2026-09-01', '2026-10-05', '2026-11-15', '2026-09-28'),
+  ('00000000-0000-4000-9000-000000000203', '00000000-0000-4000-9000-000000000002', 'Winter Salon 2025', 'group', 'closed', 'Annual mixed exhibition', null, null, null, null, null, null, null, '2025-06-30', null)
 on conflict (id) do nothing;
 
 -- ── Submissions ─────────────────────────────────────────────────────────
