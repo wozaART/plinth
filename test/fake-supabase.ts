@@ -22,6 +22,7 @@ export function createFakeSupabase() {
   const invocations: { fn: string; body: unknown }[] = [];
   const uploads: { bucket: string; path: string; file: unknown }[] = [];
   const signedUrls: { bucket: string; path: string; ttl: number }[] = [];
+  const removals: { bucket: string; paths: string[] }[] = [];
   const state = {
     signedUrlResult: { data: { signedUrl: "https://signed.test/x" }, error: null } as { data: { signedUrl: string } | null; error: unknown },
     user: null as null | { id: string; user_metadata?: Record<string, unknown> },
@@ -101,6 +102,10 @@ export function createFakeSupabase() {
           uploads.push({ bucket, path, file });
           return Promise.resolve({ error: state.uploadError });
         },
+        remove: (paths: string[]) => {
+          removals.push({ bucket, paths });
+          return Promise.resolve({ error: null });
+        },
         createSignedUrl: (path: string, ttl: number) => {
           signedUrls.push({ bucket, path, ttl });
           return Promise.resolve(state.signedUrlResult);
@@ -117,6 +122,7 @@ export function createFakeSupabase() {
     invocations,
     uploads,
     signedUrls,
+    removals,
     state,
     /** Queue the result for `table`'s next-and-subsequent `op` queries. */
     on(table: string, op: RecordedQuery["op"], result: Result) {

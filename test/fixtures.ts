@@ -40,6 +40,7 @@ export const payout = (over: Partial<Payout> = {}): Payout => ({
 export const submission = (over: Partial<Submission> = {}): Submission => ({
   id: "sub1",
   title: "Salt Pan",
+  artistId: "a1",
   artist: "Ana Artist",
   year: 2025,
   medium: "Oil on canvas",

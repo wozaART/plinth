@@ -773,3 +773,44 @@ describe("getPayoutProofUrl", () => {
     expect(await q.getPayoutProofUrl(db, "p1")).toBeNull();
   });
 });
+
+describe("getArtistPublicProfile", () => {
+  it("returns null when the profile isn't visible to the caller", async () => {
+    fake.on("artist_profiles", "select", { data: null, error: null });
+    await expect(q.getArtistPublicProfile(db, "a1")).resolves.toBeNull();
+  });
+
+  it("assembles bio, links, photos and works for the artist", async () => {
+    fake.on("artist_profiles", "select", { data: { id: "a1", full_name: "Ana", city: "Durban", practice: "Painter", bio: "Hello" } });
+    fake.on("artist_links", "select", { data: [{ kind: "instagram", url: "https://instagram.com/ana" }, { kind: "bogus", url: "https://x.test" }] });
+    fake.on("artist_photos", "select", {
+      data: [
+        { id: "p1", kind: "profile", image_url: "https://img/p1.jpg" },
+        { id: "p2", kind: "studio", image_url: "https://img/p2.jpg" },
+      ],
+    });
+    fake.on("artist_portfolio_works", "select", {
+      data: [{ id: "w1", title: "Low Tide", year: 2024, medium: null, dimensions: "10 x 10 cm", image_url: "https://img/w1.jpg" }],
+    });
+
+    const profile = await q.getArtistPublicProfile(db, "a1");
+    expect(profile).toEqual({
+      artistId: "a1",
+      name: "Ana",
+      city: "Durban",
+      practice: "Painter",
+      bio: "Hello",
+      links: [{ kind: "instagram", url: "https://instagram.com/ana" }], // unknown kinds are dropped
+      profilePhoto: { id: "p1", kind: "profile", imageUrl: "https://img/p1.jpg" },
+      studioPhotos: [{ id: "p2", kind: "studio", imageUrl: "https://img/p2.jpg" }],
+      works: [{ id: "w1", title: "Low Tide", year: 2024, medium: "", dimensions: "10 x 10 cm", imageUrl: "https://img/w1.jpg" }],
+    });
+    expect(filter(fake.last("artist_portfolio_works"), "artist_id")).toBe("a1");
+  });
+
+  it("surfaces errors from the child tables", async () => {
+    fake.on("artist_profiles", "select", { data: { id: "a1", full_name: null, city: null, practice: null, bio: null } });
+    fake.on("artist_portfolio_works", "select", { data: null, error: dbError });
+    await expect(q.getArtistPublicProfile(db, "a1")).rejects.toBe(dbError);
+  });
+});

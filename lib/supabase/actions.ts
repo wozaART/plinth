@@ -4,9 +4,18 @@ import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getPayoutProofUrl } from "@/lib/supabase/queries";
+import { getArtistPublicProfile, getPayoutProofUrl } from "@/lib/supabase/queries";
 import type { SubmissionStatus, ExhibitionType, ExhibitionAccess, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 import { deadlinePassed } from "@/lib/utils";
+import {
+  MAX_BIO_LENGTH,
+  MAX_LINKS,
+  PROFILE_IMAGE_BUCKET,
+  isLinkKind,
+  normaliseLinkUrl,
+  profileImagePathFromUrl,
+} from "@/lib/artist-profile";
+import type { ArtistLink, ArtistPhoto, ArtistPhotoKind, PortfolioWork } from "@/lib/types";
 
 async function supabaseServer() {
   return createClient(await cookies());
@@ -758,4 +767,224 @@ export async function updateArtistProfile(input: ArtistProfileInput) {
   if (bankError) throw bankError;
 
   revalidatePath("/studio");
+}
+
+// ── Artist public profile ───────────────────────────────────────────────
+// Images go from the browser straight to the artist-profile-images bucket
+// (server actions cap bodies at 1 MB); these actions receive only the path,
+// which must live under the artist's own {artist_id}/{row_id}/ folder.
+
+async function requireUser() {
+  const supabase = await supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+  return { supabase, user };
+}
+
+function profileImageUrl(supabase: Awaited<ReturnType<typeof supabaseServer>>, userId: string, rowId: string, imagePath: string) {
+  if (!imagePath.startsWith(`${userId}/${rowId}/`) || imagePath.includes("..")) {
+    throw new Error("Invalid image upload.");
+  }
+  return supabase.storage.from(PROFILE_IMAGE_BUCKET).getPublicUrl(imagePath).data.publicUrl;
+}
+
+// Best effort: an orphaned file is harmless, so a failed cleanup never fails the action.
+async function removeProfileImage(supabase: Awaited<ReturnType<typeof supabaseServer>>, imageUrl: string | null | undefined) {
+  const path = imageUrl ? profileImagePathFromUrl(imageUrl) : null;
+  if (path) await supabase.storage.from(PROFILE_IMAGE_BUCKET).remove([path]);
+}
+
+export interface ArtistAboutInput {
+  bio: string;
+  practice: string;
+  city: string;
+  links: ArtistLink[];
+}
+
+export async function saveArtistAbout(input: ArtistAboutInput) {
+  const { supabase, user } = await requireUser();
+
+  const bio = input.bio.trim();
+  if (bio.length > MAX_BIO_LENGTH) throw new Error(`Keep your bio to ${MAX_BIO_LENGTH} characters or fewer.`);
+  if (input.links.length > MAX_LINKS) throw new Error(`You can add up to ${MAX_LINKS} links.`);
+
+  const links = input.links.map((l) => {
+    if (!isLinkKind(l.kind)) throw new Error("Choose where each link goes.");
+    const url = normaliseLinkUrl(l.url);
+    if (!url) throw new Error(`"${l.url.trim()}" isn't a valid web address.`);
+    return { kind: l.kind, url };
+  });
+
+  const { error: profileError } = await supabase
+    .from("artist_profiles")
+    .update({ bio: bio || null, practice: input.practice.trim() || null, city: input.city.trim() || null })
+    .eq("id", user.id);
+  if (profileError) throw profileError;
+
+  const { error: linksError } = await supabase.rpc("replace_artist_links", { p_links: links });
+  if (linksError) throw linksError;
+
+  revalidatePath("/studio");
+  revalidatePath("/dashboard");
+  return { links };
+}
+
+export interface PortfolioWorkInput {
+  id: string;
+  title: string;
+  year: number | null;
+  medium: string;
+  dimensions: string;
+  imagePath?: string;
+}
+
+function portfolioFields(input: PortfolioWorkInput) {
+  const title = input.title.trim();
+  if (!title) throw new Error("Give the work a title.");
+  if (input.year !== null && (!Number.isInteger(input.year) || input.year < 1000 || input.year > 3000)) {
+    throw new Error("Enter a valid year.");
+  }
+  return { title, year: input.year, medium: input.medium.trim() || null, dimensions: input.dimensions.trim() || null };
+}
+
+function toPortfolioWork(row: { id: string; title: string; year: number | null; medium: string | null; dimensions: string | null; image_url: string }): PortfolioWork {
+  return { id: row.id, title: row.title, year: row.year, medium: row.medium ?? "", dimensions: row.dimensions ?? "", imageUrl: row.image_url };
+}
+
+export async function addPortfolioWork(input: PortfolioWorkInput): Promise<PortfolioWork> {
+  const { supabase, user } = await requireUser();
+  if (!input.imagePath) throw new Error("Add a photo of the work.");
+  const fields = portfolioFields(input);
+  const imageUrl = profileImageUrl(supabase, user.id, input.id, input.imagePath);
+
+  const { data: last } = await supabase
+    .from("artist_portfolio_works")
+    .select("position")
+    .eq("artist_id", user.id)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("artist_portfolio_works")
+    .insert({ id: input.id, artist_id: user.id, ...fields, image_url: imageUrl, position: (last?.position ?? -1) + 1 })
+    .select()
+    .single();
+  if (error) throw error;
+
+  revalidatePath("/studio");
+  return toPortfolioWork(data);
+}
+
+export async function updatePortfolioWork(input: PortfolioWorkInput): Promise<PortfolioWork> {
+  const { supabase, user } = await requireUser();
+  const fields = portfolioFields(input);
+  const { data: existing, error: readError } = await supabase
+    .from("artist_portfolio_works")
+    .select("image_url")
+    .eq("id", input.id)
+    .eq("artist_id", user.id)
+    .single();
+  if (readError) throw readError;
+
+  const imageUrl = input.imagePath ? profileImageUrl(supabase, user.id, input.id, input.imagePath) : undefined;
+  const { data, error } = await supabase
+    .from("artist_portfolio_works")
+    .update({ ...fields, ...(imageUrl ? { image_url: imageUrl } : {}) })
+    .eq("id", input.id)
+    .eq("artist_id", user.id)
+    .select()
+    .single();
+  if (error) throw error;
+
+  if (imageUrl) await removeProfileImage(supabase, existing.image_url);
+  revalidatePath("/studio");
+  return toPortfolioWork(data);
+}
+
+export async function deletePortfolioWork(id: string) {
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("artist_portfolio_works")
+    .delete()
+    .eq("id", id)
+    .eq("artist_id", user.id)
+    .select("image_url")
+    .single();
+  if (error) throw error;
+  await removeProfileImage(supabase, data.image_url);
+  revalidatePath("/studio");
+}
+
+// A profile photo replaces the previous one; studio photos accumulate up to the cap.
+export async function addArtistPhoto(input: { id: string; kind: ArtistPhotoKind; imagePath: string }): Promise<ArtistPhoto> {
+  const { supabase, user } = await requireUser();
+  if (input.kind !== "profile" && input.kind !== "studio") throw new Error("Unknown photo type.");
+  const imageUrl = profileImageUrl(supabase, user.id, input.id, input.imagePath);
+
+  let replaced: string | null = null;
+  if (input.kind === "profile") {
+    const { data: previous, error: deleteError } = await supabase
+      .from("artist_photos")
+      .delete()
+      .eq("artist_id", user.id)
+      .eq("kind", "profile")
+      .select("image_url")
+      .maybeSingle();
+    if (deleteError) throw deleteError;
+    replaced = previous?.image_url ?? null;
+  }
+
+  const { data: last } = await supabase
+    .from("artist_photos")
+    .select("position")
+    .eq("artist_id", user.id)
+    .eq("kind", input.kind)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("artist_photos")
+    .insert({ id: input.id, artist_id: user.id, kind: input.kind, image_url: imageUrl, position: (last?.position ?? -1) + 1 })
+    .select()
+    .single();
+  if (error) throw error;
+
+  await removeProfileImage(supabase, replaced);
+  revalidatePath("/studio");
+  return { id: data.id, kind: data.kind as ArtistPhotoKind, imageUrl: data.image_url };
+}
+
+export async function deleteArtistPhoto(id: string) {
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase
+    .from("artist_photos")
+    .delete()
+    .eq("id", id)
+    .eq("artist_id", user.id)
+    .select("image_url")
+    .single();
+  if (error) throw error;
+  await removeProfileImage(supabase, data.image_url);
+  revalidatePath("/studio");
+}
+
+// What a gallery sees when it taps an artist. Row-level security limits this
+// to artists the gallery has actually dealt with.
+export async function getArtistProfileForGallery(artistId: string) {
+  const { supabase } = await requireUser();
+  const profile = await getArtistPublicProfile(supabase, artistId);
+  if (!profile) throw new Error("This artist's profile isn't available.");
+  return profile;
+}
+
+// Contacts are keyed by email; this resolves an artist contact to their
+// profile when they have an account and have dealt with the gallery.
+export async function getArtistProfileForContact(contactId: string) {
+  const { supabase } = await requireUser();
+  const { data: artistId, error } = await supabase.rpc("get_contact_artist_id", { p_contact_id: contactId });
+  if (error) throw error;
+  if (!artistId) throw new Error("This contact hasn't joined as an artist yet, so there's no profile to show.");
+  return getArtistProfileForGallery(artistId);
 }

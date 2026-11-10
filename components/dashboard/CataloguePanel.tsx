@@ -6,6 +6,7 @@ import { artworkBg } from "@/lib/utils";
 import { formatCurrency } from "@/lib/currency";
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { createCatalogueWork, updateCatalogueWork, updateCatalogueWorkStatus, deleteCatalogueWork, recordSale, type CatalogueWorkInput, type RecordSaleInput } from "@/lib/supabase/actions";
+import ArtistProfileDrawer from "./ArtistProfileDrawer";
 import AddCatalogueWorkDrawer from "./AddCatalogueWorkDrawer";
 import EditCatalogueWorkDrawer from "./EditCatalogueWorkDrawer";
 import MarkAsSoldDrawer from "./MarkAsSoldDrawer";
@@ -17,6 +18,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogueWork | null>(null);
   const [selling, setSelling] = useState<CatalogueWork | null>(null);
+  const [viewingArtist, setViewingArtist] = useState<{ id: string; name: string } | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const { business } = useGalleryConfig();
   const fmt = (amount: number | null) => (amount != null ? formatCurrency(amount, business.currencyCode) : "—");
@@ -155,7 +157,9 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
                       <span style={{ fontFamily: "var(--font-newsreader, serif)", fontSize: 14.5, fontWeight: 600 }}>{w.title}</span>
                     </div>
                   </td>
-                  <td data-label="Artist" style={{ padding: "13px 12px", fontSize: 13.5, color: "var(--pl-text-secondary)", cursor: "pointer" }} onClick={() => setEditing(w)}>{w.artist}</td>
+                  <td data-label="Artist" style={{ padding: "13px 12px", fontSize: 13.5, color: "var(--pl-text-secondary)", cursor: "pointer" }} onClick={() => setEditing(w)}>
+                    <button type="button" title="View artist profile" onClick={e => { e.stopPropagation(); setViewingArtist({ id: w.artistId, name: w.artist }); }} style={{ background: "none", border: "none", padding: 0, font: "inherit", color: "inherit", cursor: "pointer", textDecoration: "underline", textDecorationColor: "var(--pl-border-strong)", textUnderlineOffset: 3 }}>{w.artist}</button>
+                  </td>
                   <td data-label="Price" style={{ padding: "13px 12px", fontSize: 13.5, fontWeight: 500, cursor: "pointer" }} onClick={() => setEditing(w)}>{w.price}</td>
                   <td data-label="Status" data-full style={{ padding: "13px 12px" }}>
                     <select
@@ -176,6 +180,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
         </table>
       </div>
 
+      {viewingArtist && <ArtistProfileDrawer artistId={viewingArtist.id} artistName={viewingArtist.name} onClose={() => setViewingArtist(null)} />}
       {addOpen && <AddCatalogueWorkDrawer artists={artists} onClose={() => setAddOpen(false)} onCreate={handleCreate} />}
       {editing && <EditCatalogueWorkDrawer work={editing} onClose={() => setEditing(null)} onSave={handleSave} onDelete={handleDelete} />}
       {selling && <MarkAsSoldDrawer work={selling} onClose={() => setSelling(null)} onConfirm={handleRecordSale} />}

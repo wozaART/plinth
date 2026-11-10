@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import ImageLightbox from "@/components/shared/ImageLightbox";
+import ArtistProfileDrawer from "./ArtistProfileDrawer";
 import ConsignmentTermsView from "@/components/ConsignmentTermsView";
 import { STATUS_META } from "@/lib/constants";
 import { artworkFill, avatarBg, initials } from "@/lib/utils";
@@ -21,6 +22,7 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
   const [note, setNote] = useState(sub.note);
   const noteMissing = note.trim() === "";
   const [zoomed, setZoomed] = useState(false);
+  const [viewingArtist, setViewingArtist] = useState(false);
   const [mode, setMode] = useState<"view" | "decide">("view");
   const meta = STATUS_META[sub.status];
 
@@ -51,7 +53,11 @@ export default function ReviewDrawer({ sub, artworkIdx, onClose, onDecide, inCat
           <div style={{ display: "flex", gap: 7, alignItems: "center", marginTop: 6 }}>
             <div style={{ width: 26, height: 26, borderRadius: "50%", background: avatarBg(artworkIdx), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#fff", fontWeight: 600, flexShrink: 0 }}>{initials(sub.artist)}</div>
             <span style={{ fontSize: 14, fontWeight: 500 }}>{sub.artist}</span>
+            {sub.artistId && (
+              <button type="button" onClick={() => setViewingArtist(true)} style={{ marginLeft: 4, fontSize: 12.5, color: "var(--pl-accent)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>View profile →</button>
+            )}
           </div>
+          {viewingArtist && <ArtistProfileDrawer artistId={sub.artistId} artistName={sub.artist} onClose={() => setViewingArtist(false)} />}
 
           <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
             {[

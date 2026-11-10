@@ -84,17 +84,17 @@ insert into storage.objects (bucket_id, name, owner) values
 
 select tests.act_as('00000000-0000-4000-8000-000000000011');
 select is(
-  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms'), 1,
+  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms' and name like tests.gallery_of('00000000-0000-4000-8000-0000000000a1') || '/%'), 1,
   'an artist reads only the exhibition''s current terms PDF, not superseded files');
 
 select tests.act_as('00000000-0000-4000-8000-0000000000a1');
 select is(
-  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms'), 2,
+  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms' and name like tests.gallery_of('00000000-0000-4000-8000-0000000000a1') || '/%'), 2,
   'the owning gallery reads every file in its folder');
 
 select tests.act_as('00000000-0000-4000-8000-0000000000b1');
 select is(
-  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms'), 1,
+  (select count(*)::int from storage.objects where bucket_id = 'exhibition-terms' and name like tests.gallery_of('00000000-0000-4000-8000-0000000000a1') || '/%'), 1,
   'another gallery''s owner sees only the current terms PDF, same as the public exhibition row, not superseded files');
 
 select throws_ok(

@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   updateCatalogueWorkStatus: vi.fn(),
   deleteCatalogueWork: vi.fn(),
   recordSale: vi.fn(),
+  getArtistProfileForGallery: vi.fn(),
 }));
 vi.mock("@/lib/supabase/actions", () => h);
 
@@ -40,6 +41,21 @@ beforeEach(() => {
   h.updateCatalogueWorkStatus.mockResolvedValue(undefined);
   h.deleteCatalogueWork.mockResolvedValue(undefined);
   h.recordSale.mockResolvedValue({ noticeError: null });
+});
+
+describe("CataloguePanel artist profile", () => {
+  it("opens the artist's profile from their name, without opening the work editor", async () => {
+    h.getArtistProfileForGallery.mockResolvedValue({
+      artistId: "a2", name: "Ben Brush", city: "", practice: "", bio: "Landscapes of the Karoo.",
+      links: [], profilePhoto: null, studioPhotos: [], works: [],
+    });
+    render();
+    fireEvent.click(within(row("Karoo")).getByRole("button", { name: "Ben Brush" }));
+    expect(h.getArtistProfileForGallery).toHaveBeenCalledWith("a2");
+    await screen.findByText("Landscapes of the Karoo.");
+    expect(screen.queryByRole("button", { name: /delete|remove work/i })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Ben Brush profile" })).toBeTruthy();
+  });
 });
 
 describe("CataloguePanel list", () => {

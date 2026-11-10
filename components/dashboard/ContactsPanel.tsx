@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { avatarBg, initials } from "@/lib/utils";
 import { inviteArtist, createContact, deleteContact } from "@/lib/supabase/actions";
+import ArtistProfileDrawer from "./ArtistProfileDrawer";
 import AddContactDrawer from "./AddContactDrawer";
 import type { Contact } from "@/lib/types";
 
@@ -13,6 +14,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
   const [inviteState, setInviteState] = useState<Record<string, "sending" | "sent" | "error">>({});
   const [isPending, startTransition] = useTransition();
   const [addOpen, setAddOpen] = useState(false);
+  const [viewing, setViewing] = useState<Contact | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [removeState, setRemoveState] = useState<Record<string, "confirm" | "removing" | "error">>({});
 
@@ -85,11 +87,15 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 24px" }} className="scrl dash-pad">
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtered.map((c, i) => (
-            <div key={c.id} className="dash-contact" style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
+            <div key={c.id} className="dash-contact" onClick={c.role === "Artist" ? () => setViewing(c) : undefined} style={{ cursor: c.role === "Artist" ? "pointer" : undefined, background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 12, padding: "14px 16px", display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
               <div style={{ width: 40, height: 40, borderRadius: "50%", background: avatarBg(i), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "#fff", flexShrink: 0 }}>{initials(c.name)}</div>
               <div className="dash-contact-info" style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 14.5, fontWeight: 600 }}>{c.name}</span>
+                  {c.role === "Artist" ? (
+                    <button type="button" aria-label={`View ${c.name}'s profile`} onClick={e => { e.stopPropagation(); setViewing(c); }} style={{ font: "inherit", fontSize: 14.5, fontWeight: 600, background: "none", border: "none", padding: 0, color: "inherit", cursor: "pointer" }}>{c.name}</button>
+                  ) : (
+                    <span style={{ fontSize: 14.5, fontWeight: 600 }}>{c.name}</span>
+                  )}
                   <span style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 14, background: c.role === "Artist" ? "var(--pl-sidebar)" : "var(--pl-changes-bg)", color: c.role === "Artist" ? "var(--pl-text-muted)" : "var(--pl-changes-fg)", fontWeight: 600 }}>{c.role}</span>
                 </div>
                 <div style={{ fontSize: 12, color: "var(--pl-text-soft)", marginTop: 2 }}>{c.email}</div>
@@ -99,7 +105,7 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
                 <div style={{ fontSize: 11, color: "var(--pl-text-faint)" }}>Last contact</div>
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-muted)", marginTop: 1 }}>{c.last}</div>
               </div>
-              <div className="dash-contact-actions" style={{ display: "contents" }}>
+              <div className="dash-contact-actions" style={{ display: "contents" }} onClick={e => e.stopPropagation()}>
               {c.role === "Artist" && (
                 <button
                   onClick={() => handleInvite(c)}
@@ -151,6 +157,8 @@ export default function ContactsPanel({ data }: { data: Contact[] }) {
           ))}
         </div>
       </div>
+
+      {viewing && <ArtistProfileDrawer contactId={viewing.id} artistName={viewing.name} onClose={() => setViewing(null)} />}
 
       {addOpen && (
         <AddContactDrawer

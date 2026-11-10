@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getArtistWorks, getArtistCatalogue, getArtistPayouts, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
+import { getArtistWorks, getArtistCatalogue, getArtistPayouts, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getArtistPublicProfile, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
+import { emptyPublicProfile } from "@/lib/artist-profile";
 import StudioShell from "@/components/studio/StudioShell";
 
 export default async function StudioPage() {
@@ -12,7 +13,7 @@ export default async function StudioPage() {
 
   // Gate on the artist profile, not user_metadata.role: a gallery owner can
   // also be an artist under the same account.
-  const [{ data: artistRow }, { data: ownedGallery }, works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites] = await Promise.all([
+  const [{ data: artistRow }, { data: ownedGallery }, works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites, publicProfile] = await Promise.all([
     supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle(),
     supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle(),
     getArtistWorks(supabase, user.id, gallery.id),
@@ -23,6 +24,7 @@ export default async function StudioPage() {
     getArtistProfile(supabase, user.id),
     getArtistBankDetails(supabase, user.id),
     getExhibitionInvitesForArtist(supabase, user.id, user.email ?? ""),
+    getArtistPublicProfile(supabase, user.id),
   ]);
   if (!artistRow) redirect("/signin");
 
@@ -39,6 +41,7 @@ export default async function StudioPage() {
       openCalls={openCalls}
       exhibitionInvites={exhibitionInvites}
       messages={messages}
+      publicProfile={publicProfile ?? emptyPublicProfile(user.id, profile?.full_name ?? "Artist")}
       profile={{
         firstName,
         lastName: rest.join(" "),

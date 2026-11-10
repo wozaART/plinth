@@ -273,7 +273,7 @@ set id = '00000000-0000-4000-9000-000000000002',
       {"id":"open-calls","label":"Open calls","enabled":true},
       {"id":"invitations","label":"Invitations","enabled":true},
       {"id":"messages","label":"Messages","enabled":true},
-      {"id":"profile","label":"Profile","enabled":false},
+      {"id":"profile","label":"Profile","enabled":true},
       {"id":"earnings","label":"Earnings","enabled":true}
     ]',
     currency_code = 'ZAR',

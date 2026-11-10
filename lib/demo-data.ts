@@ -2,11 +2,13 @@ import type {
   Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact,
   FrameJob, Payout, AuditLogEntry, MyWork, OpenCall, StudioMessage, ArtistPayout,
 } from "./types";
+import { emptyPublicProfile } from "./artist-profile";
 
 // Static sample content for the public, non-functional demo portals
 // (/demo/gallery and /demo/artist). Nothing here touches the database.
 
 const submission = (s: Partial<Submission> & Pick<Submission, "id" | "title" | "artist" | "status">): Submission => ({
+  artistId: "", // demo artists have no real profile to open
   year: 2025, medium: "Oil on canvas", dim: "90 × 120 cm", price: "R 24 000", forEx: "Open Call 2026",
   date: "12 Sep 2025", note: "", statement: "A study of light and land, painted over one winter.", ...s,
 });
@@ -91,6 +93,13 @@ export const demoMessages: StudioMessage[] = [
 ];
 
 export const demoArtistPayouts: ArtistPayout[] = [];
+
+export const demoArtistPublicProfile = {
+  ...emptyPublicProfile("", "Lerato Dlamini"),
+  city: "Cape Town", practice: "Painter",
+  bio: "Lerato paints the Cape coastline in layered oils. This is a preview, so nothing you add here is saved.",
+  links: [{ kind: "website" as const, url: "https://example.com" }],
+};
 
 export const demoArtistProfile = {
   firstName: "Lerato", lastName: "Dlamini", phone: "", email: "lerato@example.com",

@@ -35,7 +35,10 @@ create function tests.gallery_of(owner uuid) returns uuid language sql as
 grant execute on function tests.gallery_of(uuid) to public;
 
 create function tests.audit_for(tbl text, rid uuid) returns setof public.audit_log language sql as
-  $$ select * from public.audit_log where table_name = tbl and record_id = rid order by ctid $$; -- one transaction means one created_at; heap order is insert order
+  $$ select * from public.audit_log where table_name = tbl and record_id = rid order by case action when 'insert' then 0 when 'update' then 1 else 2 end, ctid $$;
+-- One transaction means one created_at, and heap order (ctid) is only insert order until
+-- freed slots get reused (e.g. after vacuum on a dev database). Every row's history here
+-- runs insert -> update -> delete, so rank by action first and use ctid only as a tiebreak.
 grant execute on function tests.audit_for(text, uuid) to public;
 
 select tests.act_as('00000000-0000-4000-8000-0000000000a1');

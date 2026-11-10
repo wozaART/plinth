@@ -1,3 +1,5 @@
+import type { ArtistLinkKind } from "@/lib/artist-profile";
+
 export type SubmissionStatus = "pending" | "approved" | "declined" | "changes";
 
 // An artist can edit their submission until the gallery approves or declines it.
@@ -6,6 +8,7 @@ export const isSubmissionEditable = (status: SubmissionStatus) => status === "pe
 export interface Submission {
   id: string;
   title: string;
+  artistId: string;
   artist: string;
   year: number;
   medium: string;
@@ -246,3 +249,38 @@ export interface StudioMessage {
 
 export const hasConsignmentTerms = (e: { consignmentTermsText: string; consignmentTermsPdfPath: string | null }) =>
   Boolean(e.consignmentTermsText || e.consignmentTermsPdfPath);
+
+export interface PortfolioWork {
+  id: string;
+  title: string;
+  year: number | null;
+  medium: string;
+  dimensions: string;
+  imageUrl: string;
+}
+
+export interface ArtistLink {
+  kind: ArtistLinkKind;
+  url: string;
+}
+
+export type ArtistPhotoKind = "profile" | "studio";
+
+export interface ArtistPhoto {
+  id: string;
+  kind: ArtistPhotoKind;
+  imageUrl: string;
+}
+
+// What an artist chooses to show galleries.
+export interface ArtistPublicProfile {
+  artistId: string;
+  name: string;
+  city: string;
+  practice: string;
+  bio: string;
+  links: ArtistLink[];
+  profilePhoto: ArtistPhoto | null;
+  studioPhotos: ArtistPhoto[];
+  works: PortfolioWork[];
+}

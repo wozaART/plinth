@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { galleryConfig } from "@/test/gallery-config";
 import { GalleryConfigProvider } from "@/lib/gallery-context";
+import { emptyPublicProfile } from "@/lib/artist-profile";
 import type { ArtistPayout, MyWork, OpenCall } from "@/lib/types";
 
 const h = vi.hoisted(() => ({
@@ -24,6 +25,12 @@ vi.mock("@/lib/supabase/actions", () => ({
   getPayoutProofSignedUrl: vi.fn(),
   getConsignmentTermsSignedUrl: vi.fn(),
   updateArtistProfile: vi.fn(),
+  saveArtistAbout: vi.fn(),
+  addPortfolioWork: vi.fn(),
+  updatePortfolioWork: vi.fn(),
+  deletePortfolioWork: vi.fn(),
+  addArtistPhoto: vi.fn(),
+  deleteArtistPhoto: vi.fn(),
 }));
 vi.mock("@/components/shared/ProfileDropdown", () => ({ default: () => <div>profile-dropdown</div> }));
 vi.mock("@/components/shared/ProfileSwitcher", () => ({ default: () => <div>profile-switcher</div> }));
@@ -54,6 +61,7 @@ const baseProps = {
   artistName: "Thandiwe Mokoena", artistCity: "Durban", works: [], catalogueWorks: [], payouts: [], openCalls: [],
   exhibitionInvites: [], messages: [],
   profile: { firstName: "Thandiwe", lastName: "Mokoena", phone: "", email: "t@m.co", accountNumber: "", bankName: "", branchCode: "", accountType: "" },
+  publicProfile: emptyPublicProfile("a1", "Thandiwe Mokoena"),
 };
 
 const setup = (props: Partial<React.ComponentProps<typeof StudioShell>> = {}) =>

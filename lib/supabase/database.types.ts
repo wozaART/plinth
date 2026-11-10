@@ -96,8 +96,123 @@ export type Database = {
           },
         ]
       }
+      artist_links: {
+        Row: {
+          artist_id: string
+          created_at: string
+          id: string
+          kind: string
+          position: number
+          url: string
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          position?: number
+          url: string
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          position?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_links_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_photos: {
+        Row: {
+          artist_id: string
+          created_at: string
+          id: string
+          image_url: string
+          kind: string
+          position: number
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          kind: string
+          position?: number
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          kind?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_photos_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_portfolio_works: {
+        Row: {
+          artist_id: string
+          created_at: string
+          dimensions: string | null
+          id: string
+          image_url: string
+          medium: string | null
+          position: number
+          title: string
+          year: number | null
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          dimensions?: string | null
+          id?: string
+          image_url: string
+          medium?: string | null
+          position?: number
+          title: string
+          year?: number | null
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          dimensions?: string | null
+          id?: string
+          image_url?: string
+          medium?: string | null
+          position?: number
+          title?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_portfolio_works_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_profiles: {
         Row: {
+          bio: string | null
           city: string | null
           created_at: string
           full_name: string | null
@@ -107,6 +222,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -116,6 +232,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           city?: string | null
           created_at?: string
           full_name?: string | null
@@ -1097,6 +1214,10 @@ export type Database = {
         Args: { p_payout_id: string }
         Returns: undefined
       }
+      gallery_can_view_artist: {
+        Args: { target_artist_id: string }
+        Returns: boolean
+      }
       get_artist_bank_details_for_payout: {
         Args: { target_artist_id: string }
         Returns: {
@@ -1115,6 +1236,10 @@ export type Database = {
           gallery_name: string
           status: string
         }[]
+      }
+      get_contact_artist_id: {
+        Args: { p_contact_id: string }
+        Returns: string
       }
       get_exhibition_invite: {
         Args: { p_token: string }
@@ -1142,6 +1267,10 @@ export type Database = {
       owns_gallery: { Args: { check_gallery_id: string }; Returns: boolean }
       query_payout: {
         Args: { p_payout_id: string }
+        Returns: undefined
+      }
+      replace_artist_links: {
+        Args: { p_links: Json }
         Returns: undefined
       }
       record_sale: {
