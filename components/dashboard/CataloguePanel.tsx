@@ -161,7 +161,7 @@ export default function CataloguePanel({ data, artists }: { data: CatalogueWork[
                     <select
                       value={w.status}
                       onChange={e => handleStatusChange(w.id, e.target.value as CatalogueWork["status"])}
-                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 20, background: meta.bg, color: meta.fg, border: "none", textTransform: "capitalize", appearance: "none", cursor: "pointer" }}
+                      style={{ fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 20, background: meta.bg, color: meta.fg, border: "none", textTransform: "capitalize", appearance: "none", cursor: "pointer", textAlign: "center", textAlignLast: "center" }}
                     >
                       {CAT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
