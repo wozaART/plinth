@@ -40,6 +40,13 @@ async function uploadTermsPdf(exhibitionId: string, file: File) {
 export default function ExhibitionsPanel({ data, invites: initialInvites, contacts, submissions = [], catalogueSubmissionIds = [] }: ExhibitionsPanelProps) {
   const [exhibitions, setExhibitions] = useState(data);
   const [invites, setInvites] = useState(initialInvites);
+  // Re-sync when the server sends fresh invites (e.g. an artist accepted),
+  // otherwise the initial-state copy would keep showing "Pending".
+  const [seenInvites, setSeenInvites] = useState(initialInvites);
+  if (seenInvites !== initialInvites) {
+    setSeenInvites(initialInvites);
+    setInvites(initialInvites);
+  }
   const [showArchived, setShowArchived] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
