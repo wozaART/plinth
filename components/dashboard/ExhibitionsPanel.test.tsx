@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { renderWithGallery } from "@/test/gallery-config";
 import { contact, exhibition, submission } from "@/test/fixtures";
 
 const h = vi.hoisted(() => ({
@@ -22,7 +23,7 @@ const data = [
   exhibition({ id: "e3", title: "Old Show", status: "archived" }),
 ];
 
-const setup = () => render(<ExhibitionsPanel data={data} invites={[]} contacts={[contact(), contact({ id: "c2", name: "Cora", role: "Collector" })]} />);
+const setup = () => renderWithGallery(<ExhibitionsPanel data={data} invites={[]} contacts={[contact(), contact({ id: "c2", name: "Cora", role: "Collector" })]} />);
 const listed = () => ["Highveld Light", "Quiet Rooms", "Old Show"].filter((t) => screen.queryByText(t));
 const type = (label: RegExp, v: string) => fireEvent.change(screen.getByLabelText(label), { target: { value: v } });
 
@@ -53,8 +54,8 @@ describe("ExhibitionsPanel list", () => {
   });
 
   it("shows no limit when an exhibition has no works cap", () => {
-    render(<ExhibitionsPanel data={[exhibition({ maxWorksPerArtist: null, filled: 0 })]} invites={[]} contacts={[]} />);
-    expect(screen.getByText("No limit")).toBeTruthy();
+    renderWithGallery(<ExhibitionsPanel data={[exhibition({ maxWorksPerArtist: null, filled: 0 })]} invites={[]} contacts={[]} />);
+    expect(screen.getByText("∞")).toBeTruthy();
   });
 });
 
@@ -102,7 +103,7 @@ describe("ExhibitionsPanel detail drawer", () => {
       submission({ id: "p1", title: "Pending Piece", status: "pending", exhibitionId: "e1" }),
       submission({ id: "o1", title: "Elsewhere Piece", status: "approved", exhibitionId: "e2" }),
     ];
-    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
+    renderWithGallery(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
     openDetail("Highveld Light");
     expect(screen.getByText("Accepted works (1)")).toBeTruthy();
     expect(screen.getByText("Accepted Piece")).toBeTruthy();
@@ -113,7 +114,7 @@ describe("ExhibitionsPanel detail drawer", () => {
   it("previews three accepted works and opens the rest on the page with zoomable images", () => {
     const subs = ["One", "Two", "Three", "Four"].map((t, i) =>
       submission({ id: `a${i}`, title: `Work ${t}`, status: "approved", exhibitionId: "e1", imageUrl: `https://img.test/${i}.jpg` }));
-    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
+    renderWithGallery(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} />);
     openDetail("Highveld Light");
     expect(screen.queryByText("Work Four")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /View more/ }));
@@ -149,7 +150,7 @@ describe("ExhibitionsPanel detail drawer", () => {
     submission({ id: "x1", title: "Other Show", status: "approved", exhibitionId: "e1" }),
   ];
   const archiveSetup = () => {
-    render(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} catalogueSubmissionIds={["c1"]} />);
+    renderWithGallery(<ExhibitionsPanel data={data} invites={[]} contacts={[]} submissions={subs} catalogueSubmissionIds={["c1"]} />);
     openDetail("Quiet Rooms");
     fireEvent.click(screen.getByRole("button", { name: "Archive" }));
   };

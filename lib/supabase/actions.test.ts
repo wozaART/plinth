@@ -353,7 +353,7 @@ describe("contacts and invites", () => {
 describe("exhibitions", () => {
   const base = {
     title: "Spring", type: "group" as const, access: "open" as const, blurb: "", theme: "", mediumRequirements: "",
-    sizeRequirements: "", rules: "", maxWorksPerArtist: 10, submissionDeadline: null, openingDate: null,
+    sizeRequirements: "", rules: "", maxWorksPerArtist: 10, commissionRatePct: null, submissionDeadline: null, openingDate: null,
     closingDate: null, deliveryDate: null,
   };
 

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
+import { renderWithGallery } from "@/test/gallery-config";
 import CreateExhibitionDrawer from "./CreateExhibitionDrawer";
 
 const type = (label: RegExp, v: string) => fireEvent.change(screen.getByLabelText(label), { target: { value: v } });
@@ -14,7 +15,7 @@ const fillDates = () => {
 function setup() {
   const onCreate = vi.fn();
   const onClose = vi.fn();
-  render(<CreateExhibitionDrawer onClose={onClose} onCreate={onCreate} />);
+  renderWithGallery(<CreateExhibitionDrawer onClose={onClose} onCreate={onCreate} />);
   const create = () => screen.getByRole("button", { name: "Create exhibition" }) as HTMLButtonElement;
   return { onCreate, onClose, create };
 }
@@ -61,6 +62,7 @@ describe("CreateExhibitionDrawer", () => {
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
       maxWorksPerArtist: null,
+      commissionRatePct: null,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
       closingDate: "2026-04-18",
@@ -79,6 +81,7 @@ describe("CreateExhibitionDrawer", () => {
     type(/Size requirements/, " Max 150cm ");
     type(/Rules for entering/, " Two works max ");
     type(/Maximum works per artist/, "3");
+    type(/Commission/, "35");
     type(/Online submission deadline/, "2026-01-30");
     type(/Delivery date/, "2026-03-02");
     type(/Opening date/, "2026-03-12");
@@ -96,6 +99,7 @@ describe("CreateExhibitionDrawer", () => {
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
       maxWorksPerArtist: 3,
+      commissionRatePct: 35,
       submissionDeadline: "2026-01-30",
       openingDate: "2026-03-12",
       closingDate: "2026-04-18",

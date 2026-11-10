@@ -164,7 +164,7 @@ type SubmitItem = { formData: FormData; image: File | null };
 
 const emptyDraft = (): WorkDraft => ({ title: "", medium: "", year: "", height: "", width: "", depth: "", price: "", statement: "", image: null });
 
-function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (items: SubmitItem[]) => void }) {
+function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: defaultCommissionPct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNoteTemplate: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (items: SubmitItem[]) => void }) {
   // New submissions run: how many works → one form per work → review.
   // Editing skips straight to the single work's form.
   const [phase, setPhase] = useState<"count" | "work" | "review">(editing ? "work" : "count");
@@ -201,6 +201,9 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, i
   const priceOf = (w: WorkDraft) => Number(w.price.replace(/[^0-9.]/g, ""));
   const workValid = (w: WorkDraft) =>
     Boolean(w.title.trim() && w.medium.trim() && w.year.trim() && (w.image || editing?.imageUrl) && Number(w.height) > 0 && Number(w.width) > 0 && Number(w.depth) > 0 && priceOf(w) > 0);
+  // An exhibition can set its own commission; otherwise the gallery default applies.
+  const commissionRatePct = !editing && selectedCall?.commissionRatePct != null ? selectedCall.commissionRatePct : defaultCommissionPct;
+  const commissionNote = renderCommissionNote(commissionNoteTemplate, commissionRatePct);
   const salePrice = priceOf(work) > 0 ? formatCurrency(priceOf(work) * (1 + commissionRatePct / 100), "ZAR") : null;
 
   const lastWork = index === count - 1;
@@ -621,7 +624,6 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
   const gallery = useGalleryConfig();
   const { identity, business, copy } = gallery;
   const studioNav = gallery.nav.studioTabs.filter(t => t.enabled);
-  const commissionNote = renderCommissionNote(copy.submitCommissionNoteTemplate, Math.round(business.commissionRate * 100));
 
   return (
     <div className="dash-root" style={{ display: "flex", overflow: "hidden", background: "var(--pl-surface-dark)" }}>
@@ -960,7 +962,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
 
       {zoomImage && <ImageLightbox url={zoomImage.url} alt={zoomImage.title} onClose={() => setZoomImage(null)} />}
       {termsCall && <CallTermsModal call={termsCall} onCancel={() => setTermsCall(null)} onAccept={() => { setSubmitCall({ id: termsCall.id, accepted: true }); setTermsCall(null); setShowSubmit(true); }} />}
-      {showSubmit && <SubmitDrawer key={`${editingWork?.id ?? "new"}-${submitCall?.id ?? ""}`} initialCallId={editingWork ? undefined : submitCall?.id} acceptedCallId={submitCall?.accepted ? submitCall.id : undefined} openCalls={openCalls} commissionNote={commissionNote} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); setSubmitCall(null); }} onSubmit={handleSubmitWork} />}
+      {showSubmit && <SubmitDrawer key={`${editingWork?.id ?? "new"}-${submitCall?.id ?? ""}`} initialCallId={editingWork ? undefined : submitCall?.id} acceptedCallId={submitCall?.accepted ? submitCall.id : undefined} openCalls={openCalls} commissionNoteTemplate={copy.submitCommissionNoteTemplate} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); setSubmitCall(null); }} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>

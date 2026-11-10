@@ -45,6 +45,8 @@ export interface Exhibition {
   consignmentTermsText: string;
   consignmentTermsPdfPath: string | null;
   maxWorksPerArtist: number | null;
+  // Overrides the gallery's default commission for this exhibition; null = default.
+  commissionRatePct: number | null;
   filled: number;
   applicants: number;
   submissionDeadline: string | null;
@@ -228,6 +230,7 @@ export interface OpenCall {
   consignmentTermsText: string;
   consignmentTermsPdfPath: string | null;
   maxWorksPerArtist: number | null;
+  commissionRatePct: number | null;
   // Works this artist has already submitted to the call (declined ones don't count).
   myWorkCount: number;
   accepting: boolean;

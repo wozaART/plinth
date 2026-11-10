@@ -438,6 +438,7 @@ export type Database = {
           opening_date: string | null
           rules: string | null
           size_requirements: string | null
+          commission_rate: number | null
           max_works_per_artist: number | null
           status: string
           submission_deadline: string | null
@@ -459,6 +460,7 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
+          commission_rate?: number | null
           max_works_per_artist?: number | null
           status?: string
           submission_deadline?: string | null
@@ -480,6 +482,7 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
+          commission_rate?: number | null
           max_works_per_artist?: number | null
           status?: string
           submission_deadline?: string | null
