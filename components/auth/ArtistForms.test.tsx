@@ -140,8 +140,8 @@ describe("ArtistInvite", () => {
 
 function exhibitionProps(over: Partial<React.ComponentProps<typeof ArtistExhibitionInvite>> = {}) {
   return {
-    ...inviteProps(), exhibitionTitle: "Highveld Light", exhibitionTheme: "Winter light", exhibitionRules: "Max 3 works.",
-    rulesAck: false, onRulesAck: vi.fn(), ...over,
+    ...inviteProps(), exhibitionTitle: "Highveld Light", exhibitionTheme: "Winter light",
+    ...over,
   } as React.ComponentProps<typeof ArtistExhibitionInvite>;
 }
 
@@ -162,40 +162,42 @@ describe("ArtistExhibitionInvite", () => {
     expect(screen.getByText(/confirm your place in Highveld Light/)).toBeTruthy();
   });
 
-  it("shows the theme and rules, and acknowledges the rules before joining", () => {
+  it("shows the theme and joins without any rules acknowledgement", () => {
     const p = exhibitionProps({ status: "ready_signed_in" });
     render(<ArtistExhibitionInvite {...p} />);
     expect(screen.getByRole("heading", { name: "Join Highveld Light." })).toBeTruthy();
     expect(screen.getByText("Winter light")).toBeTruthy();
-    expect(screen.getByText("Max 3 works.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("checkbox"));
-    expect(p.onRulesAck).toHaveBeenCalledWith(true);
+    expect(screen.queryByText(/Rules:/)).toBeNull();
+    expect(screen.queryByRole("checkbox")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Confirm & join exhibition" }));
     expect(p.onSubmit).toHaveBeenCalled();
   });
 
-  it("omits the rules checkbox when the exhibition has no rules", () => {
-    render(<ArtistExhibitionInvite {...exhibitionProps({ status: "ready_signed_in", exhibitionRules: "", exhibitionTheme: "" })} />);
-    expect(screen.queryByRole("checkbox")).toBeNull();
-    expect(screen.queryByText(/Theme:/)).toBeNull();
-  });
-
-  it("collects account details, the rules acknowledgement and the terms agreement", () => {
+  it("hides the registration form until the artist taps Accept", () => {
     const p = exhibitionProps();
     render(<ArtistExhibitionInvite {...p} />);
+    expect(screen.queryByPlaceholderText("Thandiwe Mokoena")).toBeNull();
+    expect(screen.queryByRole("checkbox")).toBeNull();
+    expect(screen.queryByText(/Rules:/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Accept & create account" }));
+    expect(screen.getByPlaceholderText("Thandiwe Mokoena")).toBeTruthy();
+    expect(p.onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("collects account details and the terms agreement after accepting", () => {
+    const p = exhibitionProps();
+    render(<ArtistExhibitionInvite {...p} />);
+    fireEvent.click(screen.getByRole("button", { name: "Accept & create account" }));
     change(screen.getByPlaceholderText("Thandiwe Mokoena"), "Thandiwe");
     change(screen.getByPlaceholderText("Painter, sculptor…"), "Painter");
     change(screen.getByPlaceholderText("Johannesburg"), "Durban");
     change(screen.getByPlaceholderText("••••••••••"), "pw");
-    const [rules, terms] = screen.getAllByRole("checkbox");
-    fireEvent.click(rules);
-    fireEvent.click(terms);
-    fireEvent.click(screen.getByRole("button", { name: "Accept & create account" }));
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     expect(p.onName).toHaveBeenCalledWith("Thandiwe");
     expect(p.onPractice).toHaveBeenCalledWith("Painter");
     expect(p.onCity).toHaveBeenCalledWith("Durban");
     expect(p.onPassword).toHaveBeenCalledWith("pw");
-    expect(p.onRulesAck).toHaveBeenCalledWith(true);
     expect(p.onAgreed).toHaveBeenCalledWith(true);
     expect(p.onSubmit).toHaveBeenCalled();
   });

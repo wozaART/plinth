@@ -75,14 +75,12 @@ function SignInForm() {
   const [exInviteGalleryName, setExInviteGalleryName] = useState("");
   const [exInviteExhibitionTitle, setExInviteExhibitionTitle] = useState("");
   const [exInviteExhibitionTheme, setExInviteExhibitionTheme] = useState("");
-  const [exInviteExhibitionRules, setExInviteExhibitionRules] = useState("");
   const [exInviteEmail, setExInviteEmail] = useState("");
   const [exInviteName, setExInviteName] = useState("");
   const [exInvitePractice, setExInvitePractice] = useState("");
   const [exInviteCity, setExInviteCity] = useState("");
   const [exInvitePassword, setExInvitePassword] = useState("");
   const [exInviteAgreed, setExInviteAgreed] = useState(true);
-  const [exInviteRulesAck, setExInviteRulesAck] = useState(false);
   const [exInviteConfirmationPending, setExInviteConfirmationPending] = useState(false);
 
   useEffect(() => {
@@ -137,7 +135,6 @@ function SignInForm() {
       setExInviteGalleryName(data.gallery_name);
       setExInviteExhibitionTitle(data.exhibition_title);
       setExInviteExhibitionTheme(data.exhibition_theme ?? "");
-      setExInviteExhibitionRules(data.exhibition_rules ?? "");
 
       if (data.status === "accepted") {
         setExInviteStatus("accepted");
@@ -379,7 +376,6 @@ function SignInForm() {
   const handleExhibitionInviteOAuth = async (provider: "google") => {
     if (!exhibitionInviteToken) return;
     if (!exInviteAgreed) { setError("Please agree to the terms to continue."); return; }
-    if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -393,7 +389,6 @@ function SignInForm() {
       if (!exhibitionInviteToken) return;
 
       if (exInviteStatus === "ready_signed_in") {
-        if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
         const { error: acceptError } = await supabase.rpc("accept_exhibition_invite", { p_token: exhibitionInviteToken });
         if (acceptError) { setError(acceptError.message); return; }
         router.push("/studio");
@@ -402,7 +397,6 @@ function SignInForm() {
       }
 
       if (!exInviteAgreed) { setError("Please agree to the terms to continue."); return; }
-      if (exInviteExhibitionRules && !exInviteRulesAck) { setError("Please confirm you've read the exhibition rules."); return; }
       if (exInvitePassword.length < 6) { setError("Choose a password with at least 6 characters."); return; }
 
       const { data, error } = await supabase.auth.signUp({
@@ -561,12 +555,12 @@ function SignInForm() {
           {!isGallery && aView === "exhibition-invite" && (
             <ArtistForms.ExhibitionInvite
               status={exInviteStatus} galleryName={exInviteGalleryName}
-              exhibitionTitle={exInviteExhibitionTitle} exhibitionTheme={exInviteExhibitionTheme} exhibitionRules={exInviteExhibitionRules}
+              exhibitionTitle={exInviteExhibitionTitle} exhibitionTheme={exInviteExhibitionTheme}
               email={exInviteEmail} name={exInviteName} practice={exInvitePractice} city={exInviteCity}
-              password={exInvitePassword} agreed={exInviteAgreed} rulesAck={exInviteRulesAck} confirmationPending={exInviteConfirmationPending}
+              password={exInvitePassword} agreed={exInviteAgreed} confirmationPending={exInviteConfirmationPending}
               loading={loading}
               onName={setExInviteName} onPractice={setExInvitePractice}
-              onCity={setExInviteCity} onPassword={setExInvitePassword} onAgreed={setExInviteAgreed} onRulesAck={setExInviteRulesAck}
+              onCity={setExInviteCity} onPassword={setExInvitePassword} onAgreed={setExInviteAgreed}
               onSubmit={handleExhibitionInviteAccept}
               onOAuth={handleExhibitionInviteOAuth}
               onSignIn={() => { setAView("signin"); setError(null); }}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   AuthHeading,
   AuthInput,
@@ -329,7 +330,7 @@ export function ArtistInvite({
           className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
         />
         <span className="text-[12.5px] text-text-muted leading-relaxed">
-          I agree to Woza Art&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
+          I agree to Woza Art&apos;s terms, and to receive decisions and correspondance from {galleryName}.
         </span>
       </label>
 
@@ -359,32 +360,31 @@ interface ArtistExhibitionInviteProps extends BaseProps {
   galleryName: string;
   exhibitionTitle: string;
   exhibitionTheme: string;
-  exhibitionRules: string;
   email: string;
   name: string;
   practice: string;
   city: string;
   password: string;
   agreed: boolean;
-  rulesAck: boolean;
   confirmationPending: boolean;
   onName: (v: string) => void;
   onPractice: (v: string) => void;
   onCity: (v: string) => void;
   onPassword: (v: string) => void;
   onAgreed: (v: boolean) => void;
-  onRulesAck: (v: boolean) => void;
   onSubmit: () => void;
   onOAuth: (p: "google") => void;
   onSignIn: () => void;
 }
 
 export function ArtistExhibitionInvite({
-  status, galleryName, exhibitionTitle, exhibitionTheme, exhibitionRules,
-  email, name, practice, city, password, agreed, rulesAck, confirmationPending, loading,
-  onName, onPractice, onCity, onPassword, onAgreed, onRulesAck,
+  status, galleryName, exhibitionTitle, exhibitionTheme,
+  email, name, practice, city, password, agreed, confirmationPending, loading,
+  onName, onPractice, onCity, onPassword, onAgreed,
   onSubmit, onOAuth, onSignIn, onError,
 }: ArtistExhibitionInviteProps) {
+  const [showForm, setShowForm] = useState(false);
+
   if (status === "loading") {
     return (
       <div className="anim-fade">
@@ -479,25 +479,6 @@ export function ArtistExhibitionInvite({
             <strong className="text-foreground">Theme:</strong> {exhibitionTheme}
           </p>
         )}
-        {exhibitionRules && (
-          <p className="text-[13px] text-text-soft leading-relaxed mt-2 mb-6">
-            <strong className="text-foreground">Rules:</strong> {exhibitionRules}
-          </p>
-        )}
-
-        {exhibitionRules && (
-          <label className="flex gap-[10px] items-start mt-5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={rulesAck}
-              onChange={(e) => onRulesAck(e.target.checked)}
-              className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
-            />
-            <span className="text-[12.5px] text-text-muted leading-relaxed">
-              I have read and understand the rules for {exhibitionTitle}.
-            </span>
-          </label>
-        )}
 
         <PrimaryButton loading={loading} onClick={onSubmit}>
           {loading ? "Joining…" : "Confirm & join exhibition"}
@@ -526,86 +507,75 @@ export function ArtistExhibitionInvite({
           <strong className="text-foreground">Theme:</strong> {exhibitionTheme}
         </p>
       )}
-      {exhibitionRules && (
-        <p className="text-[13px] text-text-soft leading-relaxed mt-2 mb-6">
-          <strong className="text-foreground">Rules:</strong> {exhibitionRules}
-        </p>
-      )}
+      {!showForm ? (
+        <PrimaryButton onClick={() => setShowForm(true)}>
+          Accept &amp; create account
+        </PrimaryButton>
+      ) : (
+        <div className="anim-fade mt-6">
+          <FieldLabel>Email</FieldLabel>
+          <AuthInput type="email" value={email} disabled />
 
-      <FieldLabel>Email</FieldLabel>
-      <AuthInput type="email" value={email} disabled />
+          <div className="mt-4">
+            <FieldLabel>Your name</FieldLabel>
+            <AuthInput
+              placeholder="Thandiwe Mokoena"
+              value={name}
+              onChange={(e) => onName(e.target.value)}
+            />
+          </div>
 
-      <div className="mt-4">
-        <FieldLabel>Your name</FieldLabel>
-        <AuthInput
-          placeholder="Thandiwe Mokoena"
-          value={name}
-          onChange={(e) => onName(e.target.value)}
-        />
-      </div>
+          <div className="flex gap-3 mt-4">
+            <div style={{ flex: 1.3 }}>
+              <FieldLabel>Practice</FieldLabel>
+              <AuthInput
+                placeholder="Painter, sculptor…"
+                value={practice}
+                onChange={(e) => onPractice(e.target.value)}
+              />
+            </div>
+            <div className="flex-1">
+              <FieldLabel>Based in</FieldLabel>
+              <AuthInput
+                placeholder="Johannesburg"
+                value={city}
+                onChange={(e) => onCity(e.target.value)}
+              />
+            </div>
+          </div>
 
-      <div className="flex gap-3 mt-4">
-        <div style={{ flex: 1.3 }}>
-          <FieldLabel>Practice</FieldLabel>
-          <AuthInput
-            placeholder="Painter, sculptor…"
-            value={practice}
-            onChange={(e) => onPractice(e.target.value)}
-          />
+          <div className="mt-4">
+            <FieldLabel>Choose a password</FieldLabel>
+            <AuthInput
+              type="password"
+              placeholder="••••••••••"
+              value={password}
+              onChange={(e) => { onPassword(e.target.value); onError(null); }}
+              onKeyDown={(e) => e.key === "Enter" && onSubmit()}
+            />
+          </div>
+
+          <label className="flex gap-[10px] items-start mt-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreed}
+              onChange={(e) => onAgreed(e.target.checked)}
+              className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
+            />
+            <span className="text-[12.5px] text-text-muted leading-relaxed">
+              I agree to Woza Art&apos;s terms, and to receive decisions and correspondance from {galleryName}.
+            </span>
+          </label>
+
+          <PrimaryButton loading={loading} onClick={onSubmit}>
+            {loading ? "Setting up…" : "Create account"}
+          </PrimaryButton>
+
+          <Divider label="or continue with" />
+          <OAuthRow onGoogle={() => onOAuth("google")} />
+
         </div>
-        <div className="flex-1">
-          <FieldLabel>Based in</FieldLabel>
-          <AuthInput
-            placeholder="Johannesburg"
-            value={city}
-            onChange={(e) => onCity(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <FieldLabel>Choose a password</FieldLabel>
-        <AuthInput
-          type="password"
-          placeholder="••••••••••"
-          value={password}
-          onChange={(e) => { onPassword(e.target.value); onError(null); }}
-          onKeyDown={(e) => e.key === "Enter" && onSubmit()}
-        />
-      </div>
-
-      {exhibitionRules && (
-        <label className="flex gap-[10px] items-start mt-5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={rulesAck}
-            onChange={(e) => onRulesAck(e.target.checked)}
-            className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
-          />
-          <span className="text-[12.5px] text-text-muted leading-relaxed">
-            I have read and understand the rules for {exhibitionTitle}.
-          </span>
-        </label>
       )}
-
-      <label className="flex gap-[10px] items-start mt-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={agreed}
-          onChange={(e) => onAgreed(e.target.checked)}
-          className="mt-0.5 w-4 h-4 shrink-0 accent-foreground"
-        />
-        <span className="text-[12.5px] text-text-muted leading-relaxed">
-          I agree to Woza Art&apos;s terms, and to receive decisions and drop-off passes from {galleryName} by email.
-        </span>
-      </label>
-
-      <PrimaryButton loading={loading} onClick={onSubmit}>
-        {loading ? "Setting up…" : "Accept & create account"}
-      </PrimaryButton>
-
-      <Divider label="or continue with" />
-      <OAuthRow onGoogle={() => onOAuth("google")} />
 
       <p className="text-[13px] text-text-muted mt-[22px] text-center">
         Already set up?{" "}
