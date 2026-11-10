@@ -135,6 +135,7 @@ export async function getExhibitionsWithCounts(
       consignmentTermsText: e.consignment_terms_text ?? "",
       consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
       maxWorksPerArtist: e.max_works_per_artist,
+      commissionRatePct: e.commission_rate != null ? Math.round(Number(e.commission_rate) * 1000) / 10 : null,
       filled: c?.filled ?? 0,
       applicants: c?.applicants ?? 0,
       submissionDeadline: e.submission_deadline,
@@ -526,6 +527,7 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
     consignmentTermsText: e.consignment_terms_text ?? "",
     consignmentTermsPdfPath: e.consignment_terms_pdf_path ?? null,
     maxWorksPerArtist: e.max_works_per_artist,
+    commissionRatePct: e.commission_rate != null ? Math.round(Number(e.commission_rate) * 1000) / 10 : null,
     myWorkCount: myCounts.get(e.id) ?? 0,
     accepting: (e.status === "open" || e.status === "planning") && !deadlinePassed(e.submission_deadline),
   }));

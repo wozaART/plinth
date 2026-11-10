@@ -67,6 +67,7 @@ export const exhibition = (over: Partial<Exhibition> = {}): Exhibition => ({
   consignmentTermsText: "",
   consignmentTermsPdfPath: null,
   maxWorksPerArtist: 3,
+  commissionRatePct: null,
   filled: 4,
   applicants: 7,
   submissionDeadline: null,

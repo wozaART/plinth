@@ -84,6 +84,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
         consignmentTermsText: input.consignmentTermsText ?? "",
         consignmentTermsPdfPath: null,
         maxWorksPerArtist: input.maxWorksPerArtist,
+        commissionRatePct: input.commissionRatePct,
         filled: 0,
         applicants: 0,
         submissionDeadline: input.submissionDeadline,
@@ -253,7 +254,7 @@ export default function ExhibitionsPanel({ data, invites: initialInvites, contac
                 </div>
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)" }}>Max works per artist</div>
-                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.1 }}>{ex.maxWorksPerArtist ?? "No limit"}</div>
+                  <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.1 }}>{ex.maxWorksPerArtist ?? "∞"}</div>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>

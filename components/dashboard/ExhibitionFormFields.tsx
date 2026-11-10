@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
+import { useGalleryConfig } from "@/lib/gallery-context";
 import type { ExhibitionAccess, ExhibitionType } from "@/lib/types";
 import type { ExhibitionInput } from "@/lib/supabase/actions";
 
@@ -32,6 +33,8 @@ export interface ExhibitionFormState {
   // Path of the PDF already attached to the exhibition, if any.
   termsPdfPath: string | null;
   maxWorksPerArtist: string;
+  // Blank = use the gallery's default commission.
+  commissionRatePct: string;
   submissionDeadline: string;
   openingDate: string;
   closingDate: string;
@@ -70,11 +73,19 @@ export const EMPTY_EXHIBITION_FORM: ExhibitionFormState = {
   termsPdfFile: null,
   termsPdfPath: null,
   maxWorksPerArtist: "",
+  commissionRatePct: "",
   submissionDeadline: "",
   openingDate: "",
   closingDate: "",
   deliveryDate: "",
 };
+
+// Blank (or out of range) means "use the gallery default".
+export function commissionInput(form: Pick<ExhibitionFormState, "commissionRatePct">): number | null {
+  const raw = form.commissionRatePct.trim();
+  const n = Number(raw);
+  return raw && Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 10) / 10 : null;
+}
 
 export default function ExhibitionFormFields({
   form,
@@ -86,6 +97,7 @@ export default function ExhibitionFormFields({
   requireDates?: boolean;
 }) {
   const [pdfError, setPdfError] = useState<string | null>(null);
+  const { business } = useGalleryConfig();
 
   function pickPdf(file: File | null) {
     if (!file) return;
@@ -238,6 +250,12 @@ export default function ExhibitionFormFields({
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={labelStyle}>Maximum works per artist</span>
         <input type="number" min={1} value={form.maxWorksPerArtist} placeholder="No limit" onChange={(e) => onChange({ maxWorksPerArtist: e.target.value })} style={inputStyle} />
+      </label>
+
+      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <span style={labelStyle}>Commission (%)</span>
+        <input type="number" min={0} max={100} step="any" value={form.commissionRatePct} placeholder={`Gallery default (${Math.round(business.commissionRate * 1000) / 10}%)`} onChange={(e) => onChange({ commissionRatePct: e.target.value })} style={inputStyle} />
+        <span style={{ fontSize: 12, color: "var(--pl-text-faint)" }}>Added on top of each artist&apos;s asking price. Leave blank to use the gallery default.</span>
       </label>
 
       <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>

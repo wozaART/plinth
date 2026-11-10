@@ -292,6 +292,7 @@ export interface ExhibitionInput {
   consignmentTermsText?: string;
   consignmentTermsPdfPath?: string | null;
   maxWorksPerArtist: number | null;
+  commissionRatePct: number | null;
   submissionDeadline: string | null;
   openingDate: string | null;
   closingDate: string | null;
@@ -332,6 +333,7 @@ function toExhibitionRow(input: Partial<ExhibitionInput>) {
     ...(input.sizeRequirements !== undefined && { size_requirements: input.sizeRequirements || null }),
     ...(input.rules !== undefined && { rules: input.rules || null }),
     ...termsRow(input),
+    ...(input.commissionRatePct !== undefined && { commission_rate: input.commissionRatePct == null ? null : input.commissionRatePct / 100 }),
     ...(input.maxWorksPerArtist !== undefined && { max_works_per_artist: input.maxWorksPerArtist }),
     ...(input.submissionDeadline !== undefined && { submission_deadline: input.submissionDeadline }),
     ...(input.openingDate !== undefined && { opening_date: input.openingDate }),

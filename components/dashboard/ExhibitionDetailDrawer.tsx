@@ -4,7 +4,7 @@ import { useState, type CSSProperties } from "react";
 import { EX_ACCESS_META, EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import ConsignmentTermsView from "@/components/ConsignmentTermsView";
-import ExhibitionFormFields, { termsInput, termsModeOf, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
+import ExhibitionFormFields, { commissionInput, termsInput, termsModeOf, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
 
 function toForm(ex: Exhibition): ExhibitionFormState {
   return {
@@ -20,6 +20,7 @@ function toForm(ex: Exhibition): ExhibitionFormState {
     termsText: ex.consignmentTermsText,
     termsPdfFile: null,
     termsPdfPath: ex.consignmentTermsPdfPath,
+    commissionRatePct: ex.commissionRatePct != null ? String(ex.commissionRatePct) : "",
     maxWorksPerArtist: ex.maxWorksPerArtist != null ? String(ex.maxWorksPerArtist) : "",
     submissionDeadline: ex.submissionDeadline ?? "",
     openingDate: ex.openingDate ?? "",
@@ -86,6 +87,7 @@ export default function ExhibitionDetailDrawer({
       sizeRequirements: form.sizeRequirements.trim(),
       rules: form.rules.trim(),
       ...termsInput(form),
+      commissionRatePct: commissionInput(form),
       maxWorksPerArtist: Number(form.maxWorksPerArtist) >= 1 ? Math.floor(Number(form.maxWorksPerArtist)) : null,
       submissionDeadline: form.submissionDeadline || null,
       openingDate: form.openingDate || null,
@@ -142,6 +144,7 @@ export default function ExhibitionDetailDrawer({
                 {[
                   ["Works approved", ex.filled],
                   ["Max works per artist", ex.maxWorksPerArtist ?? "No limit"],
+                  ["Commission", ex.commissionRatePct != null ? `${ex.commissionRatePct}%` : "Gallery default"],
                   ["Applicants", ex.applicants],
                   ["Theme", ex.theme || "—"],
                   ["Medium requirements", ex.mediumRequirements || "—"],

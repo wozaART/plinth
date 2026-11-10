@@ -170,7 +170,7 @@ describe("StudioShell consignment terms", () => {
   const call = (over: Partial<OpenCall> = {}): OpenCall => ({
     id: "oc1", title: "Highveld Light", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
     theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
-    maxWorksPerArtist: null, myWorkCount: 0, accepting: true, ...over,
+    maxWorksPerArtist: null, commissionRatePct: null, myWorkCount: 0, accepting: true, ...over,
   });
 
   // Walks the submit drawer to its last step.
@@ -245,6 +245,16 @@ describe("StudioShell consignment terms", () => {
     fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
     expect(screen.getByText(/already submitted the maximum of 2 works/)).toBeTruthy();
     expect((screen.getByRole("button", { name: /Continue/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("uses the exhibition's own commission in the sale-price note", () => {
+    setup({ openCalls: [call({ commissionRatePct: 25 })] });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    fireEvent.click(screen.getByRole("button", { name: /Continue/ }));
+    fireEvent.change(screen.getByPlaceholderText("e.g. R 18 000"), { target: { value: "1000" } });
+    expect(screen.getByText("Gallery keeps 25%")).toBeTruthy();
+    expect(document.body.textContent).toMatch(/R\s?1\s?250/);
   });
 
   it("asks how many works first, then one form per work", () => {
