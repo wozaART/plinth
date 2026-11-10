@@ -37,6 +37,7 @@ const config = {
     studioTabs: [
       { id: "overview", label: "Overview", enabled: true },
       { id: "submissions", label: "My work", enabled: true },
+      { id: "open-calls", label: "Open calls", enabled: true },
       { id: "earnings", label: "Earnings", enabled: false },
       { id: "messages", label: "Messages", enabled: true },
     ],
@@ -211,5 +212,21 @@ describe("StudioShell consignment terms", () => {
     reachStatementStep();
     expect(screen.queryByLabelText(/agree to the consignment terms/)).toBeNull();
     expect((screen.getByRole("button", { name: "Submit for review" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("asks the artist to accept rules and terms in a modal before opening the submit drawer", () => {
+    setup({ openCalls: [call({ rules: "Max 3 works.", consignmentTermsText: "Commission is 40%." })] });
+    fireEvent.click(screen.getByRole("button", { name: "Open calls" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit for this call" }));
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.textContent).toContain("Max 3 works.");
+    expect(dialog.textContent).toContain("Commission is 40%.");
+    expect(screen.queryByPlaceholderText("Work title")).toBeNull();
+    const accept = screen.getByRole("button", { name: /Accept & continue/ }) as HTMLButtonElement;
+    expect(accept.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(accept);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByPlaceholderText("Work title")).toBeTruthy();
   });
 });

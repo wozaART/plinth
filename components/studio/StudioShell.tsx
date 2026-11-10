@@ -102,12 +102,51 @@ function BlockingBanner({ work, onAck }: { work: MyWork; onAck: () => void }) {
   );
 }
 
+function CallTermsModal({ call, onCancel, onAccept }: { call: OpenCall; onCancel: () => void; onAccept: () => void }) {
+  const [agreed, setAgreed] = useState(false);
+  const hasRules = Boolean(call.rules);
+  const hasTerms = hasConsignmentTerms(call);
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`Rules and consignment terms for ${call.title}`} className="anim-scrim" style={{ position: "fixed", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: "var(--pl-scrim, rgba(23,21,15,.32))" }} onClick={onCancel}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(520px,100%)", maxHeight: "90vh", display: "flex", flexDirection: "column", background: "var(--pl-bg-app)", border: "1px solid var(--pl-border)", borderRadius: 14 }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid var(--pl-border)" }}>
+          <div style={{ fontSize: 15, fontWeight: 600 }}>Before you submit to {call.title}</div>
+          <div style={{ fontSize: 12.5, color: "var(--pl-text-eyebrow)", marginTop: 2 }}>Please review {hasRules && hasTerms ? "the rules and consignment terms" : hasRules ? "the rules" : "the consignment terms"} to continue.</div>
+        </div>
+        <div style={{ padding: "18px 22px", overflowY: "auto", display: "flex", flexDirection: "column", gap: 14 }}>
+          {hasRules && (
+            <div style={{ background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--pl-text-secondary)" }}>Rules:</strong> {call.rules}
+            </div>
+          )}
+          {hasTerms && (
+            <div style={{ background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px" }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--pl-text-secondary)", marginBottom: 8 }}>Consignment terms</div>
+              <ConsignmentTermsView text={call.consignmentTermsText} pdfPath={call.consignmentTermsPdfPath} maxHeight={200} />
+            </div>
+          )}
+          <label style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}>
+            <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2 }} />
+            <span style={{ fontSize: 12.5, color: "var(--pl-text-secondary)", lineHeight: 1.5 }}>
+              I have read and agree to {hasRules && hasTerms ? "the rules and consignment terms" : hasRules ? "the rules" : "the consignment terms"} for this exhibition.
+            </span>
+          </label>
+        </div>
+        <div style={{ padding: "14px 22px", borderTop: "1px solid var(--pl-border)", display: "flex", gap: 10 }}>
+          <button onClick={onCancel} style={{ flex: 1, padding: 12, background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 10, fontSize: 14, cursor: "pointer", color: "var(--pl-text-secondary)" }}>Cancel</button>
+          <button onClick={onAccept} disabled={!agreed} style={{ flex: 2, padding: 12, background: agreed ? "var(--pl-solid)" : "var(--pl-border-strong)", color: agreed ? "var(--pl-on-solid)" : "var(--pl-text-faint)", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 550, cursor: agreed ? "pointer" : "not-allowed" }}>Accept &amp; continue</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function parseDim(dim?: string | null): [string, string, string] {
   const nums = (dim ?? "").match(/\d+(?:\.\d+)?/g) ?? [];
   return [nums[0] ?? "", nums[1] ?? "", nums[2] ?? ""];
 }
 
-function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
+function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNote: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (formData: FormData, image: File | null) => void }) {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     title: editing?.title ?? "",
@@ -117,7 +156,7 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
     depth: parseDim(editing?.dim)[2],
     year: editing?.year ? String(editing.year) : "",
     price: editing?.price != null ? String(editing.price) : "",
-    exhibitionId: openCalls.find(o => o.accepting)?.id ?? "",
+    exhibitionId: initialCallId ?? openCalls.find(o => o.accepting)?.id ?? "",
     statement: editing?.statement ?? "",
   });
   const [image, setImage] = useState<File | null>(null);
@@ -130,9 +169,11 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
   useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
   const selectedCall = openCalls.find(o => o.id === form.exhibitionId);
-  const needsRulesAck = !editing && Boolean(selectedCall?.rules);
-  const needsTermsAck = !editing && Boolean(selectedCall && hasConsignmentTerms(selectedCall));
-  const termsAck = termsAckFor !== null && termsAckFor === form.exhibitionId;
+  // Rules and terms already accepted in the modal for this call need no second prompt.
+  const preAccepted = Boolean(acceptedCallId) && acceptedCallId === form.exhibitionId;
+  const needsRulesAck = !editing && Boolean(selectedCall?.rules) && !preAccepted;
+  const needsTermsAck = !editing && Boolean(selectedCall && hasConsignmentTerms(selectedCall)) && !preAccepted;
+  const termsAck = preAccepted || (termsAckFor !== null && termsAckFor === form.exhibitionId);
   const hasImage = Boolean(image || editing?.imageUrl);
   const priceNum = Number(form.price.replace(/[^0-9.]/g, ""));
   const salePrice = priceNum > 0 ? formatCurrency(priceNum * (1 + commissionRatePct / 100), "ZAR") : null;
@@ -156,7 +197,7 @@ function SubmitDrawer({ openCalls, commissionNote, commissionRatePct, editing, o
     formData.set("price", form.price);
     formData.set("exhibitionId", form.exhibitionId);
     formData.set("statement", form.statement);
-    formData.set("rulesAck", String(rulesAck));
+    formData.set("rulesAck", String(rulesAck || preAccepted));
     formData.set("termsAck", String(termsAck));
     onSubmit(formData, image);
   }
@@ -371,6 +412,8 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
   const [payouts, setPayouts] = useState(initialPayouts);
   const [invites, setInvites] = useState(initialInvites);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [termsCall, setTermsCall] = useState<OpenCall | null>(null);
+  const [submitCall, setSubmitCall] = useState<{ id: string; accepted: boolean } | null>(null);
   const [zoomImage, setZoomImage] = useState<{ url: string; title: string } | null>(null);
   const [editingWork, setEditingWork] = useState<MyWork | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -543,7 +586,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
             </span>
           )}
           {tab === "submissions" && (
-            <button onClick={() => { setEditingWork(null); setShowSubmit(true); }} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
+            <button onClick={() => { setEditingWork(null); setSubmitCall(null); setShowSubmit(true); }} style={{ fontSize: 13, padding: "9px 15px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", borderRadius: 9, border: "none", cursor: "pointer" }}>Submit work</button>
           )}
         </div>
 
@@ -616,7 +659,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                         </div>
                         <span style={{ fontSize: 11, fontWeight: 600, padding: "4px 10px", borderRadius: 20, background: meta.bg, color: meta.fg, flexShrink: 0 }}>{meta.label}</span>
                         {isSubmissionEditable(w.status) ? (
-                          <button onClick={() => { setEditingWork(w); setShowSubmit(true); }} style={{ fontSize: 12, padding: "6px 12px", border: "1px solid var(--pl-border-strong)", borderRadius: 8, background: "none", color: "var(--pl-text-secondary)", cursor: "pointer", flexShrink: 0 }}>Edit</button>
+                          <button onClick={() => { setEditingWork(w); setSubmitCall(null); setShowSubmit(true); }} style={{ fontSize: 12, padding: "6px 12px", border: "1px solid var(--pl-border-strong)", borderRadius: 8, background: "none", color: "var(--pl-text-secondary)", cursor: "pointer", flexShrink: 0 }}>Edit</button>
                         ) : w.status === "approved" ? (
                           <span title="Approved works can no longer be edited" style={{ fontSize: 11.5, color: "var(--pl-text-faint)", flexShrink: 0 }}>🔒 Locked</span>
                         ) : null}
@@ -682,7 +725,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                     </div>
                   )}
                   {oc.accepting && (
-                    <button onClick={() => { setEditingWork(null); setShowSubmit(true); }} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
+                    <button onClick={() => { setEditingWork(null); if (oc.rules || hasConsignmentTerms(oc)) setTermsCall(oc); else { setSubmitCall({ id: oc.id, accepted: false }); setShowSubmit(true); } }} style={{ marginTop: 16, padding: "10px 16px", background: "var(--pl-solid)", color: "var(--pl-on-solid)", border: "none", borderRadius: 9, fontSize: 13.5, fontWeight: 550, cursor: "pointer" }}>
                       Submit for this call
                     </button>
                   )}
@@ -810,7 +853,8 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
       </main>
 
       {zoomImage && <ImageLightbox url={zoomImage.url} alt={zoomImage.title} onClose={() => setZoomImage(null)} />}
-      {showSubmit && <SubmitDrawer key={editingWork?.id ?? "new"} openCalls={openCalls} commissionNote={commissionNote} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); }} onSubmit={handleSubmitWork} />}
+      {termsCall && <CallTermsModal call={termsCall} onCancel={() => setTermsCall(null)} onAccept={() => { setSubmitCall({ id: termsCall.id, accepted: true }); setTermsCall(null); setShowSubmit(true); }} />}
+      {showSubmit && <SubmitDrawer key={`${editingWork?.id ?? "new"}-${submitCall?.id ?? ""}`} initialCallId={editingWork ? undefined : submitCall?.id} acceptedCallId={submitCall?.accepted ? submitCall.id : undefined} openCalls={openCalls} commissionNote={commissionNote} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); setSubmitCall(null); }} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
