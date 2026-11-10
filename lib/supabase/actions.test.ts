@@ -392,6 +392,18 @@ describe("exhibitions", () => {
     expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ title: "New", max_works_per_artist: 3 });
   });
 
+  it("reopens a closed exhibition when the deadline moves to the future", async () => {
+    h.fake.on("exhibitions", "select", { data: { status: "closed" } });
+    await actions.updateExhibition("e1", { submissionDeadline: "2999-01-01" });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ submission_deadline: "2999-01-01", status: "open" });
+  });
+
+  it("leaves other statuses alone when the deadline moves", async () => {
+    h.fake.on("exhibitions", "select", { data: { status: "hanging" } });
+    await actions.updateExhibition("e1", { submissionDeadline: "2999-01-01" });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ submission_deadline: "2999-01-01" });
+  });
+
   it("typed consignment terms clear any PDF, and vice versa", async () => {
     await actions.updateExhibition("e1", { consignmentTermsText: "  Commission is 40%.  " });
     expect(h.fake.last("exhibitions", "update")?.payload).toEqual({ consignment_terms_text: "Commission is 40%.", consignment_terms_pdf_path: null });

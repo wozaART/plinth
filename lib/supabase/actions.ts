@@ -383,9 +383,17 @@ export async function updateExhibition(id: string, input: Partial<ExhibitionInpu
     const gallery = await getCurrentGallery(supabase);
     assertTermsPdfPath(input.consignmentTermsPdfPath, gallery.id, id);
   }
-  const { error } = await supabase.from("exhibitions").update(toExhibitionRow(input)).eq("id", id);
+  const row: ReturnType<typeof toExhibitionRow> = toExhibitionRow(input);
+  // Moving the deadline to today or later reopens a closed exhibition to artists.
+  if (input.submissionDeadline && !deadlinePassed(input.submissionDeadline) && input.status === undefined) {
+    const { data: current, error: readError } = await supabase.from("exhibitions").select("status").eq("id", id).single();
+    if (readError) throw readError;
+    if (current.status === "closed") row.status = "open";
+  }
+  const { error } = await supabase.from("exhibitions").update(row).eq("id", id);
   if (error) throw error;
   revalidatePath("/dashboard");
+  revalidatePath("/studio");
 }
 
 export async function archiveExhibition(id: string) {
