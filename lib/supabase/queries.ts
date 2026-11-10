@@ -18,8 +18,10 @@ import type {
   AuditLogEntry,
   AuditAction,
   AuditChange,
+  ArtistPublicProfile,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/currency";
+import { isLinkKind } from "@/lib/artist-profile";
 import { deadlinePassed, relativeTime, shortDate } from "@/lib/utils";
 
 type Client = SupabaseClient<Database>;
@@ -74,6 +76,7 @@ export async function getSubmissions(supabase: Client, galleryId: string, curren
   return (data ?? []).map((s) => ({
     id: s.id,
     title: s.title,
+    artistId: s.artist_id,
     artist: s.artist_profiles?.full_name ?? "Unknown artist",
     year: s.year ?? 0,
     medium: s.medium ?? "",
@@ -576,4 +579,42 @@ export async function getPayoutProofUrl(supabase: Client, payoutId: string): Pro
     .createSignedUrl(payout.proof_of_payment_path, 60);
   if (signError) return null;
   return data.signedUrl;
+}
+
+// An artist's public profile. Row-level security decides who gets it: the
+// artist themselves, or a gallery that has dealt with them. Anyone else gets null.
+export async function getArtistPublicProfile(supabase: Client, artistId: string): Promise<ArtistPublicProfile | null> {
+  const [profile, links, photos, works] = await Promise.all([
+    supabase.from("artist_profiles").select("id, full_name, city, practice, bio").eq("id", artistId).maybeSingle(),
+    supabase.from("artist_links").select("kind, url").eq("artist_id", artistId).order("position", { ascending: true }),
+    supabase.from("artist_photos").select("id, kind, image_url").eq("artist_id", artistId).order("position", { ascending: true }).order("created_at", { ascending: true }),
+    supabase.from("artist_portfolio_works").select("*").eq("artist_id", artistId).order("position", { ascending: true }).order("created_at", { ascending: true }),
+  ]);
+  if (profile.error || !profile.data) return null;
+  if (links.error) throw links.error;
+  if (photos.error) throw photos.error;
+  if (works.error) throw works.error;
+
+  const photoRows = photos.data ?? [];
+  const toPhoto = (p: { id: string; kind: string; image_url: string }) => ({ id: p.id, kind: p.kind as "profile" | "studio", imageUrl: p.image_url });
+  const profilePhoto = photoRows.find(p => p.kind === "profile");
+
+  return {
+    artistId,
+    name: profile.data.full_name ?? "Artist",
+    city: profile.data.city ?? "",
+    practice: profile.data.practice ?? "",
+    bio: profile.data.bio ?? "",
+    links: (links.data ?? []).filter(l => isLinkKind(l.kind)).map(l => ({ kind: l.kind as ArtistPublicProfile["links"][number]["kind"], url: l.url })),
+    profilePhoto: profilePhoto ? toPhoto(profilePhoto) : null,
+    studioPhotos: photoRows.filter(p => p.kind === "studio").map(toPhoto),
+    works: (works.data ?? []).map(w => ({
+      id: w.id,
+      title: w.title,
+      year: w.year,
+      medium: w.medium ?? "",
+      dimensions: w.dimensions ?? "",
+      imageUrl: w.image_url,
+    })),
+  };
 }

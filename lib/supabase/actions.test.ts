@@ -21,7 +21,10 @@ vi.mock("next/headers", () => ({
 vi.mock("next/cache", () => ({ revalidatePath: h.revalidatePath }));
 vi.mock("@/utils/supabase/server", () => ({ createClient: () => h.fake.client }));
 vi.mock("@/lib/supabase/gallery", () => ({ getCurrentGallery: async () => h.gallery }));
-vi.mock("@/lib/supabase/queries", () => ({ getPayoutProofUrl: vi.fn(async () => "https://signed.test/proof") }));
+vi.mock("@/lib/supabase/queries", () => ({
+  getPayoutProofUrl: vi.fn(async () => "https://signed.test/proof"),
+  getArtistPublicProfile: vi.fn(async (_db: unknown, id: string) => (id === "visible" ? { artistId: id, name: "Ann" } : null)),
+}));
 
 import * as actions from "./actions";
 
@@ -615,5 +618,177 @@ describe("updateArtistProfile", () => {
     h.fake.on("artist_profiles", "update", { error: dbError });
     await expect(actions.updateArtistProfile(input)).rejects.toBe(dbError);
     expect(h.fake.last("artist_bank_details")).toBeUndefined();
+  });
+});
+
+describe("artist public profile", () => {
+  const bucketUrl = (path: string) => `https://cdn.test/artist-profile-images/${path}`;
+
+  describe("saveArtistAbout", () => {
+    const input = { bio: "  Paints the coast.  ", practice: " Painter ", city: " ", links: [{ kind: "instagram" as const, url: "instagram.com/ann" }] };
+
+    it("requires sign-in", async () => {
+      await expect(actions.saveArtistAbout(input)).rejects.toThrow("Not signed in.");
+    });
+
+    it("trims text, nulls blanks and normalises link URLs before replacing the links", async () => {
+      signIn("artist");
+      const result = await actions.saveArtistAbout(input);
+      expect(h.fake.last("artist_profiles", "update")).toMatchObject({
+        payload: { bio: "Paints the coast.", practice: "Painter", city: null },
+        filters: [["id", "user-1"]],
+      });
+      expect(h.fake.rpcCalls).toEqual([{ fn: "replace_artist_links", args: { p_links: [{ kind: "instagram", url: "https://instagram.com/ann" }] } }]);
+      expect(result.links).toEqual([{ kind: "instagram", url: "https://instagram.com/ann" }]);
+    });
+
+    it.each(["javascript:alert(1)", "not a url", "ftp://example.com/file", "localhost"])("rejects %s as a link", async (url) => {
+      signIn("artist");
+      await expect(actions.saveArtistAbout({ ...input, links: [{ kind: "website", url }] })).rejects.toThrow("isn't a valid web address");
+      expect(h.fake.last("artist_profiles")).toBeUndefined();
+    });
+
+    it("rejects an unknown link type, too many links and an over-long bio", async () => {
+      signIn("artist");
+      await expect(actions.saveArtistAbout({ ...input, links: [{ kind: "myspace" as never, url: "https://x.com" }] })).rejects.toThrow("Choose where each link goes.");
+      const many = Array.from({ length: 11 }, () => ({ kind: "website" as const, url: "https://example.com" }));
+      await expect(actions.saveArtistAbout({ ...input, links: many })).rejects.toThrow("up to 10 links");
+      await expect(actions.saveArtistAbout({ ...input, bio: "x".repeat(2001) })).rejects.toThrow("2000 characters");
+    });
+
+    it("surfaces a failed link replacement", async () => {
+      signIn("artist");
+      h.fake.onRpc("replace_artist_links", { error: dbError });
+      await expect(actions.saveArtistAbout(input)).rejects.toBe(dbError);
+    });
+  });
+
+  describe("portfolio works", () => {
+    const work = { id: "w1", title: " Low Tide ", year: 2024, medium: " Oil ", dimensions: "", imagePath: "user-1/w1/1.jpg" };
+    const row = { id: "w1", title: "Low Tide", year: 2024, medium: "Oil", dimensions: null, image_url: bucketUrl("user-1/w1/1.jpg") };
+
+    it("adds a work after the last position, with the public image URL", async () => {
+      signIn("artist");
+      h.fake.on("artist_portfolio_works", "select", { data: { position: 3 } });
+      h.fake.on("artist_portfolio_works", "insert", { data: row });
+      const created = await actions.addPortfolioWork(work);
+      expect(h.fake.last("artist_portfolio_works", "insert")?.payload).toEqual({
+        id: "w1", artist_id: "user-1", title: "Low Tide", year: 2024, medium: "Oil", dimensions: null,
+        image_url: bucketUrl("user-1/w1/1.jpg"), position: 4,
+      });
+      expect(created).toEqual({ id: "w1", title: "Low Tide", year: 2024, medium: "Oil", dimensions: "", imageUrl: bucketUrl("user-1/w1/1.jpg") });
+    });
+
+    it("needs a photo, a title and a sane year", async () => {
+      signIn("artist");
+      await expect(actions.addPortfolioWork({ ...work, imagePath: undefined })).rejects.toThrow("Add a photo");
+      await expect(actions.addPortfolioWork({ ...work, title: " " })).rejects.toThrow("Give the work a title.");
+      await expect(actions.addPortfolioWork({ ...work, year: 12 })).rejects.toThrow("valid year");
+      expect(h.fake.last("artist_portfolio_works", "insert")).toBeUndefined();
+    });
+
+    it("only accepts images uploaded under the artist's own folder for that work", async () => {
+      signIn("artist");
+      await expect(actions.addPortfolioWork({ ...work, imagePath: "someone-else/w1/1.jpg" })).rejects.toThrow("Invalid image upload.");
+      await expect(actions.addPortfolioWork({ ...work, imagePath: "user-1/other/1.jpg" })).rejects.toThrow("Invalid image upload.");
+      await expect(actions.addPortfolioWork({ ...work, imagePath: "user-1/w1/../x.jpg" })).rejects.toThrow("Invalid image upload.");
+    });
+
+    it("surfaces the database's cap on portfolio works", async () => {
+      signIn("artist");
+      const capError = { message: "Limit of 10 reached.", code: "23514" };
+      h.fake.on("artist_portfolio_works", "insert", { error: capError });
+      await expect(actions.addPortfolioWork(work)).rejects.toBe(capError);
+    });
+
+    it("keeps the current image on edit unless a new one is uploaded, then cleans up the old file", async () => {
+      signIn("artist");
+      h.fake.on("artist_portfolio_works", "select", { data: { image_url: bucketUrl("user-1/w1/0.jpg") } });
+      h.fake.on("artist_portfolio_works", "update", { data: row });
+      await actions.updatePortfolioWork({ ...work, imagePath: undefined });
+      expect(h.fake.last("artist_portfolio_works", "update")?.payload).not.toHaveProperty("image_url");
+      expect(h.fake.removals).toEqual([]);
+
+      await actions.updatePortfolioWork(work);
+      expect(h.fake.last("artist_portfolio_works", "update")?.payload).toMatchObject({ image_url: bucketUrl("user-1/w1/1.jpg") });
+      expect(h.fake.removals).toEqual([{ bucket: "artist-profile-images", paths: ["user-1/w1/0.jpg"] }]);
+    });
+
+    it("deletes only the artist's own work and removes its image", async () => {
+      signIn("artist");
+      h.fake.on("artist_portfolio_works", "delete", { data: { image_url: bucketUrl("user-1/w1/1.jpg") } });
+      await actions.deletePortfolioWork("w1");
+      expect(h.fake.last("artist_portfolio_works", "delete")?.filters).toEqual([["id", "w1"], ["artist_id", "user-1"]]);
+      expect(h.fake.removals).toEqual([{ bucket: "artist-profile-images", paths: ["user-1/w1/1.jpg"] }]);
+    });
+  });
+
+  describe("photos", () => {
+    const photoRow = (kind: string) => ({ id: "p1", kind, image_url: bucketUrl("user-1/p1/1.jpg") });
+
+    it("a new profile photo replaces the old one and removes its file", async () => {
+      signIn("artist");
+      h.fake.on("artist_photos", "delete", { data: { image_url: bucketUrl("user-1/old/0.jpg") } });
+      h.fake.on("artist_photos", "insert", { data: photoRow("profile") });
+      const photo = await actions.addArtistPhoto({ id: "p1", kind: "profile", imagePath: "user-1/p1/1.jpg" });
+      expect(h.fake.last("artist_photos", "delete")?.filters).toEqual([["artist_id", "user-1"], ["kind", "profile"]]);
+      expect(photo).toEqual({ id: "p1", kind: "profile", imageUrl: bucketUrl("user-1/p1/1.jpg") });
+      expect(h.fake.removals).toEqual([{ bucket: "artist-profile-images", paths: ["user-1/old/0.jpg"] }]);
+    });
+
+    it("studio photos are added without touching existing ones", async () => {
+      signIn("artist");
+      h.fake.on("artist_photos", "insert", { data: photoRow("studio") });
+      await actions.addArtistPhoto({ id: "p1", kind: "studio", imagePath: "user-1/p1/1.jpg" });
+      expect(h.fake.queries.some(q => q.table === "artist_photos" && q.op === "delete")).toBe(false);
+      expect(h.fake.last("artist_photos", "insert")?.payload).toMatchObject({ kind: "studio", artist_id: "user-1", position: 0 });
+    });
+
+    it("rejects unknown kinds and foreign image paths", async () => {
+      signIn("artist");
+      await expect(actions.addArtistPhoto({ id: "p1", kind: "cover" as never, imagePath: "user-1/p1/1.jpg" })).rejects.toThrow("Unknown photo type.");
+      await expect(actions.addArtistPhoto({ id: "p1", kind: "studio", imagePath: "x/p1/1.jpg" })).rejects.toThrow("Invalid image upload.");
+    });
+
+    it("deletes a photo and its file", async () => {
+      signIn("artist");
+      h.fake.on("artist_photos", "delete", { data: { image_url: bucketUrl("user-1/p1/1.jpg") } });
+      await actions.deleteArtistPhoto("p1");
+      expect(h.fake.last("artist_photos", "delete")?.filters).toEqual([["id", "p1"], ["artist_id", "user-1"]]);
+      expect(h.fake.removals).toHaveLength(1);
+    });
+  });
+
+  describe("getArtistProfileForGallery", () => {
+    it("requires sign-in", async () => {
+      await expect(actions.getArtistProfileForGallery("visible")).rejects.toThrow("Not signed in.");
+    });
+
+    it("returns the profile when visible and a plain error when not", async () => {
+      signIn("gallery");
+      await expect(actions.getArtistProfileForGallery("visible")).resolves.toMatchObject({ name: "Ann" });
+      await expect(actions.getArtistProfileForGallery("hidden")).rejects.toThrow("isn't available");
+    });
+  });
+});
+
+describe("getArtistProfileForContact", () => {
+  it("resolves the contact to an artist, then loads their profile", async () => {
+    signIn("gallery");
+    h.fake.onRpc("get_contact_artist_id", { data: "visible", error: null });
+    await expect(actions.getArtistProfileForContact("c1")).resolves.toMatchObject({ name: "Ann" });
+    expect(h.fake.rpcCalls).toEqual([{ fn: "get_contact_artist_id", args: { p_contact_id: "c1" } }]);
+  });
+
+  it("explains when the contact has no profile to show", async () => {
+    signIn("gallery");
+    h.fake.onRpc("get_contact_artist_id", { data: null, error: null });
+    await expect(actions.getArtistProfileForContact("c1")).rejects.toThrow("no profile to show");
+  });
+
+  it("surfaces lookup errors", async () => {
+    signIn("gallery");
+    h.fake.onRpc("get_contact_artist_id", { data: null, error: dbError });
+    await expect(actions.getArtistProfileForContact("c1")).rejects.toBe(dbError);
   });
 });

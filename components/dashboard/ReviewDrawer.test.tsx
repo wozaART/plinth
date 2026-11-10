@@ -1,6 +1,10 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
+import { emptyPublicProfile } from "@/lib/artist-profile";
 import { fireEvent, render, screen } from "@testing-library/react";
+const profileAction = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/supabase/actions", () => ({ getArtistProfileForGallery: profileAction }));
+
 import ReviewDrawer from "./ReviewDrawer";
 import { submission } from "@/test/fixtures";
 import type { Submission } from "@/lib/types";
@@ -26,6 +30,21 @@ function setup(sub: Submission = submission(), extra: { inCatalogue?: boolean; a
 const btn = (name: string | RegExp) => screen.getByRole("button", { name }) as HTMLButtonElement;
 const note = () => screen.getByPlaceholderText(/kind, honest response/) as HTMLTextAreaElement;
 const decide = () => fireEvent.click(btn("Make a decision"));
+
+describe("ReviewDrawer artist profile", () => {
+  it("opens the artist's profile on request", async () => {
+    profileAction.mockResolvedValue({ ...emptyPublicProfile("a1", "Ana Artist"), bio: "I paint." });
+    setup();
+    fireEvent.click(btn("View profile →"));
+    expect(profileAction).toHaveBeenCalledWith("a1");
+    expect(await screen.findByText("I paint.")).toBeTruthy();
+  });
+
+  it("offers no profile for submissions without an artist id", () => {
+    setup(submission({ artistId: "" }));
+    expect(screen.queryByRole("button", { name: "View profile →" })).toBeNull();
+  });
+});
 
 describe("ReviewDrawer details", () => {
   it("shows the work, the artist and the submission details", () => {

@@ -11,9 +11,10 @@ import { renderCommissionNote } from "@/lib/gallery-runtime-config";
 import ImageLightbox from "@/components/shared/ImageLightbox";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
+import PublicProfilePanel from "@/components/studio/PublicProfilePanel";
 import { ackDeclinedSubmission, createSubmission, updateSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
 import ConsignmentTermsView from "@/components/ConsignmentTermsView";
-import { hasConsignmentTerms, isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout } from "@/lib/types";
+import { hasConsignmentTerms, isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout, type ArtistPublicProfile } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // matches the submission-images bucket limit
@@ -41,6 +42,7 @@ interface StudioShellProps {
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
   profile: ProfileData;
+  publicProfile: ArtistPublicProfile;
   isGalleryOwner?: boolean;
 }
 
@@ -500,7 +502,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, isGalleryOwner = false }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, publicProfile, isGalleryOwner = false }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTabState] = useState<StudioTab>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -956,7 +958,15 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
               ? <ProfileSwitcher current="artist" />
               : <div style={{ background: "var(--pl-surface)", border: "1px solid var(--pl-border)", borderRadius: 16, padding: "22px 24px", maxWidth: 720, fontSize: 13, color: "var(--pl-text-muted)" }}>No settings to manage yet.</div>
           )}
-          {tab === "profile" && <ProfilePanel initial={profile} onNotify={message => { setToast(message); setTimeout(() => setToast(null), 3000); }} />}
+          {tab === "profile" && (() => {
+            const notify = (message: string) => { setToast(message); setTimeout(() => setToast(null), 3000); };
+            return (
+              <>
+                <ProfilePanel initial={profile} onNotify={notify} />
+                <PublicProfilePanel initial={publicProfile} onNotify={notify} />
+              </>
+            );
+          })()}
         </div>
       </main>
 
