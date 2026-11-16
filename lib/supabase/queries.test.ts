@@ -16,6 +16,7 @@ beforeEach(() => {
 
 const dbError = { message: "boom", code: "XX000" };
 const ZAR = "ZAR";
+const G1 = [{ id: "g1", name: "Woza", currencyCode: ZAR, commissionRatePct: 40 }];
 const filter = (query: { filters: [string, unknown][] } | undefined, col: string) =>
   query?.filters.find(([c]) => c === col)?.[1];
 
@@ -33,12 +34,12 @@ describe("error propagation", () => {
     ["frame_jobs", "getFrameJobs", () => q.getFrameJobs(db, "g1")],
     ["contacts", "getContacts", () => q.getContacts(db, "g1")],
     ["audit_log", "getAuditLog", () => q.getAuditLog(db, "g1")],
-    ["submissions", "getArtistWorks", () => q.getArtistWorks(db, "a1", "g1")],
-    ["catalogue_works", "getArtistCatalogue", () => q.getArtistCatalogue(db, "a1", "g1", ZAR)],
+    ["submissions", "getArtistWorks", () => q.getArtistWorks(db, "a1", G1)],
+    ["catalogue_works", "getArtistCatalogue", () => q.getArtistCatalogue(db, "a1", G1)],
     ["artist_sales", "getArtistSales", () => q.getArtistSales(db, "a1", "g1", ZAR)],
-    ["payouts", "getArtistPayouts", () => q.getArtistPayouts(db, "a1", "g1", ZAR)],
-    ["exhibitions", "getOpenCalls", () => q.getOpenCalls(db, "g1", "Woza", "a1")],
-    ["messages", "getMessages", () => q.getMessages(db, "a1", "g1", "Woza")],
+    ["payouts", "getArtistPayouts", () => q.getArtistPayouts(db, "a1", G1)],
+    ["exhibitions", "getOpenCalls", () => q.getOpenCalls(db, G1, "a1")],
+    ["messages", "getMessages", () => q.getMessages(db, "a1", G1)],
   ];
 
   it.each(cases)("%s: %s throws the database error", async (table, _name, run) => {
@@ -302,10 +303,10 @@ describe("catalogue", () => {
   });
 
   it("artist catalogue is scoped to both artist and gallery", async () => {
-    await q.getArtistCatalogue(db, "a1", "g1", ZAR);
+    await q.getArtistCatalogue(db, "a1", G1);
     const query = fake.last("catalogue_works");
     expect(filter(query, "artist_id")).toBe("a1");
-    expect(filter(query, "gallery_id")).toBe("g1");
+    expect(filter(query, "gallery_id in")).toEqual(["g1"]);
   });
 });
 
@@ -414,10 +415,10 @@ describe("payouts", () => {
   it("artist view is scoped to the artist and omits other artists' fields", async () => {
     const { sales, ...rest } = payout;
     fake.on("payouts", "select", { data: [{ ...rest, artist_sales: sales }], error: null });
-    const [p] = await q.getArtistPayouts(db, "a1", "g1", ZAR);
+    const [p] = await q.getArtistPayouts(db, "a1", G1);
     const query = fake.last("payouts");
     expect(filter(query, "artist_id")).toBe("a1");
-    expect(filter(query, "gallery_id")).toBe("g1");
+    expect(filter(query, "gallery_id in")).toEqual(["g1"]);
     expect(p).toMatchObject({ amount: formatCurrency(900, ZAR), paymentReference: "REF1", hasProofOfPayment: true });
     expect(p).not.toHaveProperty("artist");
     expect(p).not.toHaveProperty("artistId");
@@ -634,10 +635,10 @@ describe("getArtistWorks", () => {
       ],
       error: null,
     });
-    const [a, b] = await q.getArtistWorks(db, "a1", "g1");
+    const [a, b] = await q.getArtistWorks(db, "a1", G1);
     const query = fake.last("submissions");
     expect(filter(query, "artist_id")).toBe("a1");
-    expect(filter(query, "gallery_id")).toBe("g1");
+    expect(filter(query, "gallery_id in")).toEqual(["g1"]);
     expect(a).toMatchObject({ year: 0, medium: "", note: undefined, price: null, statement: "", imageUrl: undefined, ack: undefined });
     expect(b).toMatchObject({ price: 99, note: "nice", ack: true, imageUrl: "u" });
   });
@@ -646,6 +647,7 @@ describe("getArtistWorks", () => {
 describe("getOpenCalls", () => {
   const base = {
     id: "e1",
+    gallery_id: "g1",
     title: "Spring",
     type: "open_call",
     access: "open",
@@ -666,7 +668,7 @@ describe("getOpenCalls", () => {
       ],
       error: null,
     });
-    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    const calls = await q.getOpenCalls(db, G1, "a1");
     expect(filter(fake.last("exhibitions"), "status!=")).toBe("archived");
     expect(calls.map((c) => c.accepting)).toEqual([true, true, false]);
     expect(calls[0]).toMatchObject({ gallery: "Woza", deadline: shortDate("2999-05-01"), focus: "" });
@@ -682,7 +684,7 @@ describe("getOpenCalls", () => {
       ],
       error: null,
     });
-    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    const calls = await q.getOpenCalls(db, G1, "a1");
     expect(calls.map((c) => [c.consignmentTermsText, c.consignmentTermsPdfPath])).toEqual([
       ["Commission is 40%.", null],
       ["", "g1/e2/1.pdf"],
@@ -695,7 +697,7 @@ describe("getOpenCalls", () => {
       data: [{ ...base, status: "open", submission_deadline: "2020-01-01" }],
       error: null,
     });
-    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    const calls = await q.getOpenCalls(db, G1, "a1");
     expect(calls[0].accepting).toBe(false);
   });
 
@@ -709,7 +711,7 @@ describe("getOpenCalls", () => {
       error: null,
     });
     fake.on("exhibition_invites", "select", { data: [{ exhibition_id: "e3" }], error: null });
-    const calls = await q.getOpenCalls(db, "g1", "Woza", "a1");
+    const calls = await q.getOpenCalls(db, G1, "a1");
     expect(calls.map((c) => c.id)).toEqual(["e1", "e3"]);
     expect(calls[1].access).toBe("closed");
     const invites = fake.last("exhibition_invites");
@@ -722,12 +724,12 @@ describe("getMessages", () => {
   it("attributes gallery messages to the gallery and others to 'You'", async () => {
     fake.on("messages", "select", {
       data: [
-        { id: "m1", sender: "gallery", created_at: new Date().toISOString(), subject: "Hi", body: "Body" },
+        { id: "m1", gallery_id: "g1", sender: "gallery", created_at: new Date().toISOString(), subject: "Hi", body: "Body" },
         { id: "m2", sender: "artist", created_at: new Date().toISOString(), subject: "Re", body: "Reply" },
       ],
       error: null,
     });
-    const [a, b] = await q.getMessages(db, "a1", "g1", "Woza");
+    const [a, b] = await q.getMessages(db, "a1", G1);
     expect(a).toMatchObject({ from: "Woza", preview: "Hi", body: "Body", time: "Today" });
     expect(b.from).toBe("You");
     expect(filter(fake.last("messages"), "artist_id")).toBe("a1");
@@ -812,5 +814,67 @@ describe("getArtistPublicProfile", () => {
     fake.on("artist_profiles", "select", { data: { id: "a1", full_name: null, city: null, practice: null, bio: null } });
     fake.on("artist_portfolio_works", "select", { data: null, error: dbError });
     await expect(q.getArtistPublicProfile(db, "a1")).rejects.toBe(dbError);
+  });
+});
+
+describe("artist studio across galleries", () => {
+  const host = { id: "g1", name: "Woza", currency_code: "ZAR", commission_rate: 0.4 };
+  const TWO = [
+    { id: "g1", name: "Woza", currencyCode: "ZAR", commissionRatePct: 40 },
+    { id: "g2", name: "The Pod", currencyCode: "USD", commissionRatePct: 35 },
+  ];
+
+  it("getStudioGalleries returns just the host gallery when the artist has dealt with no other", async () => {
+    fake.onRpc("artist_gallery_ids", { data: ["g1"], error: null });
+    expect(await q.getStudioGalleries(db, host)).toEqual([TWO[0]]);
+    expect(fake.last("galleries")).toBeUndefined();
+  });
+
+  it("getStudioGalleries adds every gallery the artist has dealt with, host first and without duplicates", async () => {
+    fake.onRpc("artist_gallery_ids", { data: ["g2", "g1", "g2"], error: null });
+    fake.on("galleries", "select", { data: [{ id: "g2", name: "The Pod", currency_code: "USD", commission_rate: 0.35 }], error: null });
+    expect(await q.getStudioGalleries(db, host)).toEqual(TWO);
+    expect(filter(fake.last("galleries"), "id in")).toEqual(["g2"]);
+  });
+
+  it("getStudioGalleries surfaces errors", async () => {
+    fake.onRpc("artist_gallery_ids", { data: null, error: dbError });
+    await expect(q.getStudioGalleries(db, host)).rejects.toBe(dbError);
+    fake.onRpc("artist_gallery_ids", { data: ["g2"], error: null });
+    fake.on("galleries", "select", { data: null, error: dbError });
+    await expect(q.getStudioGalleries(db, host)).rejects.toBe(dbError);
+  });
+
+  it("open calls and messages come from every studio gallery, each named after its own gallery", async () => {
+    fake.on("exhibitions", "select", {
+      data: [
+        { id: "e1", gallery_id: "g1", title: "A", type: "group", access: "open", status: "open", submission_deadline: null },
+        { id: "e2", gallery_id: "g2", title: "B", type: "group", access: "open", status: "open", submission_deadline: null },
+      ],
+      error: null,
+    });
+    const calls = await q.getOpenCalls(db, TWO, "a1");
+    expect(filter(fake.last("exhibitions"), "gallery_id in")).toEqual(["g1", "g2"]);
+    expect(calls.map((c) => [c.galleryId, c.gallery])).toEqual([["g1", "Woza"], ["g2", "The Pod"]]);
+
+    fake.on("messages", "select", {
+      data: [{ id: "m1", gallery_id: "g2", sender: "gallery", created_at: new Date().toISOString(), subject: "Hi", body: "B" }],
+      error: null,
+    });
+    expect((await q.getMessages(db, "a1", TWO))[0].from).toBe("The Pod");
+    expect(filter(fake.last("messages"), "gallery_id in")).toEqual(["g1", "g2"]);
+  });
+
+  it("payouts are formatted in their own gallery's currency", async () => {
+    fake.on("payouts", "select", {
+      data: [
+        { id: "p1", gallery_id: "g1", sale_id: "s1", amount_cents: 10000, status: "pending", paid_at: null, payment_reference: null, proof_of_payment_path: null, artist_sales: null },
+        { id: "p2", gallery_id: "g2", sale_id: "s2", amount_cents: 10000, status: "pending", paid_at: null, payment_reference: null, proof_of_payment_path: null, artist_sales: null },
+      ],
+      error: null,
+    });
+    const [a, b] = await q.getArtistPayouts(db, "a1", TWO);
+    expect(a.amount).toBe(formatCurrency(100, "ZAR"));
+    expect(b.amount).toBe(formatCurrency(100, "USD"));
   });
 });

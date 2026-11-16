@@ -1,6 +1,6 @@
 import type {
   Submission, Exhibition, ExhibitionInvite, CatalogueWork, GalleryArtist, Contact,
-  FrameJob, Payout, AuditLogEntry, MyWork, OpenCall, StudioMessage, ArtistPayout,
+  FrameJob, Payout, AuditLogEntry, MyWork, OpenCall, StudioGallery, StudioMessage, ArtistPayout,
 } from "./types";
 import { emptyPublicProfile } from "./artist-profile";
 
@@ -80,9 +80,11 @@ export const demoWorks: MyWork[] = [
   { id: "w3", title: "Veld at First Light", year: 2025, medium: "Oil on canvas", status: "approved", date: "3 Sep 2025" },
 ];
 
+export const demoGalleries: StudioGallery[] = [{ id: "demo", name: "Your Gallery", currencyCode: "ZAR", commissionRatePct: 40 }];
+
 export const demoOpenCalls: OpenCall[] = [
   {
-    id: "oc1", title: "Open Call 2026", gallery: "Your Gallery", type: "group", access: "open", deadline: "30 Jan 2026", focus: "Painting, drawing, print",
+    id: "oc1", title: "Open Call 2026", galleryId: "demo", gallery: "Your Gallery", type: "group", access: "open", deadline: "30 Jan 2026", focus: "Painting, drawing, print",
     theme: "Land & memory", mediumRequirements: "Painting, drawing, print", sizeRequirements: "Up to 150 cm on the longest side",
     rules: "Max two works per artist.", consignmentTermsText: "", consignmentTermsPdfPath: null, maxWorksPerArtist: 2, commissionRatePct: null, myWorkCount: 0, accepting: true,
   },

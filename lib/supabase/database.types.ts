@@ -1218,6 +1218,10 @@ export type Database = {
         Args: { target_artist_id: string }
         Returns: boolean
       }
+      artist_gallery_ids: {
+        Args: never
+        Returns: string[]
+      }
       get_artist_bank_details_for_payout: {
         Args: { target_artist_id: string }
         Returns: {

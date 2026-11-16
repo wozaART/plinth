@@ -59,6 +59,7 @@ const payout = (over: Partial<ArtistPayout> = {}): ArtistPayout => ({
 
 const baseProps = {
   artistName: "Thandiwe Mokoena", artistCity: "Durban", works: [], catalogueWorks: [], payouts: [], openCalls: [],
+  galleries: [{ id: "g1", name: "Gallery", currencyCode: "ZAR", commissionRatePct: 40 }],
   exhibitionInvites: [], messages: [],
   profile: { firstName: "Thandiwe", lastName: "Mokoena", phone: "", email: "t@m.co", accountNumber: "", bankName: "", branchCode: "", accountType: "" },
   publicProfile: emptyPublicProfile("a1", "Thandiwe Mokoena"),
@@ -176,7 +177,7 @@ describe("StudioShell attention banners", () => {
 
 describe("StudioShell consignment terms", () => {
   const call = (over: Partial<OpenCall> = {}): OpenCall => ({
-    id: "oc1", title: "Highveld Light", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
+    id: "oc1", title: "Highveld Light", galleryId: "g1", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
     theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
     maxWorksPerArtist: null, commissionRatePct: null, myWorkCount: 0, accepting: true, ...over,
   });
@@ -285,5 +286,39 @@ describe("StudioShell consignment terms", () => {
     // Medium and year carry over from the previous work.
     expect((screen.getByPlaceholderText("e.g. Oil on canvas") as HTMLInputElement).value).toBe("Oil");
     expect((screen.getByPlaceholderText("Work title") as HTMLInputElement).value).toBe("");
+  });
+});
+
+describe("StudioShell across galleries", () => {
+  const call = (id: string, galleryId: string, gallery: string): OpenCall => ({
+    id, title: `${gallery} call`, galleryId, gallery, type: "group", access: "open", deadline: "30 Jan", focus: "",
+    theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
+    maxWorksPerArtist: null, commissionRatePct: null, myWorkCount: 0, accepting: true,
+  });
+
+  it("groups the submit choices by gallery, each with its own open submissions", () => {
+    setup({
+      galleries: [
+        { id: "g1", name: "Gallery", currencyCode: "ZAR", commissionRatePct: 40 },
+        { id: "g2", name: "The Pod", currencyCode: "ZAR", commissionRatePct: 35 },
+      ],
+      openCalls: [call("e1", "g1", "Gallery"), call("e2", "g2", "The Pod")],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    const groups = [...document.querySelectorAll("optgroup")];
+    expect(groups.map((g) => g.label)).toEqual(["Gallery", "The Pod"]);
+    expect([...groups[1].querySelectorAll("option")].map((o) => [o.value, o.textContent])).toEqual([
+      ["open:g2", "Open submissions · The Pod"],
+      ["e2", "The Pod call"],
+    ]);
+  });
+
+  it("keeps a flat list when the artist only works with one gallery", () => {
+    setup({ openCalls: [call("e1", "g1", "Gallery")] });
+    fireEvent.click(screen.getByRole("button", { name: "My work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit work" }));
+    expect(document.querySelector("optgroup")).toBeNull();
+    expect(screen.getByRole("option", { name: "Open submissions" })).toHaveProperty("value", "open:g1");
   });
 });

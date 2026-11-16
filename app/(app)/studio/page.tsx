@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
-import { getArtistWorks, getArtistCatalogue, getArtistPayouts, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getArtistPublicProfile, getExhibitionInvitesForArtist } from "@/lib/supabase/queries";
+import { getArtistWorks, getArtistCatalogue, getArtistPayouts, getOpenCalls, getMessages, getArtistProfile, getArtistBankDetails, getArtistPublicProfile, getExhibitionInvitesForArtist, getStudioGalleries } from "@/lib/supabase/queries";
 import { emptyPublicProfile } from "@/lib/artist-profile";
 import StudioShell from "@/components/studio/StudioShell";
 
@@ -11,16 +11,21 @@ export default async function StudioPage() {
   const [{ data: { user } }, gallery] = await Promise.all([supabase.auth.getUser(), getCurrentGallery(supabase)]);
   if (!user) redirect("/signin");
 
+  // The host's gallery plus every gallery this artist has dealt with: artist
+  // accounts belong to the platform, so the studio doesn't depend on which
+  // domain the artist signed in on.
+  const galleries = await getStudioGalleries(supabase, gallery);
+
   // Gate on the artist profile, not user_metadata.role: a gallery owner can
   // also be an artist under the same account.
   const [{ data: artistRow }, { data: ownedGallery }, works, catalogueWorks, payouts, openCalls, messages, profile, bankDetails, exhibitionInvites, publicProfile] = await Promise.all([
     supabase.from("artist_profiles").select("id").eq("id", user.id).maybeSingle(),
     supabase.from("galleries").select("id").eq("owner_id", user.id).maybeSingle(),
-    getArtistWorks(supabase, user.id, gallery.id),
-    getArtistCatalogue(supabase, user.id, gallery.id, gallery.currency_code),
-    getArtistPayouts(supabase, user.id, gallery.id, gallery.currency_code),
-    getOpenCalls(supabase, gallery.id, gallery.name, user.id),
-    getMessages(supabase, user.id, gallery.id, gallery.name),
+    getArtistWorks(supabase, user.id, galleries),
+    getArtistCatalogue(supabase, user.id, galleries),
+    getArtistPayouts(supabase, user.id, galleries),
+    getOpenCalls(supabase, galleries, user.id),
+    getMessages(supabase, user.id, galleries),
     getArtistProfile(supabase, user.id),
     getArtistBankDetails(supabase, user.id),
     getExhibitionInvitesForArtist(supabase, user.id, user.email ?? ""),
@@ -38,6 +43,7 @@ export default async function StudioPage() {
       works={works}
       catalogueWorks={catalogueWorks}
       payouts={payouts}
+      galleries={galleries}
       openCalls={openCalls}
       exhibitionInvites={exhibitionInvites}
       messages={messages}

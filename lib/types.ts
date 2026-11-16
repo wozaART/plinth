@@ -221,6 +221,7 @@ export interface MyWork {
 export interface OpenCall {
   id: string;
   title: string;
+  galleryId: string;
   gallery: string;
   type: ExhibitionType;
   access: ExhibitionAccess;
@@ -237,6 +238,15 @@ export interface OpenCall {
   // Works this artist has already submitted to the call (declined ones don't count).
   myWorkCount: number;
   accepting: boolean;
+}
+
+// A gallery shown in the artist's studio: the one the host resolved to plus
+// every gallery the artist has dealt with (see artist_gallery_ids()).
+export interface StudioGallery {
+  id: string;
+  name: string;
+  currencyCode: string;
+  commissionRatePct: number;
 }
 
 export interface StudioMessage {

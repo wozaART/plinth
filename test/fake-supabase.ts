@@ -60,6 +60,10 @@ export function createFakeSupabase() {
       q.filters.push([`${col}!=`, val]);
       return b;
     };
+    b.in = (col: string, vals: unknown[]) => {
+      q.filters.push([`${col} in`, vals]);
+      return b;
+    };
     b.is = (col: string, val: unknown) => {
       q.filters.push([`${col} is`, val]);
       return b;

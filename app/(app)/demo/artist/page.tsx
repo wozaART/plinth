@@ -1,6 +1,6 @@
 import StudioShell from "@/components/studio/StudioShell";
 import {
-  demoArtistPayouts, demoArtistProfile, demoArtistPublicProfile, demoCatalogue, demoExhibitionInvites, demoMessages, demoOpenCalls, demoWorks,
+  demoArtistPayouts, demoArtistProfile, demoArtistPublicProfile, demoCatalogue, demoExhibitionInvites, demoGalleries, demoMessages, demoOpenCalls, demoWorks,
 } from "@/lib/demo-data";
 
 // Public, non-functional preview of the artist studio: static sample data,
@@ -13,6 +13,7 @@ export default function DemoArtistPage() {
       works={demoWorks}
       catalogueWorks={demoCatalogue.slice(0, 1)}
       payouts={demoArtistPayouts}
+      galleries={demoGalleries}
       openCalls={demoOpenCalls}
       exhibitionInvites={demoExhibitionInvites}
       messages={demoMessages}
