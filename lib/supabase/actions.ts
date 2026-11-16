@@ -21,15 +21,20 @@ async function supabaseServer() {
   return createClient(await cookies());
 }
 
-async function resolveAppUrl() {
-  let appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    const requestHeaders = await headers();
-    const host = requestHeaders.get("host") ?? "localhost:3000";
-    const protocol = host.startsWith("localhost") ? "http" : "https";
-    appUrl = `${protocol}://${host}`;
-  }
-  return appUrl;
+// Every link emailed to an artist (invites, sale and payout notices) points
+// at the platform, never at the sending gallery's own domain: artist accounts
+// and the studio live on the platform, and a gallery's custom domain may not
+// even be verified yet. The request host is only a last resort for local dev.
+async function resolveArtistAppUrl() {
+  const configured =
+    process.env.ARTIST_APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NEXT_PUBLIC_PLATFORM_APEX_DOMAIN ? `https://${process.env.NEXT_PUBLIC_PLATFORM_APEX_DOMAIN}` : "");
+  if (configured) return configured;
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("host") ?? "localhost:3000";
+  const protocol = host.startsWith("localhost") ? "http" : "https";
+  return `${protocol}://${host}`;
 }
 
 // Notices go out after the sale/payout is already committed, so a failed
@@ -37,7 +42,7 @@ async function resolveAppUrl() {
 async function sendNotice(fn: "send-sale-notice" | "send-payout-notice", body: Record<string, string>) {
   try {
     const supabase = await supabaseServer();
-    const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, appUrl: await resolveAppUrl() } });
+    const { data, error } = await supabase.functions.invoke(fn, { body: { ...body, appUrl: await resolveArtistAppUrl() } });
     if (error) {
       const detail = await error.context?.json?.().catch(() => null);
       return detail?.error || error.message;
@@ -92,6 +97,18 @@ function parseSubmissionFields(formData: FormData) {
   };
 }
 
+// An open submission (no exhibition) goes to the gallery the artist picked,
+// as long as it's one their studio shows: the host's gallery, or one they've
+// dealt with. Without a choice it goes to the host's gallery, as before.
+async function resolveOpenSubmissionGallery(supabase: Awaited<ReturnType<typeof supabaseServer>>, requested: string | null) {
+  const host = await getCurrentGallery(supabase);
+  if (!requested || requested === host.id) return host.id;
+  const { data, error } = await supabase.rpc("artist_gallery_ids");
+  if (error) throw error;
+  if (!((data ?? []) as string[]).includes(requested)) throw new Error("You can't submit to this gallery.");
+  return requested;
+}
+
 export async function createSubmission(formData: FormData) {
   const supabase = await supabaseServer();
 
@@ -100,10 +117,10 @@ export async function createSubmission(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
 
-  const gallery = await getCurrentGallery(supabase);
-
   const fields = parseSubmissionFields(formData);
   const exhibitionId = String(formData.get("exhibitionId") || "") || null;
+  const requestedGalleryId = String(formData.get("galleryId") || "") || null;
+  let galleryId: string;
   const rulesAck = formData.get("rulesAck") === "true";
   const termsAck = formData.get("termsAck") === "true";
 
@@ -117,10 +134,12 @@ export async function createSubmission(formData: FormData) {
   if (exhibitionId) {
     const { data: exhibition, error: exError } = await supabase
       .from("exhibitions")
-      .select("submission_deadline, access, max_works_per_artist, consignment_terms_text, consignment_terms_pdf_path")
+      .select("gallery_id, submission_deadline, access, max_works_per_artist, consignment_terms_text, consignment_terms_pdf_path")
       .eq("id", exhibitionId)
       .single();
     if (exError) throw exError;
+    // The exhibition decides the gallery, whatever domain the studio is on.
+    galleryId = exhibition.gallery_id;
     if (exhibition.access === "closed") {
       const { data: invite, error: inviteError } = await supabase
         .from("exhibition_invites")
@@ -151,11 +170,13 @@ export async function createSubmission(formData: FormData) {
     if ((exhibition.consignment_terms_text || exhibition.consignment_terms_pdf_path) && !termsAck) {
       throw new Error("You need to agree to the consignment terms for this exhibition.");
     }
+  } else {
+    galleryId = await resolveOpenSubmissionGallery(supabase, requestedGalleryId);
   }
 
   const { error } = await supabase.from("submissions").insert({
     id: submissionId,
-    gallery_id: gallery.id,
+    gallery_id: galleryId,
     exhibition_id: exhibitionId,
     artist_id: user.id,
     ...fields,
@@ -255,13 +276,7 @@ export async function inviteArtist(email: string, fullName: string) {
 
   const gallery = await getCurrentGallery(supabase);
 
-  let appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    const requestHeaders = await headers();
-    const host = requestHeaders.get("host") ?? "localhost:3000";
-    const protocol = host.startsWith("localhost") ? "http" : "https";
-    appUrl = `${protocol}://${host}`;
-  }
+  const appUrl = await resolveArtistAppUrl();
 
   const { data, error } = await supabase.functions.invoke("send-artist-invite", {
     body: {
@@ -464,13 +479,7 @@ export async function inviteArtistToExhibition(
     .single();
   if (exError) throw exError;
 
-  let appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  if (!appUrl) {
-    const requestHeaders = await headers();
-    const host = requestHeaders.get("host") ?? "localhost:3000";
-    const protocol = host.startsWith("localhost") ? "http" : "https";
-    appUrl = `${protocol}://${host}`;
-  }
+  const appUrl = await resolveArtistAppUrl();
 
   const { data, error } = await supabase.functions.invoke("send-exhibition-invite", {
     body: {

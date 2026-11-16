@@ -20,6 +20,22 @@ is sufficient on its own.
 Gallery-facing steps live in the in-app guide under **Custom domain**
 (`app/(marketing)/docs/page.tsx`). Keep the two in sync.
 
+## Artists stay on the platform
+
+A custom domain is for the gallery's own dashboard and public pages. Artist
+accounts belong to the platform, not to a gallery:
+
+- Every link emailed to an artist (artist invite, exhibition invite, sale and
+  payout notices) points at the platform URL, never at the sending gallery's
+  domain, so it works whether or not that domain is verified yet. The URL is
+  `ARTIST_APP_URL`, else `NEXT_PUBLIC_APP_URL`, else
+  `https://<NEXT_PUBLIC_PLATFORM_APEX_DOMAIN>` (see `resolveArtistAppUrl` in
+  `lib/supabase/actions.ts`).
+- The studio (`app/(app)/studio/page.tsx`) shows the host's gallery plus every
+  gallery the artist has dealt with (`artist_gallery_ids()`: accepted invites,
+  exhibition invites, submissions, messages, catalogue works, payouts),
+  whichever domain the artist signed in on.
+
 ## 1. Attach the domain
 
 A gallery owner does this themselves from **Dashboard → Settings**

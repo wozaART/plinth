@@ -10,6 +10,7 @@ import type {
   MyWork,
   OpenCall,
   StudioMessage,
+  StudioGallery,
   GalleryArtist,
   Sale,
   ArtistSale,
@@ -412,12 +413,47 @@ export async function getAuditLog(supabase: Client, galleryId: string, limit = 2
 
 // ── Studio-side reads ───────────────────────────────────────────────────
 
-export async function getArtistWorks(supabase: Client, artistId: string, galleryId: string): Promise<MyWork[]> {
+// ── Artist studio ─────────────────────────────────────────────────────────
+// The studio isn't tied to the gallery the host resolved to: it covers that
+// gallery plus every gallery the artist has dealt with, so an artist account
+// on woza.art sees each gallery's open calls whichever domain they sign in on.
+
+type GalleryFields = { id: string; name: string; currency_code: string; commission_rate: number };
+
+const toStudioGallery = (g: GalleryFields): StudioGallery => ({
+  id: g.id,
+  name: g.name,
+  currencyCode: g.currency_code,
+  commissionRatePct: Math.round(Number(g.commission_rate) * 100),
+});
+
+export async function getStudioGalleries(supabase: Client, hostGallery: GalleryFields): Promise<StudioGallery[]> {
+  const { data: ids, error } = await supabase.rpc("artist_gallery_ids");
+  if (error) throw error;
+
+  const host = toStudioGallery(hostGallery);
+  const otherIds = [...new Set((ids ?? []) as string[])].filter((id) => id !== host.id);
+  if (otherIds.length === 0) return [host];
+
+  const { data: rows, error: galleriesError } = await supabase
+    .from("galleries")
+    .select("id, name, currency_code, commission_rate")
+    .in("id", otherIds)
+    .order("name", { ascending: true });
+  if (galleriesError) throw galleriesError;
+
+  return [host, ...(rows ?? []).map(toStudioGallery)];
+}
+
+const galleryIds = (galleries: StudioGallery[]) => galleries.map((g) => g.id);
+const galleryById = (galleries: StudioGallery[]) => new Map(galleries.map((g) => [g.id, g]));
+
+export async function getArtistWorks(supabase: Client, artistId: string, galleries: StudioGallery[]): Promise<MyWork[]> {
   const { data, error } = await supabase
     .from("submissions")
     .select("*")
     .eq("artist_id", artistId)
-    .eq("gallery_id", galleryId)
+    .in("gallery_id", galleryIds(galleries))
     .order("created_at", { ascending: false });
   if (error) throw error;
 
@@ -437,16 +473,17 @@ export async function getArtistWorks(supabase: Client, artistId: string, gallery
   }));
 }
 
-export async function getArtistCatalogue(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<CatalogueWork[]> {
+export async function getArtistCatalogue(supabase: Client, artistId: string, galleries: StudioGallery[]): Promise<CatalogueWork[]> {
   const { data, error } = await supabase
     .from("catalogue_works")
     .select("*, artist_profiles(full_name)")
     .eq("artist_id", artistId)
-    .eq("gallery_id", galleryId)
+    .in("gallery_id", galleryIds(galleries))
     .order("created_at", { ascending: false });
   if (error) throw error;
 
-  return (data ?? []).map((w) => mapCatalogueRow(w, currencyCode));
+  const byId = galleryById(galleries);
+  return (data ?? []).map((w) => mapCatalogueRow(w, byId.get(w.gallery_id)?.currencyCode ?? galleries[0].currencyCode));
 }
 
 export async function getArtistSales(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<ArtistSale[]> {
@@ -471,20 +508,21 @@ export async function getArtistSales(supabase: Client, artistId: string, gallery
   }));
 }
 
-export async function getArtistPayouts(supabase: Client, artistId: string, galleryId: string, currencyCode: string): Promise<ArtistPayout[]> {
+export async function getArtistPayouts(supabase: Client, artistId: string, galleries: StudioGallery[]): Promise<ArtistPayout[]> {
   const { data, error } = await supabase
     .from("payouts")
     .select("*, artist_sales(payout_due_at, catalogue_works(title))")
     .eq("artist_id", artistId)
-    .eq("gallery_id", galleryId)
+    .in("gallery_id", galleryIds(galleries))
     .order("created_at", { ascending: false });
   if (error) throw error;
 
+  const byId = galleryById(galleries);
   return (data ?? []).map((p) => ({
     id: p.id,
     saleId: p.sale_id,
     workTitle: p.artist_sales?.catalogue_works?.title ?? "Untitled work",
-    amount: formatCurrency(p.amount_cents / 100, currencyCode),
+    amount: formatCurrency(p.amount_cents / 100, byId.get(p.gallery_id)?.currencyCode ?? galleries[0].currencyCode),
     status: p.status as ArtistPayout["status"],
     dueDate: p.artist_sales?.payout_due_at ? shortDate(p.artist_sales.payout_due_at) : "—",
     paidDate: p.paid_at ? shortDate(p.paid_at) : "—",
@@ -495,12 +533,13 @@ export async function getArtistPayouts(supabase: Client, artistId: string, galle
 
 // Closed (invite-only) exhibitions appear only for artists who have accepted
 // an invitation to them.
-export async function getOpenCalls(supabase: Client, galleryId: string, galleryName: string, artistId: string): Promise<OpenCall[]> {
+export async function getOpenCalls(supabase: Client, galleries: StudioGallery[], artistId: string): Promise<OpenCall[]> {
+  const byId = galleryById(galleries);
   const [{ data, error }, { data: invites, error: inviteError }, { data: mine, error: mineError }] = await Promise.all([
     supabase
       .from("exhibitions")
       .select("*")
-      .eq("gallery_id", galleryId)
+      .in("gallery_id", galleryIds(galleries))
       .neq("status", "archived")
       .order("created_at", { ascending: true }),
     supabase.from("exhibition_invites").select("exhibition_id").eq("artist_id", artistId).eq("status", "accepted"),
@@ -518,7 +557,8 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
   return (data ?? []).filter((e) => e.access !== "closed" || invitedTo.has(e.id)).map((e) => ({
     id: e.id,
     title: e.title,
-    gallery: galleryName,
+    galleryId: e.gallery_id,
+    gallery: byId.get(e.gallery_id)?.name ?? "",
     type: e.type as OpenCall["type"],
     access: e.access as OpenCall["access"],
     deadline: e.submission_deadline ? shortDate(e.submission_deadline) : "Closed",
@@ -536,18 +576,19 @@ export async function getOpenCalls(supabase: Client, galleryId: string, galleryN
   }));
 }
 
-export async function getMessages(supabase: Client, artistId: string, galleryId: string, galleryName: string): Promise<StudioMessage[]> {
+export async function getMessages(supabase: Client, artistId: string, galleries: StudioGallery[]): Promise<StudioMessage[]> {
   const { data, error } = await supabase
     .from("messages")
     .select("*")
     .eq("artist_id", artistId)
-    .eq("gallery_id", galleryId)
+    .in("gallery_id", galleryIds(galleries))
     .order("created_at", { ascending: false });
   if (error) throw error;
 
+  const byId = galleryById(galleries);
   return (data ?? []).map((m) => ({
     id: m.id,
-    from: m.sender === "gallery" ? galleryName : "You",
+    from: m.sender === "gallery" ? (byId.get(m.gallery_id)?.name ?? "Gallery") : "You",
     time: relativeTime(m.created_at),
     preview: m.subject,
     body: m.body,

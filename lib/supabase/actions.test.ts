@@ -35,6 +35,8 @@ beforeEach(() => {
   h.revalidatePath.mockClear();
   h.headerValues = {};
   delete process.env.NEXT_PUBLIC_APP_URL;
+  delete process.env.ARTIST_APP_URL;
+  delete process.env.NEXT_PUBLIC_PLATFORM_APEX_DOMAIN;
 });
 
 function signIn(role?: string, id = "user-1") {
@@ -802,5 +804,58 @@ describe("getArtistProfileForContact", () => {
     signIn("gallery");
     h.fake.onRpc("get_contact_artist_id", { data: null, error: dbError });
     await expect(actions.getArtistProfileForContact("c1")).rejects.toBe(dbError);
+  });
+});
+
+describe("artist accounts live on the platform, not a gallery's domain", () => {
+  const form = (fields: Record<string, string>) => {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+    return fd;
+  };
+  const appUrlOf = (i: number) => (h.fake.invocations[i].body as { appUrl: string }).appUrl;
+
+  it("links in artist invites point at the platform even when sent from a gallery's own domain", async () => {
+    signIn("gallery");
+    h.headerValues.host = "thepod.example";
+    process.env.NEXT_PUBLIC_PLATFORM_APEX_DOMAIN = "woza.art";
+    await actions.inviteArtist("ann@x.com", "Ann");
+    expect(appUrlOf(0)).toBe("https://woza.art");
+
+    h.fake.on("exhibitions", "select", { data: { title: "Spring" } });
+    await actions.inviteArtistToExhibition("e1", { email: "ann@x.com" });
+    expect(appUrlOf(1)).toBe("https://woza.art");
+
+    process.env.ARTIST_APP_URL = "https://artists.woza.art";
+    await actions.inviteArtist("bob@x.com", "Bob");
+    expect(appUrlOf(2)).toBe("https://artists.woza.art");
+  });
+
+  it("an exhibition submission goes to the exhibition's gallery, not the host's", async () => {
+    signIn("artist");
+    h.fake.on("exhibitions", "select", { data: { gallery_id: "gal-pod", submission_deadline: null, access: "open" } });
+    await actions.createSubmission(form({ exhibitionId: "e1", galleryId: "gal-1" }));
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ gallery_id: "gal-pod", exhibition_id: "e1" });
+  });
+
+  it("an open submission can go to another gallery the artist has dealt with", async () => {
+    signIn("artist");
+    h.fake.onRpc("artist_gallery_ids", { data: ["gal-pod"], error: null });
+    await actions.createSubmission(form({ galleryId: "gal-pod" }));
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ gallery_id: "gal-pod", exhibition_id: null });
+  });
+
+  it("an open submission to a gallery the artist hasn't dealt with is rejected", async () => {
+    signIn("artist");
+    h.fake.onRpc("artist_gallery_ids", { data: ["gal-pod"], error: null });
+    await expect(actions.createSubmission(form({ galleryId: "gal-other" }))).rejects.toThrow("can't submit to this gallery");
+    expect(h.fake.last("submissions", "insert")).toBeUndefined();
+  });
+
+  it("an open submission to the host's gallery needs no prior dealings", async () => {
+    signIn("artist");
+    await actions.createSubmission(form({ galleryId: "gal-1" }));
+    expect(h.fake.rpcCalls).toHaveLength(0);
+    expect(h.fake.last("submissions", "insert")?.payload).toMatchObject({ gallery_id: "gal-1" });
   });
 });

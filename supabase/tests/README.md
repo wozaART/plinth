@@ -21,6 +21,7 @@ touched.
 | `payouts_and_bank_details.test.sql` | `mark_payout_paid` / `acknowledge_payout` / `query_payout` ownership and state rules, bank-detail disclosure |
 | `consignment_terms.test.sql` | per-exhibition terms: agreement required on submit, terms snapshotted onto the submission, `exhibition-terms` bucket access |
 | `audit_log.test.sql` | insert/update/delete triggers on contacts, exhibitions, catalogue works; actor, old/new record, per-gallery visibility |
+| `studio_galleries.test.sql` | `artist_gallery_ids()` (which galleries an artist's studio shows), submissions tied to their exhibition's gallery |
 
 Each file creates its own fixtures (two galleries, two artists) and a `tests`
 helper schema inside its transaction: `tests.act_as(uuid)` switches to a

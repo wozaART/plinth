@@ -14,7 +14,7 @@ import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
 import PublicProfilePanel from "@/components/studio/PublicProfilePanel";
 import { ackDeclinedSubmission, createSubmission, updateSubmission, respondToExhibitionInvite, acknowledgePayout, queryPayout, getPayoutProofSignedUrl, updateArtistProfile } from "@/lib/supabase/actions";
 import ConsignmentTermsView from "@/components/ConsignmentTermsView";
-import { hasConsignmentTerms, isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioMessage, type CatalogueWork, type ArtistPayout, type ArtistPublicProfile } from "@/lib/types";
+import { hasConsignmentTerms, isSubmissionEditable, type ExhibitionInvite, type MyWork, type OpenCall, type StudioGallery, type StudioMessage, type CatalogueWork, type ArtistPayout, type ArtistPublicProfile } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // matches the submission-images bucket limit
@@ -38,6 +38,7 @@ interface StudioShellProps {
   works: MyWork[];
   catalogueWorks: CatalogueWork[];
   payouts: ArtistPayout[];
+  galleries: StudioGallery[];
   openCalls: OpenCall[];
   exhibitionInvites: ExhibitionInvite[];
   messages: StudioMessage[];
@@ -166,7 +167,11 @@ type SubmitItem = { formData: FormData; image: File | null };
 
 const emptyDraft = (): WorkDraft => ({ title: "", medium: "", year: "", height: "", width: "", depth: "", price: "", statement: "", image: null });
 
-function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: defaultCommissionPct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { openCalls: OpenCall[]; commissionNoteTemplate: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (items: SubmitItem[]) => void }) {
+// The "Submitting for" choice is an exhibition id, or OPEN_PREFIX + a gallery
+// id for that gallery's open submissions (no exhibition).
+const OPEN_PREFIX = "open:";
+
+function SubmitDrawer({ galleries, openCalls, commissionNoteTemplate, commissionRatePct: fallbackCommissionPct, editing, initialCallId, acceptedCallId, onClose, onSubmit }: { galleries: StudioGallery[]; openCalls: OpenCall[]; commissionNoteTemplate: string; commissionRatePct: number; editing?: MyWork; initialCallId?: string; acceptedCallId?: string; onClose: () => void; onSubmit: (items: SubmitItem[]) => void }) {
   // New submissions run: how many works → one form per work → review.
   // Editing skips straight to the single work's form.
   const [phase, setPhase] = useState<"count" | "work" | "review">(editing ? "work" : "count");
@@ -177,7 +182,8 @@ function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: de
     const [height, width, depth] = parseDim(editing.dim);
     return [{ title: editing.title ?? "", medium: editing.medium ?? "", year: editing.year ? String(editing.year) : "", height, width, depth, price: editing.price != null ? String(editing.price) : "", statement: editing.statement ?? "", image: null }];
   });
-  const [exhibitionId, setExhibitionId] = useState(initialCallId ?? openCalls.find(o => o.accepting)?.id ?? "");
+  const [target, setTarget] = useState(initialCallId ?? openCalls.find(o => o.accepting)?.id ?? `${OPEN_PREFIX}${galleries[0]?.id ?? ""}`);
+  const exhibitionId = target.startsWith(OPEN_PREFIX) ? "" : target;
   const [imageError, setImageError] = useState<string | null>(null);
   const [rulesAck, setRulesAck] = useState(false);
   // Remembers which exhibition the terms were agreed for, so switching the
@@ -190,6 +196,8 @@ function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: de
   useEffect(() => () => { if (imagePreview) URL.revokeObjectURL(imagePreview); }, [imagePreview]);
 
   const selectedCall = openCalls.find(o => o.id === exhibitionId);
+  const galleryId = selectedCall?.galleryId ?? (target.startsWith(OPEN_PREFIX) ? target.slice(OPEN_PREFIX.length) : galleries[0]?.id ?? "");
+  const defaultCommissionPct = galleries.find(g => g.id === galleryId)?.commissionRatePct ?? fallbackCommissionPct;
   // Rules and terms already accepted in the modal for this call need no second prompt.
   const preAccepted = Boolean(acceptedCallId) && acceptedCallId === exhibitionId;
   const needsRulesAck = !editing && Boolean(selectedCall?.rules) && !preAccepted;
@@ -263,6 +271,7 @@ function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: de
       formData.set("year", w.year);
       formData.set("price", w.price);
       formData.set("exhibitionId", exhibitionId);
+      formData.set("galleryId", galleryId);
       formData.set("statement", w.statement);
       formData.set("rulesAck", String(rulesAck || preAccepted));
       formData.set("termsAck", String(termsAck));
@@ -307,11 +316,22 @@ function SubmitDrawer({ openCalls, commissionNoteTemplate, commissionRatePct: de
               </div>
               <label style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                 <span style={fieldLabel}>Submitting for</span>
-                <select value={exhibitionId} onChange={e => { setExhibitionId(e.target.value); setRulesAck(false); }} style={{ ...fieldInput, appearance: "none" }}>
-                  <option value="">Open submissions</option>
-                  {openCalls.filter(o => o.accepting).map(o => (
-                    <option key={o.id} value={o.id}>{o.title}</option>
-                  ))}
+                <select value={target} onChange={e => { setTarget(e.target.value); setRulesAck(false); }} style={{ ...fieldInput, appearance: "none" }}>
+                  {galleries.length > 1 ? galleries.map(g => (
+                    <optgroup key={g.id} label={g.name}>
+                      <option value={`${OPEN_PREFIX}${g.id}`}>Open submissions · {g.name}</option>
+                      {openCalls.filter(o => o.accepting && o.galleryId === g.id).map(o => (
+                        <option key={o.id} value={o.id}>{o.title}</option>
+                      ))}
+                    </optgroup>
+                  )) : (
+                    <>
+                      <option value={`${OPEN_PREFIX}${galleries[0]?.id ?? ""}`}>Open submissions</option>
+                      {openCalls.filter(o => o.accepting).map(o => (
+                        <option key={o.id} value={o.id}>{o.title}</option>
+                      ))}
+                    </>
+                  )}
                 </select>
               </label>
               {selectedCall?.maxWorksPerArtist != null && (
@@ -502,7 +522,7 @@ function ProfilePanel({ initial, onNotify }: { initial: ProfileData; onNotify: (
   );
 }
 
-export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, openCalls, exhibitionInvites: initialInvites, messages, profile, publicProfile, isGalleryOwner = false }: StudioShellProps) {
+export default function StudioShell({ artistName, artistCity, works: initialWorks, catalogueWorks, payouts: initialPayouts, galleries, openCalls, exhibitionInvites: initialInvites, messages, profile, publicProfile, isGalleryOwner = false }: StudioShellProps) {
   const router = useRouter();
   const [tab, setTabState] = useState<StudioTab>("overview");
   const [navOpen, setNavOpen] = useState(false);
@@ -972,7 +992,7 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
 
       {zoomImage && <ImageLightbox url={zoomImage.url} alt={zoomImage.title} onClose={() => setZoomImage(null)} />}
       {termsCall && <CallTermsModal call={termsCall} onCancel={() => setTermsCall(null)} onAccept={() => { setSubmitCall({ id: termsCall.id, accepted: true }); setTermsCall(null); setShowSubmit(true); }} />}
-      {showSubmit && <SubmitDrawer key={`${editingWork?.id ?? "new"}-${submitCall?.id ?? ""}`} initialCallId={editingWork ? undefined : submitCall?.id} acceptedCallId={submitCall?.accepted ? submitCall.id : undefined} openCalls={openCalls} commissionNoteTemplate={copy.submitCommissionNoteTemplate} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); setSubmitCall(null); }} onSubmit={handleSubmitWork} />}
+      {showSubmit && <SubmitDrawer key={`${editingWork?.id ?? "new"}-${submitCall?.id ?? ""}`} initialCallId={editingWork ? undefined : submitCall?.id} acceptedCallId={submitCall?.accepted ? submitCall.id : undefined} galleries={galleries} openCalls={openCalls} commissionNoteTemplate={copy.submitCommissionNoteTemplate} commissionRatePct={Math.round(business.commissionRate * 100)} editing={editingWork ?? undefined} onClose={() => { setShowSubmit(false); setEditingWork(null); setSubmitCall(null); }} onSubmit={handleSubmitWork} />}
 
       {toast && (
         <div className="anim-toast" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: "var(--pl-surface-dark)", color: "var(--pl-on-dark)", padding: "13px 20px", borderRadius: 11, fontSize: 13.5, fontWeight: 500, zIndex: 60, whiteSpace: "nowrap", boxShadow: "0 12px 30px rgba(0,0,0,.18)" }}>
