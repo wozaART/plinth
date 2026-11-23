@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { getCurrentGallery } from "@/lib/supabase/gallery";
 import { getArtistPublicProfile, getPayoutProofUrl } from "@/lib/supabase/queries";
-import type { SubmissionStatus, ExhibitionType, ExhibitionAccess, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
+import type { SubmissionStatus, ExhibitionType, ExhibitionAccess, ExhibitionLimits, ExhibitionStatus, CatalogueStatus } from "@/lib/types";
 import { deadlinePassed } from "@/lib/utils";
 import {
   MAX_BIO_LENGTH,
@@ -302,7 +302,7 @@ export async function inviteArtist(email: string, fullName: string) {
 
 // ── Exhibitions ──────────────────────────────────────────────────────────
 
-export interface ExhibitionInput {
+export interface ExhibitionInput extends ExhibitionLimits {
   title: string;
   type: ExhibitionType;
   access: ExhibitionAccess;
@@ -355,6 +355,11 @@ function toExhibitionRow(input: Partial<ExhibitionInput>) {
     ...(input.theme !== undefined && { theme: input.theme || null }),
     ...(input.mediumRequirements !== undefined && { medium_requirements: input.mediumRequirements || null }),
     ...(input.sizeRequirements !== undefined && { size_requirements: input.sizeRequirements || null }),
+    ...(input.maxHeightCm !== undefined && { max_height_cm: input.maxHeightCm }),
+    ...(input.maxLengthCm !== undefined && { max_length_cm: input.maxLengthCm }),
+    ...(input.maxWidthCm !== undefined && { max_width_cm: input.maxWidthCm }),
+    ...(input.maxWeightExclPackagingKg !== undefined && { max_weight_excl_packaging_kg: input.maxWeightExclPackagingKg }),
+    ...(input.maxWeightInclPackagingKg !== undefined && { max_weight_incl_packaging_kg: input.maxWeightInclPackagingKg }),
     ...(input.rules !== undefined && { rules: input.rules || null }),
     ...termsRow(input),
     ...(input.commissionRatePct !== undefined && { commission_rate: input.commissionRatePct == null ? null : input.commissionRatePct / 100 }),

@@ -34,7 +34,16 @@ export type ExhibitionType = "group" | "solo";
 export type ExhibitionAccess = "open" | "closed";
 export type ExhibitionStatus = "open" | "planning" | "hanging" | "closed" | "archived";
 
-export interface Exhibition {
+// The largest work an exhibition takes; null = no limit.
+export interface ExhibitionLimits {
+  maxHeightCm: number | null;
+  maxLengthCm: number | null;
+  maxWidthCm: number | null;
+  maxWeightExclPackagingKg: number | null;
+  maxWeightInclPackagingKg: number | null;
+}
+
+export interface Exhibition extends ExhibitionLimits {
   id: string;
   title: string;
   type: ExhibitionType;
@@ -218,7 +227,7 @@ export interface MyWork {
   imageUrl?: string;
 }
 
-export interface OpenCall {
+export interface OpenCall extends ExhibitionLimits {
   id: string;
   title: string;
   galleryId: string;

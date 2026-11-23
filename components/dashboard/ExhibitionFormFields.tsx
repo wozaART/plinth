@@ -2,7 +2,8 @@
 
 import { useState, type CSSProperties } from "react";
 import { useGalleryConfig } from "@/lib/gallery-context";
-import type { ExhibitionAccess, ExhibitionType } from "@/lib/types";
+import { parseLimit } from "@/lib/exhibition-limits";
+import type { ExhibitionAccess, ExhibitionLimits, ExhibitionType } from "@/lib/types";
 import type { ExhibitionInput } from "@/lib/supabase/actions";
 
 const inputStyle: CSSProperties = { background: "var(--pl-sidebar)", border: "1px solid var(--pl-border)", borderRadius: 9, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", color: "var(--pl-text)", width: "100%" };
@@ -25,7 +26,13 @@ export interface ExhibitionFormState {
   blurb: string;
   theme: string;
   mediumRequirements: string;
+  // Free text from before the structured limits; only editable where it exists.
   sizeRequirements: string;
+  maxHeightCm: string;
+  maxLengthCm: string;
+  maxWidthCm: string;
+  maxWeightExclPackagingKg: string;
+  maxWeightInclPackagingKg: string;
   rules: string;
   termsMode: TermsMode;
   termsText: string;
@@ -67,6 +74,11 @@ export const EMPTY_EXHIBITION_FORM: ExhibitionFormState = {
   theme: "",
   mediumRequirements: "",
   sizeRequirements: "",
+  maxHeightCm: "",
+  maxLengthCm: "",
+  maxWidthCm: "",
+  maxWeightExclPackagingKg: "",
+  maxWeightInclPackagingKg: "",
   rules: "",
   termsMode: "none",
   termsText: "",
@@ -87,6 +99,51 @@ export function commissionInput(form: Pick<ExhibitionFormState, "commissionRateP
   return raw && Number.isFinite(n) && n >= 0 && n <= 100 ? Math.round(n * 10) / 10 : null;
 }
 
+export function limitsInput(form: Pick<ExhibitionFormState, keyof ExhibitionLimits>): ExhibitionLimits {
+  return {
+    maxHeightCm: parseLimit(form.maxHeightCm),
+    maxLengthCm: parseLimit(form.maxLengthCm),
+    maxWidthCm: parseLimit(form.maxWidthCm),
+    maxWeightExclPackagingKg: parseLimit(form.maxWeightExclPackagingKg),
+    maxWeightInclPackagingKg: parseLimit(form.maxWeightInclPackagingKg),
+  };
+}
+
+type LimitField = readonly [keyof ExhibitionLimits, string];
+
+const SIZE_FIELDS: readonly LimitField[] = [
+  ["maxHeightCm", "Height (cm)"],
+  ["maxLengthCm", "Length (cm)"],
+  ["maxWidthCm", "Width (cm)"],
+];
+const WEIGHT_FIELDS: readonly LimitField[] = [
+  ["maxWeightExclPackagingKg", "Excluding packaging (kg)"],
+  ["maxWeightInclPackagingKg", "Including packaging / crating (kg)"],
+];
+
+function LimitGroup({ title, hint, fields, form, onChange }: {
+  title: string;
+  hint: string;
+  fields: readonly LimitField[];
+  form: ExhibitionFormState;
+  onChange: (patch: Partial<ExhibitionFormState>) => void;
+}) {
+  return (
+    <div role="group" aria-label={title}>
+      <div style={labelStyle}>{title}</div>
+      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: `repeat(${fields.length}, minmax(0, 1fr))`, gap: 12, marginTop: 8 }}>
+        {fields.map(([key, label]) => (
+          <label key={key} style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            <span style={{ fontSize: 12.5, color: "var(--pl-text-soft)" }}>{label}</span>
+            <input type="number" min={0} step="any" value={form[key]} placeholder="No limit" onChange={(e) => onChange({ [key]: e.target.value })} style={inputStyle} />
+          </label>
+        ))}
+      </div>
+      <div style={{ fontSize: 12, color: "var(--pl-text-faint)", marginTop: 7 }}>{hint}</div>
+    </div>
+  );
+}
+
 export default function ExhibitionFormFields({
   form,
   onChange,
@@ -97,6 +154,8 @@ export default function ExhibitionFormFields({
   requireDates?: boolean;
 }) {
   const [pdfError, setPdfError] = useState<string | null>(null);
+  // Decided on mount so the field doesn't vanish while it's being cleared.
+  const [hasSizeNotes] = useState(form.sizeRequirements !== "");
   const { business } = useGalleryConfig();
 
   function pickPdf(file: File | null) {
@@ -171,16 +230,19 @@ export default function ExhibitionFormFields({
         <input value={form.theme} onChange={(e) => onChange({ theme: e.target.value })} placeholder="e.g. Landscape & memory of the interior" style={inputStyle} />
       </label>
 
-      <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <span style={labelStyle}>Medium</span>
+        <input value={form.mediumRequirements} onChange={(e) => onChange({ mediumRequirements: e.target.value })} placeholder="e.g. Oil or acrylic only" style={inputStyle} />
+      </label>
+
+      <LimitGroup title="Size requirements" hint="Largest work accepted: height × length × width. Leave blank for no limit." fields={SIZE_FIELDS} form={form} onChange={onChange} />
+      {hasSizeNotes && (
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Medium requirements</span>
-          <input value={form.mediumRequirements} onChange={(e) => onChange({ mediumRequirements: e.target.value })} placeholder="e.g. Oil or acrylic only" style={inputStyle} />
+          <span style={labelStyle}>Size notes</span>
+          <input value={form.sizeRequirements} onChange={(e) => onChange({ sizeRequirements: e.target.value })} style={inputStyle} />
         </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span style={labelStyle}>Size requirements</span>
-          <input value={form.sizeRequirements} onChange={(e) => onChange({ sizeRequirements: e.target.value })} placeholder="e.g. Max 150cm on longest edge" style={inputStyle} />
-        </label>
-      </div>
+      )}
+      <LimitGroup title="Weight" hint="Heaviest work accepted. Leave blank for no limit." fields={WEIGHT_FIELDS} form={form} onChange={onChange} />
 
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         <span style={labelStyle}>Rules for entering</span>
@@ -248,7 +310,7 @@ export default function ExhibitionFormFields({
       </div>
 
       <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <span style={labelStyle}>Maximum works per artist</span>
+        <span style={labelStyle}>Maximum works submitted</span>
         <input type="number" min={1} value={form.maxWorksPerArtist} placeholder="No limit" onChange={(e) => onChange({ maxWorksPerArtist: e.target.value })} style={inputStyle} />
       </label>
 

@@ -2,9 +2,10 @@
 
 import { useState, type CSSProperties } from "react";
 import { EX_ACCESS_META, EX_STATUS_META, EX_TYPE_META } from "@/lib/constants";
+import { sizeLabel, weightLabel } from "@/lib/exhibition-limits";
 import type { Contact, Exhibition, ExhibitionInvite, Submission } from "@/lib/types";
 import ConsignmentTermsView from "@/components/ConsignmentTermsView";
-import ExhibitionFormFields, { commissionInput, termsInput, termsModeOf, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
+import ExhibitionFormFields, { commissionInput, limitsInput, termsInput, termsModeOf, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
 
 function toForm(ex: Exhibition): ExhibitionFormState {
   return {
@@ -15,6 +16,11 @@ function toForm(ex: Exhibition): ExhibitionFormState {
     theme: ex.theme,
     mediumRequirements: ex.mediumRequirements,
     sizeRequirements: ex.sizeRequirements,
+    maxHeightCm: ex.maxHeightCm != null ? String(ex.maxHeightCm) : "",
+    maxLengthCm: ex.maxLengthCm != null ? String(ex.maxLengthCm) : "",
+    maxWidthCm: ex.maxWidthCm != null ? String(ex.maxWidthCm) : "",
+    maxWeightExclPackagingKg: ex.maxWeightExclPackagingKg != null ? String(ex.maxWeightExclPackagingKg) : "",
+    maxWeightInclPackagingKg: ex.maxWeightInclPackagingKg != null ? String(ex.maxWeightInclPackagingKg) : "",
     rules: ex.rules,
     termsMode: termsModeOf(ex.consignmentTermsText, ex.consignmentTermsPdfPath),
     termsText: ex.consignmentTermsText,
@@ -85,6 +91,7 @@ export default function ExhibitionDetailDrawer({
       theme: form.theme.trim(),
       mediumRequirements: form.mediumRequirements.trim(),
       sizeRequirements: form.sizeRequirements.trim(),
+      ...limitsInput(form),
       rules: form.rules.trim(),
       ...termsInput(form),
       commissionRatePct: commissionInput(form),
@@ -143,12 +150,13 @@ export default function ExhibitionDetailDrawer({
               <div className="dash-grid2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 18px", marginTop: 20 }}>
                 {[
                   ["Works approved", ex.filled],
-                  ["Max works per artist", ex.maxWorksPerArtist ?? "No limit"],
+                  ["Max works submitted", ex.maxWorksPerArtist ?? "No limit"],
                   ["Commission", ex.commissionRatePct != null ? `${ex.commissionRatePct}%` : "Gallery default"],
                   ["Applicants", ex.applicants],
                   ["Theme", ex.theme || "—"],
-                  ["Medium requirements", ex.mediumRequirements || "—"],
-                  ["Size requirements", ex.sizeRequirements || "—"],
+                  ["Medium", ex.mediumRequirements || "—"],
+                  ["Size requirements", sizeLabel(ex) || "—"],
+                  ["Weight", weightLabel(ex) || "—"],
                   ["Submission deadline", ex.submissionDeadline ?? "—"],
                   ["Delivery date", ex.deliveryDate ?? "—"],
                   ["Opening date", ex.openingDate ?? "—"],

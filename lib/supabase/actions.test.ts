@@ -358,7 +358,8 @@ describe("contacts and invites", () => {
 describe("exhibitions", () => {
   const base = {
     title: "Spring", type: "group" as const, access: "open" as const, blurb: "", theme: "", mediumRequirements: "",
-    sizeRequirements: "", rules: "", maxWorksPerArtist: 10, commissionRatePct: null, submissionDeadline: null, openingDate: null,
+    sizeRequirements: "", maxHeightCm: null, maxLengthCm: null, maxWidthCm: null, maxWeightExclPackagingKg: null, maxWeightInclPackagingKg: null,
+    rules: "", maxWorksPerArtist: 10, commissionRatePct: null, submissionDeadline: null, openingDate: null,
     closingDate: null, deliveryDate: null,
   };
 
@@ -386,6 +387,13 @@ describe("exhibitions", () => {
       medium_requirements: null,
       max_works_per_artist: 10,
       submission_deadline: null,
+    });
+  });
+
+  it("maps size and weight limits to columns, and clears them with null", async () => {
+    await actions.updateExhibition("e1", { maxHeightCm: 150, maxLengthCm: 100, maxWidthCm: 20, maxWeightExclPackagingKg: 12.5, maxWeightInclPackagingKg: null });
+    expect(h.fake.last("exhibitions", "update")?.payload).toEqual({
+      max_height_cm: 150, max_length_cm: 100, max_width_cm: 20, max_weight_excl_packaging_kg: 12.5, max_weight_incl_packaging_kg: null,
     });
   });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import ExhibitionFormFields, { EMPTY_EXHIBITION_FORM, commissionInput, termsInput, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
+import ExhibitionFormFields, { EMPTY_EXHIBITION_FORM, commissionInput, limitsInput, termsInput, type ExhibitionFormInput, type ExhibitionFormState } from "./ExhibitionFormFields";
 
 interface CreateExhibitionDrawerProps {
   onClose: () => void;
@@ -25,6 +25,7 @@ export default function CreateExhibitionDrawer({ onClose, onCreate }: CreateExhi
       theme: form.theme.trim(),
       mediumRequirements: form.mediumRequirements.trim(),
       sizeRequirements: form.sizeRequirements.trim(),
+      ...limitsInput(form),
       rules: form.rules.trim(),
       ...termsInput(form),
       commissionRatePct: commissionInput(form),
