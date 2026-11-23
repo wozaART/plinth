@@ -555,6 +555,11 @@ export type Database = {
           opening_date: string | null
           rules: string | null
           size_requirements: string | null
+          max_height_cm: number | null
+          max_length_cm: number | null
+          max_width_cm: number | null
+          max_weight_excl_packaging_kg: number | null
+          max_weight_incl_packaging_kg: number | null
           commission_rate: number | null
           max_works_per_artist: number | null
           status: string
@@ -577,6 +582,11 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
+          max_height_cm?: number | null
+          max_length_cm?: number | null
+          max_width_cm?: number | null
+          max_weight_excl_packaging_kg?: number | null
+          max_weight_incl_packaging_kg?: number | null
           commission_rate?: number | null
           max_works_per_artist?: number | null
           status?: string
@@ -599,6 +609,11 @@ export type Database = {
           opening_date?: string | null
           rules?: string | null
           size_requirements?: string | null
+          max_height_cm?: number | null
+          max_length_cm?: number | null
+          max_width_cm?: number | null
+          max_weight_excl_packaging_kg?: number | null
+          max_weight_incl_packaging_kg?: number | null
           commission_rate?: number | null
           max_works_per_artist?: number | null
           status?: string

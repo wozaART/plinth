@@ -44,13 +44,13 @@ describe("ExhibitionsPanel list", () => {
     expect(screen.getByRole("button", { name: "Showing archived" })).toBeTruthy();
   });
 
-  it("shows status, max works per artist, applicants and approved works", () => {
+  it("shows status, max works submitted, applicants and approved works", () => {
     setup();
     expect(screen.getByText("Open call")).toBeTruthy();
     expect(screen.getByText("Planning")).toBeTruthy();
     expect(screen.getByText("7 applicants")).toBeTruthy();
     expect(screen.getByText("4 approved")).toBeTruthy();
-    expect(screen.getAllByText("Max works per artist")).toHaveLength(2);
+    expect(screen.getAllByText("Max works submitted")).toHaveLength(2);
   });
 
   it("shows no limit when an exhibition has no works cap", () => {

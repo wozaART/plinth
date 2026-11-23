@@ -178,7 +178,7 @@ describe("StudioShell attention banners", () => {
 describe("StudioShell consignment terms", () => {
   const call = (over: Partial<OpenCall> = {}): OpenCall => ({
     id: "oc1", title: "Highveld Light", galleryId: "g1", gallery: "Gallery", type: "group", access: "open", deadline: "30 Jan", focus: "",
-    theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
+    theme: "", mediumRequirements: "", sizeRequirements: "", maxHeightCm: null, maxLengthCm: null, maxWidthCm: null, maxWeightExclPackagingKg: null, maxWeightInclPackagingKg: null, rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
     maxWorksPerArtist: null, commissionRatePct: null, myWorkCount: 0, accepting: true, ...over,
   });
 
@@ -292,7 +292,7 @@ describe("StudioShell consignment terms", () => {
 describe("StudioShell across galleries", () => {
   const call = (id: string, galleryId: string, gallery: string): OpenCall => ({
     id, title: `${gallery} call`, galleryId, gallery, type: "group", access: "open", deadline: "30 Jan", focus: "",
-    theme: "", mediumRequirements: "", sizeRequirements: "", rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
+    theme: "", mediumRequirements: "", sizeRequirements: "", maxHeightCm: null, maxLengthCm: null, maxWidthCm: null, maxWeightExclPackagingKg: null, maxWeightInclPackagingKg: null, rules: "", consignmentTermsText: "", consignmentTermsPdfPath: null,
     maxWorksPerArtist: null, commissionRatePct: null, myWorkCount: 0, accepting: true,
   });
 

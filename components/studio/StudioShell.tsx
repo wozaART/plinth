@@ -8,6 +8,7 @@ import { EX_ACCESS_META, EX_TYPE_META, STATUS_META, CAT_STATUS_META, PAYOUT_STAT
 import { useGalleryConfig } from "@/lib/gallery-context";
 import { formatCurrency } from "@/lib/currency";
 import { renderCommissionNote } from "@/lib/gallery-runtime-config";
+import { sizeLabel, weightLabel } from "@/lib/exhibition-limits";
 import ImageLightbox from "@/components/shared/ImageLightbox";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
 import ProfileSwitcher from "@/components/shared/ProfileSwitcher";
@@ -341,11 +342,12 @@ function SubmitDrawer({ galleries, openCalls, commissionNoteTemplate, commission
                     : `This exhibition accepts up to ${selectedCall.maxWorksPerArtist} ${selectedCall.maxWorksPerArtist === 1 ? "work" : "works"} per artist${selectedCall.myWorkCount > 0 ? ` — you can add ${remainingWorks} more` : ""}.`}
                 </div>
               )}
-              {selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || selectedCall.sizeRequirements) && (
+              {selectedCall && (selectedCall.theme || selectedCall.mediumRequirements || sizeLabel(selectedCall) || weightLabel(selectedCall)) && (
                 <div style={{ fontSize: 12.5, color: "var(--pl-text-soft)", background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", lineHeight: 1.55 }}>
                   {selectedCall.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {selectedCall.theme}</div>}
                   {selectedCall.mediumRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {selectedCall.mediumRequirements}</div>}
-                  {selectedCall.sizeRequirements && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {selectedCall.sizeRequirements}</div>}
+                  {sizeLabel(selectedCall) && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {sizeLabel(selectedCall)}</div>}
+                  {weightLabel(selectedCall) && <div style={{ marginTop: 4 }}><strong style={{ color: "var(--pl-text-secondary)" }}>Weight:</strong> {weightLabel(selectedCall)}</div>}
                 </div>
               )}
             </div>
@@ -840,11 +842,12 @@ export default function StudioShell({ artistName, artistCity, works: initialWork
                       <div style={{ fontSize: 12, color: "var(--pl-text-eyebrow)", marginTop: 6 }}>Deadline: {oc.deadline}</div>
                     </div>
                   </div>
-                  {(oc.theme || oc.mediumRequirements || oc.sizeRequirements || oc.rules || hasConsignmentTerms(oc)) && (
+                  {(oc.theme || oc.mediumRequirements || sizeLabel(oc) || weightLabel(oc) || oc.rules || hasConsignmentTerms(oc)) && (
                     <div style={{ marginTop: 14, background: "var(--pl-sidebar)", borderRadius: 9, padding: "12px 14px", fontSize: 12.5, color: "var(--pl-text-soft)", lineHeight: 1.6 }}>
                       {oc.theme && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Theme:</strong> {oc.theme}</div>}
                       {oc.mediumRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Medium:</strong> {oc.mediumRequirements}</div>}
-                      {oc.sizeRequirements && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {oc.sizeRequirements}</div>}
+                      {sizeLabel(oc) && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Size:</strong> {sizeLabel(oc)}</div>}
+                      {weightLabel(oc) && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Weight:</strong> {weightLabel(oc)}</div>}
                       {oc.rules && <div><strong style={{ color: "var(--pl-text-secondary)" }}>Rules:</strong> {oc.rules}</div>}
                       {hasConsignmentTerms(oc) && (
                         <div style={{ marginTop: 8 }}>

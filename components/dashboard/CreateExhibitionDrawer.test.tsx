@@ -58,6 +58,11 @@ describe("CreateExhibitionDrawer", () => {
       theme: "",
       mediumRequirements: "",
       sizeRequirements: "",
+      maxHeightCm: null,
+      maxLengthCm: null,
+      maxWidthCm: null,
+      maxWeightExclPackagingKg: null,
+      maxWeightInclPackagingKg: null,
       rules: "",
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
@@ -77,10 +82,14 @@ describe("CreateExhibitionDrawer", () => {
     type(/Title/, "Quiet Rooms");
     type(/Blurb/, " A solo show ");
     type(/Theme/, " Interiors ");
-    type(/Medium requirements/, " Oil ");
-    type(/Size requirements/, " Max 150cm ");
+    type(/Medium/, " Oil ");
+    type(/Height/, "150");
+    type(/Length/, "100");
+    type(/Width/, "20");
+    type(/Excluding packaging/, "12.5");
+    type(/Including packaging/, "30");
     type(/Rules for entering/, " Two works max ");
-    type(/Maximum works per artist/, "3");
+    type(/Maximum works submitted/, "3");
     type(/Commission/, "35");
     type(/Online submission deadline/, "2026-01-30");
     type(/Delivery date/, "2026-03-02");
@@ -94,7 +103,12 @@ describe("CreateExhibitionDrawer", () => {
       blurb: "A solo show",
       theme: "Interiors",
       mediumRequirements: "Oil",
-      sizeRequirements: "Max 150cm",
+      sizeRequirements: "",
+      maxHeightCm: 150,
+      maxLengthCm: 100,
+      maxWidthCm: 20,
+      maxWeightExclPackagingKg: 12.5,
+      maxWeightInclPackagingKg: 30,
       rules: "Two works max",
       consignmentTermsText: "",
       consignmentTermsPdfPath: null,
@@ -146,7 +160,7 @@ describe("CreateExhibitionDrawer", () => {
     const { create, onCreate } = setup();
     type(/Title/, "X");
     fillDates();
-    type(/Maximum works per artist/, "");
+    type(/Maximum works submitted/, "");
     fireEvent.click(create());
     expect(onCreate).toHaveBeenCalledWith(expect.objectContaining({ maxWorksPerArtist: null }));
   });
